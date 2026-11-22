@@ -15,7 +15,7 @@
         <td><a href="/server/{{ s.id }}">{{ s.name }}</a><br><span class="muted small">{{ s.type }} {{ s.mc_version }}</span></td>
         <td><a href="/admin/user/{{ s.owner_id }}">{{ s.username }}</a></td>
         <td>{{ s.model_name }}</td>
-        <td><span class="pill {{ cls }}">{{ t(label) }}</span></td>
+        <td><span class="pill dot {{ cls }}"><span class="cap">{{ t(label) }}</span></span></td>
         <td>{{ s.rented_until | remaining if s.state not in ('archived',) else '–' }}</td>
         <td class="actions-cell">
           <form method="post" action="/admin/server/{{ s.id }}/loeschen" onsubmit="return confirm('{{ t('Server wirklich löschen? Das kann nicht rückgängig gemacht werden.') }}')">

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_empty.html" import empty %}
 {% block title %}{{ t('Backups & Archive') }} · Hostly{% endblock %}
 {% block content %}
 <h1>{{ t('Backups & Archive') }}</h1>
@@ -44,6 +45,6 @@
         </td></tr>
     {% endfor %}</tbody>
   </table></div>
-  {% else %}<p class="muted small">{{ t('Noch keine Backups.') }}</p>{% endif %}
+  {% else %}{{ empty(t('Noch keine Backups.'), t('Backups laufen jede Nacht zwischen 02 und 06 Uhr automatisch.'), None, None, 'list') }}{% endif %}
 </section>
 {% endblock %}

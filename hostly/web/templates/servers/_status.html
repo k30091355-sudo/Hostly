@@ -1,6 +1,6 @@
 <div id="status" class="status-box" hx-get="/server/{{ server.id }}/status" hx-trigger="every {{ '4s' if busy or status_class == 'busy' else '30s' }}" hx-swap="outerHTML">
   <div class="status-line">
-    <span class="pill big {{ status_class }}">{{ t(status_label) }}</span>
+    <span class="pill dot big {{ status_class }}"><span class="cap">{{ t(status_label) }}</span></span>
     {% if busy %}<span class="muted small">{{ t('Aktion läuft:') }} {{ t({'create': 'Erstellen', 'start': 'Starten', 'stop': 'Stoppen', 'restart': 'Neustarten', 'reload': 'Reload', 'archive': 'Archivieren', 'reactivate': 'Reaktivieren', 'delete': 'Löschen', 'restore': 'Wiederherstellen', 'rebuild': 'Umbauen', 'backup': 'Backup', 'ext_sync': 'Plugins/Mods', 'world_upload': 'Welt hochladen', 'world_delete': 'Welt löschen', 'file_write': 'Speichern', 'file_delete': 'Löschen', 'file_put': 'Hochladen'}.get(busy.kind, busy.kind)) }} …</span>{% endif %}
   </div>
   {% if night %}<div class="small muted">{{ t('Nachtpause bis') }} {{ night.end_at | localtime }}. {{ t('Wenn du jetzt startest, gibt es für diese Nacht keine Erstattung.') }}</div>{% endif %}

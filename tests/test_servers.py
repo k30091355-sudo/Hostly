@@ -75,7 +75,7 @@ def test_worker_creates_and_controls_server(client):
     run_jobs(w)
     assert "save-all" in w.rcon.commands
     assert not w.ops.containers["hostly-mc-1"]["running"]
-    assert "offline" in client.get("/server/1").text
+    assert "cap\">aus<" in client.get("/server/1").text
 
 
 def test_paused_server_is_never_pinged(client):

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_empty.html" import empty %}
 {% block title %}{{ t('Gewinnspiele') }} · Hostly{% endblock %}
 {% block content %}
 <h1>{{ t('Gewinnspiele') }}</h1>
@@ -6,7 +7,7 @@
 {% if active %}
   {% for g in active %}{% include "_giveaway.html" %}{% endfor %}
 {% else %}
-  <div class="card"><p class="muted">{{ t('Gerade läuft kein Gewinnspiel.') }}</p></div>
+  {{ empty(t('Gerade läuft kein Gewinnspiel.'), t('Schau bald wieder vorbei – hier gibt es ab und zu Coins zu gewinnen.'), None, None, 'gift') }}
 {% endif %}
 {% if past %}
 <section class="card">

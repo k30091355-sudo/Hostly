@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_empty.html" import empty %}
 {% block title %}{{ t('Coin-Verlauf') }} · Hostly{% endblock %}
 {% block content %}
 <h1>{{ t('Coin-Verlauf') }}</h1>
@@ -20,8 +21,7 @@
     </table>
   </div>
   {% else %}
-  <p class="muted">{{ t('Noch keine Buchungen. Löse einen Code ein, um Coins zu bekommen.') }}</p>
-  <a class="btn primary" href="/code">{{ t('Code einlösen') }}</a>
+  {{ empty(t('Noch keine Coins'), t('Noch keine Buchungen. Löse einen Code ein, um Coins zu bekommen.'), '/code', t('Code einlösen'), 'coins') }}
   {% endif %}
 </div>
 {% endblock %}

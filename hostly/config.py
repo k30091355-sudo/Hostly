@@ -11,6 +11,10 @@ DB_PATH = Path(os.environ.get("HOSTLY_DB_PATH", str(DATA_DIR / "db" / "hostly.sq
 # Support-Adresse (siehe KONZEPT.md 20.1)
 SUPPORT_EMAIL = "k3009135@gmail.com"
 
+# Versionsnummer: GROSS.NEU.KLEIN – GROSS nur bei etwas Riesigem, NEU bei großen Neuerungen,
+# KLEIN bei kleinen Updates/Fehlerbehebungen. Bei jedem Update erhöhen + in docs/UPDATE.md eintragen.
+VERSION = "1.2.0"
+
 # Sitzung: wie lange man eingeloggt bleibt
 SESSION_DAYS = 30
 SESSION_COOKIE = "hostly_session"

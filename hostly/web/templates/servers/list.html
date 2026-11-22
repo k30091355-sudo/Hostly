@@ -1,30 +1,37 @@
 {% extends "base.html" %}
+{% from "_empty.html" import empty %}
 {% block title %}{{ t('Meine Server') }} · Hostly{% endblock %}
 {% block content %}
 <div class="title-row">
   <h1>{{ t('Meine Server') }}</h1>
-  <a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>
+  {% if items %}<a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>{% endif %}
 </div>
 {% if items %}
-<div class="server-list">
-  {% for s, label, cls in items %}
-  <a class="card server-card" href="/server/{{ s.id }}">
-    <img class="server-icon" src="/server/{{ s.id }}/icon.png" alt="" width="48" height="48">
-    <div class="server-info">
-      <div class="server-name">{{ s.name }}</div>
-      <div class="small muted">{{ t(s.model_name) }} · {{ s.type | capitalize }}{% if s.mc_version != 'LATEST' %} {{ s.mc_version }}{% endif %}</div>
-      {% if s.state != 'archived' %}
-      <div class="small">{{ t('noch') }} {{ s.rented_until | remaining }}{% if s.public_address %} · <span class="mono">{{ s.public_address }}</span>{% endif %}</div>
-      {% endif %}
+<div class="server-grid">
+  {% for it in items %}{% set s = it.server %}
+  <div class="card server-tile lift">
+    <div class="tile-top">
+      <img class="server-icon" src="/server/{{ s.id }}/icon.png" alt="" width="40" height="40">
+      <div class="server-info">
+        <a class="server-name stretch" href="/server/{{ s.id }}">{{ s.name }}</a>
+        <div class="tile-meta">{{ t(s.model_name) }} · {{ s.type | capitalize }}{% if s.mc_version != 'LATEST' %} {{ s.mc_version }}{% endif %}</div>
+      </div>
+      <span class="pill dot {{ it.cls }}"><span class="cap">{{ t('Online') if it.cls == 'on' else t(it.label) }}</span></span>
     </div>
-    <span class="pill {{ cls }}">{{ t(label) }}</span>
-  </a>
+    {% if s.state != 'archived' %}
+    <div class="meter-row"><span>{{ t('Spieler') }}</span><b>{{ it.online }} / {{ s.max_players }}</b></div>
+    <div class="meter"><span class="good" style="width: {{ it.players_pct }}%"></span></div>
+    <div class="meter-row"><span>{{ t('Restlaufzeit') }}</span><b class="{{ 'bad' if it.days_cls == 'bad' }}">{{ s.rented_until | remaining }}</b></div>
+    <div class="meter"><span class="{{ it.days_cls }}" style="width: {{ it.days_pct }}%"></span></div>
+    {% if s.public_address %}
+    <div class="tile-addr"><code class="mono">{{ s.public_address }}</code>
+      <button type="button" class="btn small" data-copy="{{ s.public_address }}">{{ t('Kopieren') }}</button></div>
+    {% endif %}
+    {% endif %}
+  </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="card center">
-  <p>{{ t('Du hast noch keinen Server.') }}</p>
-  <a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>
-</div>
+{{ empty(t('Noch kein Server'), t('Miete deinen ersten Minecraft-Server – in einer Minute startklar.'), '/kaufen', t('Ersten Server mieten')) }}
 {% endif %}
 {% endblock %}

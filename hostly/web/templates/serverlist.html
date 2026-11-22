@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_empty.html" import empty %}
 {% block title %}{{ t('Serverliste') }} · Hostly{% endblock %}
 {% block content %}
 <h1>{{ t('Serverliste') }}</h1>
@@ -20,5 +21,5 @@
   </div>
   {% endfor %}
 </div>
-{% else %}<div class="card"><p class="muted">{{ t('Noch keine öffentlichen Server.') }}</p></div>{% endif %}
+{% else %}{{ empty(t('Noch keine öffentlichen Server'), t('Besitzer können ihren Server im Reiter „Spieler“ in dieser Liste zeigen.'), '/kaufen', t('Eigenen Server mieten'), 'list') }}{% endif %}
 {% endblock %}

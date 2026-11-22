@@ -4,7 +4,7 @@
 {% block content %}
 <div class="title-row">
   <h1>{{ t('nav.settings') }}</h1>
-  <a class="btn" href="/einstellungen/coins">🪙 {{ t('Coin-Verlauf') }}</a>
+  <a class="btn" href="/einstellungen/coins">{% include "_coin.html" %}&nbsp;{{ t('Coin-Verlauf') }}</a>
 </div>
 {% if user.must_change_password %}
 <div class="alert warn" role="alert">{{ t('settings.must_change') }}</div>

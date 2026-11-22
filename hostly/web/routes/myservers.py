@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
 from ... import config, console, db, images, minecraft, motd, nightpause, security, servers
+from ...timeutil import time_left
 from ..deps import Ctx, Redirect, get_ctx
 
 router = APIRouter()
@@ -62,15 +63,26 @@ def is_active(server) -> bool:
 def my_servers(ctx: Ctx = Depends(get_ctx)):
     ctx.require_login()
     rows = ctx.conn.execute(
-        """SELECT s.*, m.name AS model_name, t.public_address,
+        """SELECT s.*, m.name AS model_name, m.max_players, t.public_address,
                   st.running, st.paused, st.health, st.players_online, st.players_max
            FROM servers s JOIN models m ON m.id = s.model_id LEFT JOIN tunnels t ON t.id = s.tunnel_id
            LEFT JOIN server_status st ON st.server_id = s.id
            WHERE s.owner_id = ? AND s.state != 'deleted' ORDER BY s.state = 'archived', s.id DESC""",
         (ctx.user["id"],),
     ).fetchall()
-    items = [(r, *servers.display_status(r, r if r["running"] is not None else None,
-                                         servers.night_pause_running(ctx.conn, r["id"]) is not None)) for r in rows]
+    items = []
+    for r in rows:
+        label, cls = servers.display_status(r, r if r["running"] is not None else None,
+                                            servers.night_pause_running(ctx.conn, r["id"]) is not None)
+        online = (r["players_online"] or 0) if cls == "on" else 0
+        days = max(0.0, time_left(r["rented_until"]).total_seconds() / 86400) if r["rented_until"] else 0.0
+        items.append({
+            "server": r, "label": label, "cls": cls, "online": online,
+            "players_pct": min(100, round(100 * online / max(1, r["max_players"]))),
+            # Balken: 30 Tage = voll; gelb ab 7, rot ab 3 Tagen
+            "days_pct": max(3, min(100, round(100 * days / 30))),
+            "days_cls": "bad" if days <= 3 else "warn" if days <= 7 else "",
+        })
     return ctx.render("servers/list.html", items=items)
 
 

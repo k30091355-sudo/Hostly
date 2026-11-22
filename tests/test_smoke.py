@@ -33,3 +33,10 @@ def test_all_pages_render(client):
     logout(client)
     for url in ("/", "/kaufen", "/gewinnspiele", "/serverliste", "/statistik", "/login", "/registrieren"):
         assert client.get(url).status_code == 200, url
+
+
+def test_footer_version_support_and_home_link(client):
+    from hostly import config
+    html = client.get("/").text
+    assert f"v{config.VERSION}" in html and 'class="footer-brand"' in html and 'href="/"' in html
+    assert "mailto:" in html and "English" in html

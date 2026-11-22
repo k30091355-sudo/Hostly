@@ -1,0 +1,34 @@
+{# Leer-Anzeige mit kleinem Bild: {% from "_empty.html" import empty %} {{ empty(t('Titel'), t('Text'), '/link', t('Knopf'), 'server') }} #}
+{% macro empty(title, text, href=None, button=None, art='server') %}
+<div class="card empty">
+  <svg viewBox="0 0 160 110" aria-hidden="true">
+    <ellipse cx="80" cy="100" rx="56" ry="7" fill="var(--surface-2)"/>
+    {% if art == 'coins' %}
+      <ellipse cx="80" cy="88" rx="30" ry="9" fill="#c98a00"/><rect x="50" y="76" width="60" height="12" fill="#e6a810"/><ellipse cx="80" cy="76" rx="30" ry="9" fill="#f5b81c"/>
+      <rect x="50" y="64" width="60" height="12" fill="#e6a810"/><ellipse cx="80" cy="64" rx="30" ry="9" fill="#ffd34d"/>
+      <ellipse cx="80" cy="34" rx="30" ry="9" fill="var(--primary-soft)" stroke="var(--primary)" stroke-width="2" stroke-dasharray="5 4"/>
+      <path d="M80 28v12M74 34h12" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+    {% elif art == 'gift' %}
+      <rect x="48" y="48" width="64" height="44" rx="6" fill="var(--primary-soft)" stroke="var(--primary)" stroke-width="2"/>
+      <rect x="44" y="36" width="72" height="16" rx="5" fill="var(--surface-2)" stroke="var(--primary)" stroke-width="2"/>
+      <path d="M80 36v56" stroke="var(--primary)" stroke-width="4"/>
+      <path d="M80 36c-6-14-24-14-20-2 2 5 12 3 20 2zM80 36c6-14 24-14 20-2-2 5-12 3-20 2z" fill="none" stroke="var(--primary)" stroke-width="2.5"/>
+    {% elif art == 'list' %}
+      <rect x="40" y="20" width="80" height="72" rx="8" fill="var(--surface-2)" stroke="var(--border)" stroke-width="2"/>
+      <circle cx="54" cy="38" r="4" fill="var(--off)"/><rect x="64" y="35" width="42" height="6" rx="3" fill="var(--border)"/>
+      <circle cx="54" cy="56" r="4" fill="var(--off)"/><rect x="64" y="53" width="34" height="6" rx="3" fill="var(--border)"/>
+      <circle cx="54" cy="74" r="4" fill="var(--primary)"/><rect x="64" y="71" width="38" height="6" rx="3" fill="var(--primary-soft)"/>
+    {% else %}
+      <rect x="40" y="18" width="80" height="20" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="2"/>
+      <rect x="40" y="44" width="80" height="20" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="2"/>
+      <rect x="40" y="70" width="80" height="20" rx="6" fill="var(--primary-soft)" stroke="var(--primary)" stroke-width="2" stroke-dasharray="5 4"/>
+      <circle cx="51" cy="28" r="3" fill="var(--off)"/><circle cx="51" cy="54" r="3" fill="var(--off)"/>
+      <rect x="90" y="26" width="20" height="4" rx="2" fill="var(--border)"/><rect x="90" y="52" width="20" height="4" rx="2" fill="var(--border)"/>
+      <path d="M80 74v12M74 80h12" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+    {% endif %}
+  </svg>
+  <h2>{{ title }}</h2>
+  {% if text %}<p>{{ text }}</p>{% endif %}
+  {% if href and button %}<a class="btn primary" href="{{ href }}">{{ button }}</a>{% endif %}
+</div>
+{% endmacro %}

@@ -52,7 +52,17 @@ document.addEventListener("DOMContentLoaded", () => {
   scrollConsoles();
   setupConsoleForms();
   setupCodeCards();
+  setupTopbar();
 });
+
+// Kopfzeile wird beim Scrollen leicht durchsichtig mit Unschärfe
+function setupTopbar() {
+  const bar = document.querySelector(".topbar");
+  if (!bar) return;
+  const update = () => bar.classList.toggle("scrolled", window.scrollY > 4);
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+}
 
 // Konsole automatisch nach unten scrollen (auch nach HTMX-Aktualisierung)
 function scrollConsoles() {
@@ -235,32 +245,32 @@ function drawCodeCard(canvas, logo) {
   const round = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
   // Hintergrund
   g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
-  g.fillStyle = "#2f7d4f"; g.fillRect(0, 0, W, 14);
+  g.fillStyle = "#2563eb"; g.fillRect(0, 0, W, 14);
   g.textAlign = "center"; g.textBaseline = "alphabetic";
   // Logo + Name
   g.font = `700 76px ${font}`;
   const nameW = g.measureText("Hostly").width, logoS = 84, gap = 22;
   const startX = (W - (logoS + gap + nameW)) / 2;
   if (logo) g.drawImage(logo, startX, 70, logoS, logoS);
-  g.fillStyle = "#14281d"; g.textAlign = "left";
+  g.fillStyle = "#0f172a"; g.textAlign = "left";
   g.fillText("Hostly", startX + logoS + gap, 140);
   g.textAlign = "center";
   // Untertitel
-  g.fillStyle = "#5b6b62"; g.font = `500 30px ${font}`;
+  g.fillStyle = "#5b6780"; g.font = `500 30px ${font}`;
   g.fillText("Free Java Server Hosting", W / 2, 200);
   // Code
   g.font = `700 64px ${mono}`;
   const codeW = Math.min(W - 80, g.measureText(d.code).width + 80);
   round((W - codeW) / 2, 250, codeW, 120, 22);
-  g.fillStyle = "#eaf6ee"; g.fill();
-  g.lineWidth = 3; g.strokeStyle = "#6cc08d"; g.stroke();
-  g.fillStyle = "#14281d"; g.fillText(d.code, W / 2, 332, W - 120);
+  g.fillStyle = "#eef4ff"; g.fill();
+  g.lineWidth = 3; g.strokeStyle = "#93c5fd"; g.stroke();
+  g.fillStyle = "#0f172a"; g.fillText(d.code, W / 2, 332, W - 120);
   // Coins + Einlösungen (+ Ablauf)
-  g.fillStyle = "#2f7d4f"; g.font = `700 44px ${font}`;
+  g.fillStyle = "#2563eb"; g.font = `700 44px ${font}`;
   g.fillText(d.coins, W / 2, 445);
-  g.fillStyle = "#3d4b43"; g.font = `500 32px ${font}`;
+  g.fillStyle = "#334155"; g.font = `500 32px ${font}`;
   g.fillText([d.uses, d.expires].filter(Boolean).join(" · "), W / 2, 495);
   // Website
-  g.fillStyle = "#8a978f"; g.font = `400 26px ${font}`;
+  g.fillStyle = "#8a96ad"; g.font = `400 26px ${font}`;
   g.fillText(d.site, W / 2, H - 42);
 }

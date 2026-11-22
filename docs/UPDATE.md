@@ -6,7 +6,27 @@
 
 ---
 
-## Besondere Hinweise – neuestes Update zuerst
+## Versionsnummern
+Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie unten auf der Website neben „Hostly“.
+- **1**.x.x – ändert sich nur bei etwas Riesigem
+- x.**2**.x – große Neuerung
+- x.x.**0** – kleine Updates und Fehlerbehebungen
+
+## Besondere Hinweise – neueste Version zuerst
+
+### Version 1.2.0 (22.11.2026) – Neues Design
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
+- **Neues Logo** („Server-Rack“) – auch als Tab-Symbol und Handy-App-Symbol.
+- **Blaues Design**, **Dark-Mode in Dunkelblau**, weiche Schatten unter den Karten.
+- **Coins immer oben rechts mit goldener Münze** (auch auf Handys golden).
+- **Kopfzeile** wird beim Scrollen leicht durchsichtig mit Unschärfe.
+- **Status mit farbigem Punkt:** 🟢 Online (pulsiert), 🔵 Schläft, ⚪ Aus, 🔴 Abgestürzt.
+- **„Meine Server“ als Karten** mit Balken für Spieler und Restlaufzeit (gelb ab 7, rot ab 3 Tagen) und Adresse zum Kopieren.
+- **Schönere Leer-Anzeigen** mit kleinem Bild und Knopf (z. B. „Ersten Server mieten“).
+- **Unten auf der Seite:** Hostly + Versionsnummer (Klick → Startseite), Support, English.
+- Code-Bilder (Admin → Codes) jetzt auch in Blau.
+
+👉 Falls im Browser oder in der Handy-App noch das alte grüne Design erscheint: Seite einmal neu laden (am PC `Strg + F5`).
 
 ### Update 6 (22.11.2026, nachts) – Codes als Bild
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.

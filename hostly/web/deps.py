@@ -16,6 +16,7 @@ from ..i18n import translate
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 templates.env.globals["SUPPORT_EMAIL"] = config.SUPPORT_EMAIL
+templates.env.globals["VERSION"] = config.VERSION
 
 _BERLIN = ZoneInfo("Europe/Berlin")
 

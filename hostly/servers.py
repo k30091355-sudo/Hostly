@@ -281,7 +281,7 @@ def display_status(server: sqlite3.Row, status: sqlite3.Row | None, night_paused
     """(Text, CSS-Klasse) für die Anzeige."""
     state = server["state"]
     if state == "active" and server["crash_locked"]:
-        return "abgestürzt", "off"
+        return "abgestürzt", "crash"
     if state == "active" and night_paused and (status is None or not status["running"]):
         return "Nachtpause", "sleep"
     if state == "creating":
@@ -295,7 +295,7 @@ def display_status(server: sqlite3.Row, status: sqlite3.Row | None, night_paused
     if state == "deleted":
         return "gelöscht", "off"
     if status is None or not status["running"]:
-        return "offline", "off"
+        return "aus", "off"
     if status["paused"]:
         return "schläft", "sleep"
     if status["health"] == "starting":
