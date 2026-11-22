@@ -121,7 +121,7 @@ Details: [`docs/TECHNIK.md`](docs/TECHNIK.md).
 | Installation | Alles per **Docker Compose**, möglichst mit einem Befehl | *Vorschlag* |
 | Plugin-/Mod-Quellen | **Modrinth** und **CurseForge** (APIs) | **ENTSCHIEDEN** |
 
-> Hinweis: Der Ordner/Repo-Name ist `MC-Plugim`, das Produkt heißt **Hostly**.
+> Repo: `k30091355-sudo/hostly` (Konzept ursprünglich in `MC-Plugim` entstanden).
 
 ### 4.3 Website-Erreichbarkeit: Tailscale Funnel (ENTSCHIEDEN)
 - Kostenlos für private Nutzung, kein Abo.
