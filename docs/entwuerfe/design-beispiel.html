@@ -1,0 +1,63 @@
+<!doctype html><html lang="de" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#f4f7fc;--surface:#fff;--surface-2:#eef3fb;--text:#0f172a;--muted:#5b6780;--border:#e2e8f3;
+--primary:#2563eb;--primary-hover:#1d4ed8;--primary-text:#fff;--primary-soft:#e8f0ff;
+--good:#16a34a;--good-bg:#e7f7ed;--bad:#dc2626;--bad-bg:#fdecec;--warn:#b45309;--sleep:#3b82f6;--off:#94a3b8;
+--shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(37,99,235,.08);--shadow-h:0 2px 4px rgba(15,23,42,.06),0 14px 32px rgba(37,99,235,.14);
+--header:rgba(255,255,255,.72);--radius:14px}
+[data-theme=dark]{--bg:#0a1324;--surface:#111d35;--surface-2:#16264a;--text:#e6edfa;--muted:#93a3c4;--border:#1e3156;
+--primary:#3b82f6;--primary-hover:#60a5fa;--primary-text:#fff;--primary-soft:#15284d;
+--good:#4ade80;--good-bg:#0f2a22;--bad:#f87171;--bad-bg:#3a1520;--warn:#fbbf24;--sleep:#60a5fa;--off:#64748b;
+--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);--shadow-h:0 2px 4px rgba(0,0,0,.35),0 16px 36px rgba(0,0,0,.45);
+--header:rgba(10,19,36,.7)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--header);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.bar{max-width:1080px;margin:auto;display:flex;align-items:center;gap:20px;padding:12px 16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;color:var(--text);text-decoration:none}.brand svg{width:32px;height:32px}
+nav{display:flex;gap:4px}nav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:9px;font-weight:500}nav a.on{background:var(--primary-soft);color:var(--primary)}
+.sp{flex:1}.coin{display:flex;align-items:center;gap:7px;background:linear-gradient(180deg,#fff8e1,#ffeeb8);color:#7a4d00;border:1px solid #f3d27a;padding:5px 12px 5px 6px;border-radius:999px;font-weight:700}
+[data-theme=dark] .coin{background:linear-gradient(180deg,#3a2e0e,#2a210a);color:#ffd766;border-color:#5c4713}
+.coin svg{width:22px;height:22px}.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#2563eb)}
+main{max-width:1080px;margin:auto;padding:24px 16px 40px}h1{font-size:26px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;transition:.2s}.card:hover{box-shadow:var(--shadow-h);transform:translateY(-2px)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}.name{font-weight:700;font-size:17px}.meta{color:var(--muted);font-size:13px;margin:2px 0 14px}
+.st{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--surface-2)}
+.dot{width:9px;height:9px;border-radius:50%;position:relative}.on .dot{background:var(--good)}.on .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--good);opacity:.35}
+.on{color:var(--good);background:var(--good-bg)}.sl{color:var(--sleep)}.sl .dot{background:var(--sleep)}.of{color:var(--muted)}.of .dot{background:var(--off)}.cr{color:var(--bad);background:var(--bad-bg)}.cr .dot{background:var(--bad)}
+.row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:10px}.row b{color:var(--text)}
+.track{height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-top:5px}.fill{height:100%;border-radius:99px;background:var(--primary)}.fill.g{background:var(--good)}.fill.r{background:var(--bad)}.fill.y{background:#f59e0b}
+.addr{display:flex;align-items:center;justify-content:space-between;margin-top:14px;background:var(--surface-2);border-radius:10px;padding:8px 8px 8px 12px;font:600 13px ui-monospace,Consolas,monospace}
+.btn{border:0;border-radius:9px;padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer;background:var(--primary);color:var(--primary-text);box-shadow:0 2px 6px rgba(37,99,235,.3)}.btn.s{padding:5px 10px;font-size:12px;background:var(--surface);color:var(--primary);box-shadow:none;border:1px solid var(--border)}
+.empty{margin-top:28px;text-align:center;padding:36px 20px}.empty svg{width:150px;height:auto}.empty h2{margin:10px 0 4px;font-size:20px}.empty p{color:var(--muted);margin:0 0 16px}
+.lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:32px 0 10px}
+@media(max-width:640px){nav{display:none}.bar{gap:10px}.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header><div class="bar"><a class="brand" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2563eb"/><g fill="#fff"><rect x="14" y="14" width="36" height="10" rx="3"/><rect x="14" y="27" width="36" height="10" rx="3"/><rect x="14" y="40" width="36" height="10" rx="3"/></g><g fill="#22c55e"><rect x="18" y="17.5" width="3" height="3" rx="1"/><rect x="18" y="30.5" width="3" height="3" rx="1"/><rect x="18" y="43.5" width="3" height="3" rx="1"/></g><g fill="#93c5fd"><rect x="36" y="18" width="10" height="2" rx="1"/><rect x="36" y="31" width="10" height="2" rx="1"/><rect x="36" y="44" width="10" height="2" rx="1"/></g></svg>
+ Hostly</a>
+<nav><a href="#">Start</a><a class="on" href="#">Meine Server</a><a href="#">Mieten</a><a href="#">Gewinnspiele</a></nav><div class="sp"></div>
+<span class="coin"><svg viewBox="0 0 24 24"><defs><linearGradient id="gc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe07a"/><stop offset=".55" stop-color="#f5b81c"/><stop offset="1" stop-color="#c98a00"/></linearGradient></defs><circle cx="12" cy="12" r="11" fill="url(#gc)" stroke="#b07800" stroke-width="1"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#fff3c2" stroke-width="1.3" opacity=".8"/><text x="12" y="16.2" text-anchor="middle" font-size="11" font-weight="800" fill="#8a5a00" font-family="system-ui,sans-serif">H</text></svg>250</span>
+<span class="avatar"></span></div></header>
+<main><h1>Meine Server</h1><p class="sub">3 Server · Zum Verbinden die Adresse in Minecraft eintragen.</p>
+<div class="grid">
+<div class="card"><div class="top"><span class="name">Survival mit Freunden</span><span class="st on"><span class="dot"></span>Online</span></div>
+<div class="meta">Eisen · Paper 26.3</div>
+<div class="row"><span>Spieler</span><b>2 / 7</b></div><div class="track"><div class="fill g" style="width:29%"></div></div>
+<div class="row"><span>Restlaufzeit</span><b>18 Tage</b></div><div class="track"><div class="fill" style="width:60%"></div></div>
+<div class="addr">blue-cat.joinmc.link <button class="btn s">Kopieren</button></div></div>
+<div class="card"><div class="top"><span class="name">Kreativ-Welt</span><span class="st sl"><span class="dot"></span>Schläft</span></div>
+<div class="meta">Holz · Fabric 26.3 · wacht beim Beitreten auf</div>
+<div class="row"><span>Spieler</span><b>0 / 3</b></div><div class="track"><div class="fill g" style="width:0%"></div></div>
+<div class="row"><span>Restlaufzeit</span><b style="color:var(--bad)">2 Tage</b></div><div class="track"><div class="fill r" style="width:8%"></div></div>
+<div class="addr">red-fox.joinmc.link <button class="btn s">Kopieren</button></div></div>
+<div class="card"><div class="top"><span class="name">SkyBlock</span><span class="st cr"><span class="dot"></span>Abgestürzt</span></div>
+<div class="meta">Diamant · Paper 26.2</div>
+<div class="row"><span>Spieler</span><b>0 / 15</b></div><div class="track"><div class="fill g" style="width:0%"></div></div>
+<div class="row"><span>Restlaufzeit</span><b>6 Tage</b></div><div class="track"><div class="fill y" style="width:20%"></div></div>
+<div class="addr">green-owl.joinmc.link <button class="btn s">Kopieren</button></div></div>
+</div>
+<div class="lbl">So sieht es aus, wenn noch kein Server da ist</div>
+<div class="card empty">
+<svg viewBox="0 0 160 110"><ellipse cx="80" cy="100" rx="56" ry="7" fill="var(--surface-2)"/><rect x="40" y="18" width="80" height="20" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="2"/><rect x="40" y="44" width="80" height="20" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="2"/><rect x="40" y="70" width="80" height="20" rx="6" fill="var(--primary-soft)" stroke="var(--primary)" stroke-width="2" stroke-dasharray="5 4"/><circle cx="51" cy="28" r="3" fill="var(--off)"/><circle cx="51" cy="54" r="3" fill="var(--off)"/><path d="M80 74v12M74 80h12" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/><rect x="90" y="26" width="20" height="4" rx="2" fill="var(--border)"/><rect x="90" y="52" width="20" height="4" rx="2" fill="var(--border)"/></svg>
+<h2>Noch kein Server</h2><p>Miete deinen ersten Minecraft-Server – in einer Minute startklar.</p><button class="btn">Ersten Server mieten</button></div>
+</main></body></html>
