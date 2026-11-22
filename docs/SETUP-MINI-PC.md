@@ -1,5 +1,7 @@
 # Hostly – Setup auf dem Mini-PC (Windows 11)
 
+> 👉 **Für die Einrichtung bitte die ausführliche Anleitung benutzen: [ANLEITUNG.md](ANLEITUNG.md).** Diese Datei ist die technische Übersicht.
+
 > Schritt-für-Schritt-Plan für die Einrichtung. Wird gemeinsam durchgegangen.
 > **Windows bleibt installiert, keine Daten gehen verloren** (ENTSCHIEDEN).
 > Befehle in `grauen Kästen` werden in **PowerShell (als Administrator)** oder im **Ubuntu-Fenster** eingegeben – steht jeweils dabei.
@@ -49,19 +51,21 @@ wsl --list --verbose
 **Datei** `C:\Users\<DeinName>\.wslconfig` anlegen (mit Editor), Inhalt:
 ```ini
 [wsl2]
-memory=12GB              # ENTSCHIEDEN: 12 GB für Hostly
-processors=8             # i5-12400T hat 12 Threads, 4 bleiben für Windows
+memory=12GB
+processors=8
 swap=4GB
-networkingMode=mirrored  # Windows 11: einfacheres Netzwerk
-vmIdleTimeout=-1         # VM nie automatisch beenden
+networkingMode=mirrored
+vmIdleTimeout=-1
 
 [general]
-instanceIdleTimeout=-1   # Ubuntu nie automatisch beenden
+instanceIdleTimeout=-1
 
 [experimental]
-autoMemoryReclaim=gradual  # ungenutzten RAM langsam an Windows zurückgeben
-sparseVhd=true             # virtuelle Festplatte schrumpft wieder, wenn Daten gelöscht werden
+autoMemoryReclaim=gradual
+sparseVhd=true
 ```
+(12 GB RAM, 8 Threads für Hostly; nie automatisch beenden; Festplatte schrumpft wieder. Kommentare bitte **nicht** in dieselbe Zeile schreiben.)
+
 > Hinweis: Optionen und Werte werden beim Setup noch einmal mit der aktuellen Microsoft-Doku abgeglichen.
 
 **Im Ubuntu-Fenster:** Datei `/etc/wsl.conf` bearbeiten:
@@ -74,7 +78,7 @@ Inhalt:
 systemd=true
 
 [automount]
-enabled=false            # ENTSCHIEDEN: kein Zugriff auf Windows-Laufwerke
+enabled=false
 
 [interop]
 appendWindowsPath=false
@@ -114,7 +118,7 @@ docker run --rm hello-world
 sudo mkdir -p /srv/hostly
 sudo chown $USER:$USER /srv/hostly
 cd /srv/hostly
-git clone https://github.com/k30091355-sudo/hostly.git app
+git clone https://github.com/k30091355-sudo/Hostly.git app
 ```
 
 ### Hostly starten

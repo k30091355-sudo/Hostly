@@ -1,7 +1,7 @@
 # Hostly – Anweisungen für Claude
 
 Kostenlose Minecraft-Hosting-Plattform auf einem Mini-PC. Spieler lösen Codes ein → Coins → mieten Minecraft-Server.
-**Vollständige Regeln:** `KONZEPT.md` (was), `docs/TECHNIK.md` (wie), `docs/SEITEN-UND-ABLAEUFE.md` (Seiten/Abläufe), `docs/SETUP-MINI-PC.md` (Einrichtung).
+**Vollständige Regeln:** `KONZEPT.md` (was), `docs/TECHNIK.md` (wie), `docs/SEITEN-UND-ABLAEUFE.md` (Seiten/Abläufe), `docs/ANLEITUNG.md` (Einrichtung für den Besitzer), `docs/SETUP-MINI-PC.md` (Setup-Technik).
 Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht alles auf einmal.
 
 ## Arbeitsweise
@@ -21,7 +21,7 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 - Zwei Dienste: **hostly-web** (Website, KEIN Docker-Zugriff) und **hostly-worker** (Zeitsteuerung, Docker, Backups). Web → worker über Auftrags-Tabelle `jobs`.
 - Minecraft: **`itzg/minecraft-server`** (kein Pelican). Typen: Vanilla, Paper, Fabric.
 - Website extern: **Tailscale Funnel** (`https://hostly.<tailnet>.ts.net`). Minecraft extern: **playit.gg** (2 Accounts), feste Tunnel-Plätze im Docker-Netz `hostly-mc` (z. B. `172.30.0.11:25565`).
-- Mods/Plugins nur **Modrinth + CurseForge**. Eigene Dateien nur über Support (Admin lädt hoch).
+- Mods/Plugins nur **Modrinth** (CurseForge gestrichen). Eigene Dateien nur über Support (Admin lädt hoch).
 - Daten unter `/srv/hostly/` (db, servers, backups, archives, uploads, resourcepacks).
 
 ## Kernregeln (Kurzfassung)
