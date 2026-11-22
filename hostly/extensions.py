@@ -30,6 +30,8 @@ TEMPLATES = {
                   "text": "Neue Landschaften und Dungeons + Performance. Mit Modpack für Spieler."},
 }
 
+FABRIC_API = "fabric-api"   # Modrinth-Kürzel der Fabric API
+
 FOLDERS = {"plugin": "plugins", "mod": "mods", "datapack": "datapacks"}
 
 
@@ -77,6 +79,13 @@ def resolve(server_type: str, mc_version: str, project_ref: str, kind: str,
             raise ExtensionError(f"Benötigte Abhängigkeit „{dproj.get('title')}“ gibt es nicht für {mc_version}.")
         result.append(entry_from_version(server_type, kind, dproj, dv, is_dependency=True))
         queue.extend(dv.get("dependencies") or [])
+    if server_type == "FABRIC" and kind == "mod" and not any(e["slug"] == FABRIC_API for e in result):
+        # Fast jede Fabric-Mod braucht die Fabric API – manche tragen das auf Modrinth nicht ein
+        # (z. B. TabTPS). Ohne sie startet der Server nicht ("requires fabric-api, which is missing").
+        fproj = modrinth.project(FABRIC_API)
+        fv = modrinth.best_version(fproj["id"], loaders, mc_version) if fproj else None
+        if fv is not None:
+            result.append(entry_from_version(server_type, kind, fproj, fv, is_dependency=True))
     return result
 
 

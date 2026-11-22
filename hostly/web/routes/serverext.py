@@ -46,7 +46,11 @@ def _ext_page(ctx: Ctx, server, status_code: int = 200, **values):
     rows = ctx.conn.execute(
         "SELECT * FROM server_extensions WHERE server_id = ? ORDER BY is_dependency, title", (server["id"],)).fetchall()
     kinds = modrinth.kinds_for(server["type"])
-    return page(ctx, "servers/extensions.html", server, status_code, rows=rows, kinds=kinds, **values)
+    mods = [r for r in rows if r["kind"] == "mod" and r["enabled"]]
+    missing_fapi = server["type"] == "FABRIC" and bool(mods) and not any(
+        r["slug"] == extensions.FABRIC_API or (r["filename"] or "").lower().startswith("fabric-api") for r in mods)
+    return page(ctx, "servers/extensions.html", server, status_code, rows=rows, kinds=kinds,
+                missing_fapi=missing_fapi, **values)
 
 
 @router.get("/server/{server_id}/erweiterungen", response_class=HTMLResponse)

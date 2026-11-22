@@ -635,5 +635,7 @@
   "Deine letzten Befehle und die Antworten des Servers": "Your recent commands and the server's replies",
   "wird ausgeführt … (ein eingefrorener Server wacht dafür kurz auf)": "running … (a frozen server wakes up briefly for this)",
   "Tipp: Mit den Pfeiltasten ↑ ↓ holst du frühere Befehle zurück. Den Schrägstrich / brauchst du nicht.": "Tip: use the arrow keys ↑ ↓ to bring back earlier commands. You don't need the slash /.",
-  "Befehl": "Command"
+  "Befehl": "Command",
+  "Auf diesem Server fehlt die Fabric API. Fast alle Mods brauchen sie – ohne sie startet der Server nicht („requires fabric-api, which is missing“).": "Fabric API is missing on this server. Almost all mods need it – without it the server won't start (“requires fabric-api, which is missing”).",
+  "Fabric API jetzt hinzufügen": "Add Fabric API now"
 }

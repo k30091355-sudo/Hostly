@@ -3,6 +3,17 @@
 {% block content %}
 {% include "servers/_tabs.html" %}
 {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+{% if missing_fapi %}
+<div class="alert warn" role="alert">
+  <p>{{ t('Auf diesem Server fehlt die Fabric API. Fast alle Mods brauchen sie – ohne sie startet der Server nicht („requires fabric-api, which is missing“).') }}</p>
+  <form method="post" action="/server/{{ server.id }}/erweiterungen">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="project_id" value="fabric-api">
+    <input type="hidden" name="kind" value="mod">
+    <button class="btn primary">{{ t('Fabric API jetzt hinzufügen') }}</button>
+  </form>
+</div>
+{% endif %}
 
 <section class="card">
   <h2>{{ t('Suchen und installieren') }}</h2>

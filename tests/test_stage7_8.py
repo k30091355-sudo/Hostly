@@ -329,3 +329,24 @@ def test_version_change_blocked_if_type_unsupported(client, fake_modrinth, monke
     fabric_server(client, c)
     monkeypatch.setattr(modrinth, "server_supports", lambda t, v: v != "1.21.5")
     assert "noch nicht" in client.get("/server/1/version?to_version=1.21.5&to_type=FABRIC").text
+
+
+def test_fabric_api_added_even_if_not_declared(client, fake_modrinth):
+    """Manche Mods (z. B. TabTPS) tragen die Fabric API nicht als Abhängigkeit ein – sonst startet der Server nicht."""
+    c = setup_shop(client)
+    fabric_server(client, c)
+    token = csrf_of(client, "/server/1/erweiterungen")
+    client.post("/server/1/erweiterungen", data={"project_id": "P_LITH", "kind": "mod", "csrf": token})
+    rows = c.execute("SELECT title, is_dependency FROM server_extensions ORDER BY id").fetchall()
+    assert [tuple(r) for r in rows] == [("Lithium", 0), ("Fabric API", 1)]
+
+
+def test_hint_when_fabric_api_missing(client, fake_modrinth):
+    c = setup_shop(client)
+    fabric_server(client, c)
+    c.execute("""INSERT INTO server_extensions (server_id, source, kind, project_id, slug, title, filename, enabled)
+                 VALUES (1, 'modrinth', 'mod', 'P_TAB', 'tabtps', 'TabTPS', 'tabtps.jar', 1)""")
+    assert "Fabric API jetzt hinzufügen" in client.get("/server/1/erweiterungen").text
+    token = csrf_of(client, "/server/1/erweiterungen")
+    client.post("/server/1/erweiterungen", data={"project_id": "fabric-api", "kind": "mod", "csrf": token})
+    assert "Fabric API jetzt hinzufügen" not in client.get("/server/1/erweiterungen").text

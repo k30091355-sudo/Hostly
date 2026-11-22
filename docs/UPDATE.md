@@ -8,6 +8,11 @@
 
 ## Besondere Hinweise – neuestes Update zuerst
 
+### Update 5 (22.11.2026, nachts) – Fabric API automatisch
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
+- **Behoben:** Fabric-Server startete nicht mit „requires fabric-api, which is missing“ (z. B. bei TabTPS). Hostly installiert die Fabric API jetzt bei jeder Mod automatisch mit.
+- Fehlt sie auf einem bestehenden Server, zeigt der Reiter „Plugins/Mods“ einen Knopf **„Fabric API jetzt hinzufügen“**. Danach den Server neu starten.
+
 ### Update 4 (22.11.2026, nachts) – playit-Verbindung + Konsole
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
 - **Verbindungsabbrüche („Timed out“ ca. 30 Sekunden nach dem Betreten):** Der playit-Agent läuft jetzt direkt im Netz von WSL statt in einem eigenen Docker-Netz, damit große Datenpakete (Welt-Daten) nicht hängen bleiben. Außerdem hat er mehr Arbeitsspeicher (512 MB statt 128 MB), und Server schicken beim Betreten weniger Daten auf einmal (Sichtweite 8 statt 10 Chunks).
