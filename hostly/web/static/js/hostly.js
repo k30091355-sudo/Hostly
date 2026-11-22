@@ -53,7 +53,26 @@ document.addEventListener("DOMContentLoaded", () => {
   setupConsoleForms();
   setupCodeCards();
   setupTopbar();
+  setupCountdowns();
 });
+
+// Countdown (Aktionen, geplante Wartung): data-countdown = Zeitpunkt in UTC "YYYY-MM-DD HH:MM:SS"
+function setupCountdowns() {
+  const els = document.querySelectorAll("[data-countdown]");
+  if (!els.length) return;
+  const en = document.documentElement.lang === "en";
+  const tick = () => els.forEach((el) => {
+    const end = Date.parse(el.dataset.countdown.replace(" ", "T") + "Z");
+    let s = Math.max(0, Math.floor((end - Date.now()) / 1000));
+    const d = Math.floor(s / 86400); s %= 86400;
+    const h = Math.floor(s / 3600); s %= 3600;
+    const m = Math.floor(s / 60); s %= 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    el.textContent = (d ? d + (en ? " d " : " T ") : "") + pad(h) + ":" + pad(m) + ":" + pad(s);
+  });
+  tick();
+  setInterval(tick, 1000);
+}
 
 // Kopfzeile wird beim Scrollen leicht durchsichtig mit Unschärfe
 function setupTopbar() {

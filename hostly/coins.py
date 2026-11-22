@@ -45,4 +45,5 @@ REASONS = {
     "nachtpause": "Nachtpausen-Erstattung",
     "gewinnspiel": "Gewinnspiel gewonnen",
     "account_geloescht": "Account gelöscht",
+    "startbonus": "Startbonus",
 }

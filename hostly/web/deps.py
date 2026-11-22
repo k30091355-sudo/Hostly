@@ -95,6 +95,7 @@ class Ctx:
     cookies: dict = field(default_factory=dict)  # Cookies, die gesetzt werden sollen
     cache: dict = field(default_factory=dict)
     maintenance: bool = False
+    maintenance_planned: str | None = None
 
     # --- Hilfen ---
     def t(self, key: str, **values) -> str:
@@ -182,6 +183,8 @@ def get_ctx(request: Request):
         ctx = Ctx(request, conn, user, session, lang, theme, csrf, new_csrf)
 
         ctx.maintenance = db.get_setting(conn, "maintenance_mode") == "1"
+        planned = db.get_setting(conn, "maintenance_planned_start") or ""
+        ctx.maintenance_planned = planned if planned and not ctx.maintenance else None
         if (ctx.maintenance and request.method == "POST" and not (user is not None and user["is_admin"])
                 and not request.url.path.startswith(_MAINTENANCE_ALLOWED)):
             raise MaintenanceError()

@@ -2,6 +2,7 @@
 {% block title %}{{ t('Konsole') }} · {{ server.name }} · Hostly{% endblock %}
 {% block content %}
 {% include "servers/_tabs.html" %}
+{% include "servers/_diagnosis.html" %}
 <section class="card">
   {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
   <div id="console-log" hx-get="/server/{{ server.id }}/konsole/log" hx-trigger="every 3s" hx-swap="innerHTML">

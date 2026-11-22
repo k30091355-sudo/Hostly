@@ -31,6 +31,7 @@ def update_status(w, conn, server_id: int) -> None:
     paused = st["running"] and w.is_paused(server_id)
     model = servers.model(conn, server["model_id"])
     online, players = 0, ""
+    cpu = mem = tps = None
     if st["running"] and not paused and st["health"] == "healthy":
         try:
             out = w.server_rcon(conn, server, "list", attempts=1)
@@ -38,23 +39,45 @@ def update_status(w, conn, server_id: int) -> None:
             if m:
                 online = int(m.group(1))
                 players = ", ".join(p.strip() for p in m.group(3).split(",") if p.strip())
+            tps = parse_tps(w.server_rcon(conn, server, "tick query", attempts=1))
         except rcon.RconError:
             pass
+        if hasattr(w.ops, "stats"):
+            try:
+                s = w.ops.stats(minecraft.container_name(server_id)) or {}
+                cpu, mem = s.get("cpu_percent"), s.get("mem_mb")
+            except Exception:
+                log.debug("Docker-Werte für Server %s nicht lesbar", server_id)
     restarts = st.get("restart_count", 0)
     old = conn.execute("SELECT restart_count FROM server_status WHERE server_id = ?", (server_id,)).fetchone()
     conn.execute(
         """INSERT INTO server_status (server_id, running, paused, health, players_online, players_max, players,
-                                      checked_at, restart_count)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                      checked_at, restart_count, cpu_percent, mem_mb, tps)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(server_id) DO UPDATE SET running = excluded.running, paused = excluded.paused,
              health = excluded.health, players_online = excluded.players_online,
              players_max = excluded.players_max, players = excluded.players, checked_at = excluded.checked_at,
-             restart_count = excluded.restart_count""",
+             restart_count = excluded.restart_count, cpu_percent = excluded.cpu_percent,
+             mem_mb = excluded.mem_mb, tps = excluded.tps""",
         (server_id, int(st["running"]), int(paused), st["health"], online, model["max_players"], players, now_sql(),
-         restarts),
+         restarts, cpu, mem, tps),
     )
     if old is not None and restarts > old["restart_count"]:
         handle_crash(w, conn, server)
+
+
+TICK_RE = re.compile(r"Average time per tick: ([\d.]+)ms")
+RATE_RE = re.compile(r"Target tick rate: ([\d.]+)")
+
+
+def parse_tps(out: str | None) -> float | None:
+    """TPS aus `tick query` (Minecraft 1.20.3+): min(Ziel-Rate, 1000 / ms pro Tick)."""
+    m = TICK_RE.search(out or "")
+    if not m:
+        return None
+    rate = float(RATE_RE.search(out).group(1)) if RATE_RE.search(out) else 20.0
+    mspt = float(m.group(1))
+    return round(min(rate, 1000 / mspt) if mspt > 0 else rate, 1)
 
 
 def handle_crash(w, conn, server) -> None:
@@ -80,8 +103,9 @@ def handle_crash(w, conn, server) -> None:
 def record_samples(conn) -> None:
     """Spielerzahlen für die Statistik (1× pro Minute, 8 Tage aufbewahren)."""
     conn.execute(
-        """INSERT INTO player_samples (server_id, at, running, players)
-           SELECT st.server_id, ?, st.running, st.players_online FROM server_status st
+        """INSERT INTO player_samples (server_id, at, running, players, cpu_percent, mem_mb, tps)
+           SELECT st.server_id, ?, st.running, st.players_online, st.cpu_percent, st.mem_mb, st.tps
+           FROM server_status st
            JOIN servers s ON s.id = st.server_id WHERE s.state = 'active'""", (now_sql(),))
     conn.execute("DELETE FROM player_samples WHERE at < datetime('now', '-8 days')")
 
@@ -162,6 +186,50 @@ def read_log(conn, server_id: int) -> None:
                ON CONFLICT(server_id) DO UPDATE SET inode = excluded.inode, offset = excluded.offset""",
             (server_id, stat.st_ino, new_offset),
         )
+
+
+# ---------- Geplante Wartung (1.3.0) ----------
+
+def planned_maintenance(w) -> None:
+    conn = w.conn()
+    try:
+        start = db.get_setting(conn, "maintenance_planned_start") or ""
+        end = db.get_setting(conn, "maintenance_planned_end") or ""
+        auto_end = db.get_setting(conn, "maintenance_auto_end") or ""
+        if start and start <= now_sql():
+            db.set_setting(conn, "maintenance_mode", "1")
+            db.set_setting(conn, "maintenance_planned_start", "")
+            db.set_setting(conn, "maintenance_planned_end", "")
+            db.set_setting(conn, "maintenance_auto_end", end)
+            log.info("Geplante Wartung beginnt")
+        elif auto_end and auto_end <= now_sql():
+            db.set_setting(conn, "maintenance_mode", "0")
+            db.set_setting(conn, "maintenance_auto_end", "")
+            log.info("Geplante Wartung beendet")
+    finally:
+        conn.close()
+
+
+def coins_reminder(w) -> None:
+    """3 Tage vor dem Auto-Verlängern: Hinweis, wenn die Coins nicht reichen (einmal pro Ablauftermin)."""
+    conn = w.conn()
+    try:
+        rows = conn.execute(
+            """SELECT * FROM servers WHERE state = 'active' AND auto_renew = 1
+               AND rented_until <= datetime('now', '+3 days') AND rented_until > datetime('now')""").fetchall()
+        for s in rows:
+            price = servers.price_for(conn, servers.model(conn, s["model_id"]), 7).final
+            if coins.balance(conn, s["owner_id"]) >= price:
+                continue
+            seen = conn.execute(
+                """SELECT 1 FROM notifications WHERE user_id = ? AND server_id = ? AND kind = 'coins_low'
+                   AND created_at > datetime(?, '-4 days')""", (s["owner_id"], s["id"], s["rented_until"])).fetchone()
+            if not seen:
+                db.notify(conn, s["owner_id"], "coins_low",
+                          f"Für das Auto-Verlängern von „{s['name']}“ fehlen Coins ({price} nötig). "
+                          "Löse einen Code ein, sonst wird der Server archiviert.", s["id"])
+    finally:
+        conn.close()
 
 
 # ---------- Ablauf ----------

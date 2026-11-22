@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
-from ... import config, console, db, images, minecraft, motd, nightpause, security, servers
+from ... import config, console, db, diagnose, images, minecraft, motd, nightpause, security, servers
 from ...timeutil import time_left
 from ..deps import Ctx, Redirect, get_ctx
 
@@ -102,7 +102,19 @@ def overview(server_id: int, ctx: Ctx = Depends(get_ctx)):
                               AND kind IN ('create', 'start', 'restart', 'reactivate', 'rebuild', 'restore')), 0)
            ORDER BY id DESC LIMIT 1""", (server_id, server_id)).fetchone()
     return page(ctx, "servers/overview.html", server, new=ctx.request.query_params.get("neu") == "1",
-                downloads=downloads, last_error=last_error)
+                downloads=downloads, last_error=last_error, findings=diagnosis(ctx, server))
+
+
+def diagnosis(ctx: Ctx, server):
+    """Fehler-Erklärer: Protokoll + letzter Absturz-Ausschnitt (nur lesen, weckt nichts)."""
+    if server["state"] != "active":
+        return []
+    text = read_log_tail(server["id"], 800)
+    crash = ctx.conn.execute("SELECT log_excerpt FROM crashes WHERE server_id = ? AND created_at > datetime('now', '-1 day') "
+                             "ORDER BY id DESC LIMIT 1", (server["id"],)).fetchone()
+    if crash and crash["log_excerpt"]:
+        text += "\n" + crash["log_excerpt"]
+    return diagnose.analyse(text, server["type"])
 
 
 @router.get("/server/{server_id}/status", response_class=HTMLResponse)
@@ -151,7 +163,7 @@ def recent_commands(ctx: Ctx, server_id: int):
 def console_page(server_id: int, ctx: Ctx = Depends(get_ctx)):
     server = load(ctx, server_id)
     return page(ctx, "servers/console.html", server, log=read_log_tail(server_id),
-                commands=recent_commands(ctx, server_id))
+                commands=recent_commands(ctx, server_id), findings=diagnosis(ctx, server))
 
 
 @router.get("/server/{server_id}/konsole/log", response_class=HTMLResponse)
@@ -262,7 +274,11 @@ def _players_page(ctx: Ctx, server, status_code: int = 200, **values):
         "SELECT * FROM whitelist WHERE server_id = ? ORDER BY minecraft_name", (server["id"],)).fetchall()
     sessions = ctx.conn.execute(
         "SELECT * FROM player_sessions WHERE server_id = ? ORDER BY id DESC LIMIT 100", (server["id"],)).fetchall()
-    return page(ctx, "servers/players.html", server, status_code, whitelist=wl, sessions=sessions, **values)
+    requests = ctx.conn.execute(
+        """SELECT r.*, u.username FROM whitelist_requests r JOIN users u ON u.id = r.user_id
+           WHERE r.server_id = ? AND r.status = 'offen' ORDER BY r.id""", (server["id"],)).fetchall()
+    return page(ctx, "servers/players.html", server, status_code, whitelist=wl, sessions=sessions,
+                requests=requests, **values)
 
 
 @router.get("/server/{server_id}/spieler", response_class=HTMLResponse)
@@ -279,8 +295,6 @@ def whitelist(server_id: int, action: str = Form(...), name: str = Form(""), csr
     commands = []
     if action in ("on", "off"):
         ctx.conn.execute("UPDATE servers SET whitelist_enabled = ? WHERE id = ?", (int(action == "on"), server_id))
-        if action == "on":   # mit Whitelist nicht in der öffentlichen Serverliste
-            ctx.conn.execute("UPDATE servers SET public_listed = 0 WHERE id = ?", (server_id,))
         commands = ["whitelist on" if action == "on" else "whitelist off"]
     elif action in ("add", "remove"):
         if not console.valid_mc_name(name):
@@ -292,6 +306,31 @@ def whitelist(server_id: int, action: str = Form(...), name: str = Form(""), csr
         commands = [f"whitelist {action} {name}"]
     if commands and is_active(server):
         db.add_job(ctx.conn, "rcon", server_id, ctx.user["id"], {"commands": commands})
+    raise Redirect(f"/server/{server_id}/spieler")
+
+
+@router.post("/server/{server_id}/anfrage/{request_id}")
+def decide_request(server_id: int, request_id: int, action: str = Form(...), csrf: str = Form(""),
+                   ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    ctx.check_csrf(csrf)
+    req = ctx.conn.execute("SELECT * FROM whitelist_requests WHERE id = ? AND server_id = ? AND status = 'offen'",
+                           (request_id, server_id)).fetchone()
+    if req is None:
+        raise Redirect(f"/server/{server_id}/spieler")
+    accept = action == "accept"
+    with db.transaction(ctx.conn):
+        ctx.conn.execute("UPDATE whitelist_requests SET status = ?, decided_at = datetime('now') WHERE id = ?",
+                         ("angenommen" if accept else "abgelehnt", request_id))
+        if accept:
+            ctx.conn.execute("INSERT OR IGNORE INTO whitelist (server_id, minecraft_name) VALUES (?, ?)",
+                             (server_id, req["minecraft_name"]))
+            if is_active(server):
+                db.add_job(ctx.conn, "rcon", server_id, ctx.user["id"],
+                           {"commands": [f"whitelist add {req['minecraft_name']}"]})
+        db.notify(ctx.conn, req["user_id"], "whitelist",
+                  f"Deine Whitelist-Anfrage für „{server['name']}“ wurde " + ("angenommen. Viel Spaß!" if accept else "abgelehnt."),
+                  None)
     raise Redirect(f"/server/{server_id}/spieler")
 
 

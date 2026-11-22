@@ -27,6 +27,8 @@ def promo_label(conn, p) -> str:
         ", ".join(names.get(int(i), "?") for i in p["model_ids"].split(",") if i)
     if p["kind"] == "rabatt":
         return f"−{p['percent']} % auf {target}"
+    if p["kind"] == "start":
+        return f"+{p['extra_coins']} Start-Coins für neue Accounts"
     return f"+{p['extra_ram_gb']:g} GB RAM für {target} (bei neuen Mieten)"
 
 
@@ -90,6 +92,12 @@ def end_giveaway(giveaway_id: int, csrf: str = Form(""), ctx: Ctx = Depends(get_
 
 # ---------- Admin: Aktionen ----------
 
+def _local_dt_to_utc(value: str) -> str:
+    """Datum + Uhrzeit aus <input type="datetime-local"> (deutsche Zeit) → UTC-Text."""
+    d = datetime.strptime(value[:16], "%Y-%m-%dT%H:%M")
+    return fmt(d.replace(tzinfo=ZoneInfo(config.TIMEZONE)))
+
+
 def _local_to_utc(value: str, end_of_day: bool) -> str:
     d = datetime.strptime(value, "%Y-%m-%d")
     d = d.replace(hour=23, minute=59, second=59) if end_of_day else d
@@ -116,16 +124,19 @@ async def create_promotion(ctx: Ctx = Depends(get_ctx)):
         ends = _local_to_utc(form.get("ends", ""), True)
         percent = int(form.get("percent") or 0)
         extra = float(form.get("extra_ram_gb") or 0)
+        extra_coins = int(form.get("extra_coins") or 0)
     except ValueError:
         raise Redirect("/admin/aktionen")
     ids = "all" if not model_ids or len(model_ids) == 3 else ",".join(i for i in model_ids if i.isdigit())
     ok = ends > starts and form.get("title", "").strip() and (
-        (kind == "rabatt" and 1 <= percent <= 75) or (kind == "ram" and 0.5 <= extra <= 8))
+        (kind == "rabatt" and 1 <= percent <= 75) or (kind == "ram" and 0.5 <= extra <= 8)
+        or (kind == "start" and 1 <= extra_coins <= 1000))
     if ok:
         ctx.conn.execute(
-            "INSERT INTO promotions (kind, title, percent, extra_ram_gb, model_ids, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            """INSERT INTO promotions (kind, title, percent, extra_ram_gb, extra_coins, model_ids, starts_at, ends_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (kind, form["title"].strip()[:80], percent if kind == "rabatt" else 0, extra if kind == "ram" else 0,
-             ids, starts, ends))
+             extra_coins if kind == "start" else 0, "all" if kind == "start" else ids, starts, ends))
     raise Redirect("/admin/aktionen")
 
 

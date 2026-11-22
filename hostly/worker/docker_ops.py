@@ -47,6 +47,22 @@ class DockerOps:
             "restart_count": int(c.attrs.get("RestartCount") or 0),
         }
 
+    def stats(self, name: str) -> dict | None:
+        """CPU (% eines Kerns, 100 = 1 Kern) und RAM (MB, ohne Datei-Cache). Nur für wache Server aufrufen."""
+        try:
+            st = self.client.containers.get(name).stats(stream=False)
+        except self.docker.errors.NotFound:
+            return None
+        cpu, pre = st.get("cpu_stats", {}), st.get("precpu_stats", {})
+        delta = cpu.get("cpu_usage", {}).get("total_usage", 0) - pre.get("cpu_usage", {}).get("total_usage", 0)
+        sys_delta = cpu.get("system_cpu_usage", 0) - pre.get("system_cpu_usage", 0)
+        cores = cpu.get("online_cpus") or len(cpu.get("cpu_usage", {}).get("percpu_usage") or []) or 1
+        cpu_percent = (delta / sys_delta) * cores * 100 if sys_delta > 0 and delta >= 0 else 0.0
+        mem = st.get("memory_stats", {})
+        cache = (mem.get("stats") or {}).get("inactive_file", 0)
+        mem_mb = max(0, (mem.get("usage", 0) - cache)) // (1024 * 1024)
+        return {"cpu_percent": round(cpu_percent, 1), "mem_mb": int(mem_mb)}
+
     def logs_tail(self, name: str, lines: int = 30) -> str:
         try:
             return self.client.containers.get(name).logs(tail=lines).decode("utf-8", errors="replace")

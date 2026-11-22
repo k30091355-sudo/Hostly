@@ -300,7 +300,7 @@ def test_failed_start_does_not_hang_in_creating(client):
     assert "Letzte Aktion fehlgeschlagen" in page and "Starten" in page
 
 
-def test_whitelist_server_not_public(client):
+def test_whitelist_server_can_be_public(client):
     c = setup_shop(client)
     token = csrf_of(client, "/kaufen")
     client.post("/kaufen", data={"model_id": 2, "server_type": "PAPER", "days": 1, "name": "Pub",
@@ -308,11 +308,9 @@ def test_whitelist_server_not_public(client):
     run_jobs(Worker(FakeOps(), FakeRcon()))
     assert "Pub" in client.get("/serverliste").text
     client.post("/server/1/whitelist", data={"action": "on", "csrf": token})
-    assert c.execute("SELECT public_listed FROM servers").fetchone()[0] == 0
-    assert "Pub" not in client.get("/serverliste").text
-    client.post("/server/1/oeffentlich", data={"public": "1", "csrf": token})
-    assert c.execute("SELECT public_listed FROM servers").fetchone()[0] == 0
-    assert "Whitelist" in client.get("/server/1/statistik").text
+    assert c.execute("SELECT public_listed FROM servers").fetchone()[0] == 1   # seit 1.3.0 erlaubt
+    listing = client.get("/serverliste").text
+    assert "Pub 🔒" in listing and "Whitelist-Anfrage" in listing
 
 
 def test_paper_to_fabric_moves_nether_and_end(tmp_path):
@@ -350,3 +348,20 @@ def test_hint_when_fabric_api_missing(client, fake_modrinth):
     token = csrf_of(client, "/server/1/erweiterungen")
     client.post("/server/1/erweiterungen", data={"project_id": "fabric-api", "kind": "mod", "csrf": token})
     assert "Fabric API jetzt hinzufügen" not in client.get("/server/1/erweiterungen").text
+
+
+def test_mod_updates_single_and_all(client, fake_modrinth):
+    c = setup_shop(client)
+    w = fabric_server(client, c)
+    token = csrf_of(client, "/server/1/erweiterungen")
+    client.post("/server/1/erweiterungen", data={"project_id": "P_YUNG", "kind": "mod", "csrf": token})
+    run_jobs(w)
+    c.execute("UPDATE server_extensions SET version_id = 'V_X_OLD', version_number = '0.9'")
+    frag = client.get("/server/1/erweiterungen-updates").text
+    assert "2 Updates verfügbar" in frag and "0.9 → 1.0+1.21.4" in frag
+    yung = c.execute("SELECT id FROM server_extensions WHERE project_id = 'P_YUNG'").fetchone()[0]
+    client.post("/server/1/erweiterungen-updates", data={"ext_id": str(yung), "csrf": token})
+    assert "1 Update verfügbar" in client.get("/server/1/erweiterungen-updates").text
+    client.post("/server/1/erweiterungen-updates", data={"ext_id": "all", "csrf": token})
+    assert client.get("/server/1/erweiterungen-updates").text.strip() == ""
+    assert c.execute("SELECT needs_restart FROM servers").fetchone()[0] == 1

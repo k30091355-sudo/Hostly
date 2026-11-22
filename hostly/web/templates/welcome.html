@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Willkommen') }} · Hostly{% endblock %}
+{% block content %}
+<section class="card tour">
+  <div class="tour-head">
+    <img src="/static/favicon.svg" alt="" width="56" height="56">
+    <div>
+      <h1>{{ t('Willkommen bei Hostly, {name}!', name=user.username) }}</h1>
+      <p class="muted">{{ t('In 3 Schritten zu deinem eigenen Minecraft-Server.') }}</p>
+    </div>
+  </div>
+  {% if balance %}
+  <div class="tour-gift">{% include "_coin.html" %} {{ t('Geschenkt: Du hast schon {n} Coins zum Start!', n=balance) }}</div>
+  {% endif %}
+  <ol class="tour-steps">
+    <li><span class="step-num">1</span><div><strong>{{ t('Code einlösen') }}</strong>
+      <p class="small muted">{{ t('Du bekommst Codes (z. B. von Freunden oder bei Gewinnspielen). Jeder Code bringt Coins.') }}</p></div></li>
+    <li><span class="step-num">2</span><div><strong>{{ t('Server mieten') }}</strong>
+      <p class="small muted">{{ t('Wähle Holz, Eisen oder Diamant, eine Vorlage und wie viele Tage. Je länger, desto mehr Rabatt.') }}</p></div></li>
+    <li><span class="step-num">3</span><div><strong>{{ t('Verbinden und spielen') }}</strong>
+      <p class="small muted">{{ t('Kopiere die Adresse deines Servers und füge sie in Minecraft unter Mehrspieler hinzu.') }}</p></div></li>
+  </ol>
+  <form method="post" action="/willkommen" class="tour-actions">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button name="next" value="/kaufen" class="btn primary">🛒 {{ t('Server mieten') }}</button>
+    <button name="next" value="/code" class="btn primary">🎟️ {{ t('Code einlösen') }}</button>
+    <button name="next" value="/" class="btn">{{ t('Überspringen') }}</button>
+  </form>
+</section>
+{% endblock %}

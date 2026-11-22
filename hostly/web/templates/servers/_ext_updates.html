@@ -1,0 +1,17 @@
+{% if updates %}
+<div class="alert warn">
+  <strong>🔄 {{ updates | length }} {{ t('Update verfügbar') if updates | length == 1 else t('Updates verfügbar') }}</strong>
+  <ul class="update-list">
+    {% for u in updates %}
+    <li><span><strong>{{ u.row.title }}</strong> <span class="small">{{ u.row.version_number }} → {{ u.version.version_number }}</span></span>
+      <form method="post" action="/server/{{ server.id }}/erweiterungen-updates"><input type="hidden" name="csrf" value="{{ csrf }}">
+        <button name="ext_id" value="{{ u.row.id }}" class="btn small">{{ t('Aktualisieren') }}</button></form></li>
+    {% endfor %}
+  </ul>
+  {% if updates | length > 1 %}
+  <form method="post" action="/server/{{ server.id }}/erweiterungen-updates"><input type="hidden" name="csrf" value="{{ csrf }}">
+    <button name="ext_id" value="all" class="btn primary small">{{ t('Alle aktualisieren') }}</button></form>
+  {% endif %}
+  <div class="small">{{ t('Danach den Server neu starten. Vorher am besten kurz prüfen, ob die neuen Versionen zusammenpassen.') }}</div>
+</div>
+{% endif %}

@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from .. import config, console, db, minecraft, rcon, servers
+from .. import config, console, db, gamesettings, minecraft, rcon, servers
 from ..timeutil import now_sql
 from . import files
 
@@ -65,6 +65,10 @@ class Worker:
             files.write_code_datapack(server, db.get_setting(conn, "public_url"))
         except OSError:
             log.warning("/code-Datapack für Server %s konnte nicht geschrieben werden", server["id"])
+        try:
+            files.write_rules_datapack(server)
+        except OSError:
+            log.warning("Gamerule-Datapack für Server %s konnte nicht geschrieben werden", server["id"])
         files.fix_owner(minecraft.data_dir(server["id"]))   # Minecraft (Benutzer 1000) muss überall schreiben dürfen
         self.ops.recreate(self.spec_for(conn, server))
         conn.execute("UPDATE servers SET needs_restart = 0, crash_locked = 0 WHERE id = ?", (server["id"],))
@@ -322,6 +326,43 @@ class Worker:
             files.paper_worlds_to_vanilla(minecraft.data_dir(server["id"]), server["level_name"] or "world")
         self.recreate(conn, server)
         return "umgebaut"
+
+    def job_gamerules(self, conn, job, payload):
+        """Gamerules: Datapack schreiben (gilt bei jedem Start) und – wenn der Server läuft – sofort setzen."""
+        server = self.load(conn, job["server_id"])
+        if server["state"] != "active":
+            return "übersprungen"
+        files.write_rules_datapack(server)
+        if not self.ops.state(minecraft.container_name(server["id"]))["running"]:
+            return "wird beim nächsten Start übernommen"
+        new, old = gamesettings.commands(gamesettings.changed_rules(server))
+        ok = 0
+        for cmd in new + old:
+            try:
+                out = self.server_rcon(conn, server, cmd)
+                if "Incorrect" not in out and "Unknown" not in out:
+                    ok += 1
+            except rcon.RconError:
+                pass
+        return f"{ok} Regeln gesetzt"
+
+    def job_world_reset(self, conn, job, payload):
+        """Neue Welt: stoppen → Sicherung → alte Welt (inkl. Nether/End) löschen → neu starten."""
+        server = self.load(conn, job["server_id"])
+        if server["state"] != "active":
+            return "übersprungen"
+        self.graceful_stop(conn, server)
+        self.backup(conn, server, "vor-aenderung")
+        level = server["level_name"] or "world"
+        data = minecraft.data_dir(server["id"])
+        for name in (level, f"{level}_nether", f"{level}_the_end"):
+            target = safe_path(server["id"], name)
+            if target != data:
+                shutil.rmtree(target, ignore_errors=True)
+        seed = (payload.get("seed") or "").strip()[:64] or None
+        conn.execute("UPDATE servers SET world_seed = ? WHERE id = ?", (seed, server["id"]))
+        self.recreate(conn, server)
+        return "neue Welt erstellt"
 
     def job_world_upload(self, conn, job, payload):
         server = self.load(conn, job["server_id"])

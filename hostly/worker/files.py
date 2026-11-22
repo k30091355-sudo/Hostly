@@ -121,6 +121,34 @@ def sync_extensions(conn, server) -> str:
 
 # ---------- /code-Datapack (Server-Kürzel im Spiel: /trigger code) ----------
 
+def write_rules_datapack(server) -> None:
+    """Gamerules als Datapack: werden bei jedem Serverstart gesetzt. Zwei Funktionen (neue + alte Namen);
+    die zur Version unpassende lädt Minecraft einfach nicht (Einträge im load-Tag sind optional)."""
+    from .. import gamesettings
+    root = minecraft.data_dir(server["id"]) / (server["level_name"] or "world") / "datapacks" / "hostly-rules"
+    rules = gamesettings.changed_rules(server)
+    if not rules:
+        shutil.rmtree(root, ignore_errors=True)
+        return
+    new, old = gamesettings.commands(rules)
+    meta = {"pack": {"description": "Hostly: Gamerules", "pack_format": 48,
+                     "supported_formats": {"min_inclusive": 4, "max_inclusive": 999},
+                     "min_format": 4, "max_format": 999}}
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "pack.mcmeta").write_text(json.dumps(meta))
+    tag = {"values": [{"id": "hostly_rules:new", "required": False}, {"id": "hostly_rules:old", "required": False}]}
+    for folder in ("function", "functions"):
+        d = root / "data" / "hostly_rules" / folder
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "new.mcfunction").write_text("\n".join(new) + "\n", encoding="utf-8")
+        (d / "old.mcfunction").write_text("\n".join(old) + "\n", encoding="utf-8")
+        tags = root / "data" / "minecraft" / ("tags/function" if folder == "function" else "tags/functions")
+        tags.mkdir(parents=True, exist_ok=True)
+        (tags / "load.json").write_text(json.dumps(tag))
+    for p in [root, *root.rglob("*")]:
+        chown(p)
+
+
 def write_code_datapack(server, public_url: str | None) -> None:
     root = minecraft.data_dir(server["id"]) / (server["level_name"] or "world") / "datapacks" / "hostly-code"
     link = f"{public_url.rstrip('/')}/s/{server['short_code']}" if public_url else ""

@@ -20,6 +20,7 @@
   {% endif %}
   {% if server.state == 'active' %}
   <a href="{{ base }}/erweiterungen" class="{{ 'active' if p.endswith('/erweiterungen') }}">{{ t('Plugins/Mods') }}</a>
+  <a href="{{ base }}/einstellungen" class="{{ 'active' if p.endswith('/einstellungen') }}">{{ t('Einstellungen') }}</a>
   <a href="{{ base }}/welten" class="{{ 'active' if p.endswith('/welten') }}">{{ t('Welten') }}</a>
   <a href="{{ base }}/version" class="{{ 'active' if p.endswith('/version') }}">{{ t('Version') }}</a>
   <a href="{{ base }}/dateien" class="{{ 'active' if '/dateien' in p }}">{{ t('Dateien') }}</a>

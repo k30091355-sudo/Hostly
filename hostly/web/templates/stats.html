@@ -11,6 +11,31 @@
   <div class="card stat"><span class="stat-value">{{ data.total_hours }} h</span><span class="stat-label">{{ t('Gesamt-Spielzeit') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ '%d %%' % data.uptime if data.uptime is not none else '–' }}</span><span class="stat-label">{{ t('Verfügbarkeit (7 Tage)') }}</span></div>
 </div>
+{% if server.whitelist_enabled and server.state == 'active' %}
+<section class="card" id="anfrage">
+  <h2>🔒 {{ t('Whitelist') }}</h2>
+  <p class="small muted">{{ t('Auf diesem Server dürfen nur freigeschaltete Spieler spielen.') }}</p>
+  {% if sent == 'ok' %}<div class="alert success">{{ t('Anfrage gesendet! Der Besitzer bekommt eine Nachricht.') }}</div>{% endif %}
+  {% if sent == 'name' %}<div class="alert error">{{ t('Ungültiger Minecraft-Name (3–16 Zeichen: Buchstaben, Zahlen, _).') }}</div>{% endif %}
+  {% if not user %}
+    <a class="btn primary" href="/login">{{ t('Zum Anfragen einloggen') }}</a>
+  {% elif on_list %}
+    <p class="hint good">✓ {{ t('Du bist auf der Whitelist.') }}</p>
+  {% elif user.id == server.owner_id %}
+    <p class="small">{{ t('Das ist dein Server – Anfragen findest du im Reiter „Spieler“.') }}</p>
+  {% elif my_request and my_request.status == 'offen' %}
+    <p class="small">{{ t('Deine Anfrage wartet auf den Besitzer.') }} ({{ my_request.minecraft_name }})</p>
+  {% else %}
+    {% if my_request and my_request.status == 'abgelehnt' %}<p class="small muted">{{ t('Deine letzte Anfrage wurde abgelehnt.') }}</p>{% endif %}
+    <form method="post" action="/s/{{ server.short_code }}/anfrage" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Dein Minecraft-Name') }}<input name="minecraft_name" value="{{ user.minecraft_name or '' }}" maxlength="16" required pattern="[A-Za-z0-9_]{3,16}"></label>
+      <label>{{ t('Nachricht an den Besitzer (optional)') }}<input name="message" maxlength="200"></label>
+      <div><button class="btn primary">{{ t('Whitelist-Anfrage senden') }}</button></div>
+    </form>
+  {% endif %}
+</section>
+{% endif %}
 {% if data.peak %}
 <section class="card"><h2>{{ t('Spieler – letzte 24 Stunden') }}</h2>{{ chart24 }}</section>
 <section class="card"><h2>{{ t('Spieler – letzte 7 Tage') }}</h2>{{ chart7 }}</section>

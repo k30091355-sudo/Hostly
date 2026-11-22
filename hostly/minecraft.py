@@ -39,9 +39,14 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
         "ONLINE_MODE": "TRUE",
         # optimierte Java-Einstellungen (schnellerer Start, weniger Ruckler)
         "USE_AIKAR_FLAGS": "TRUE",
-        # weniger Daten beim Betreten (playit-Tunnel + Heim-Upload) und weniger CPU
-        "VIEW_DISTANCE": "8",
-        "SIMULATION_DISTANCE": "6",
+        # Einstellungen aus dem Reiter „Einstellungen“ (Sichtweite begrenzt: playit-Tunnel + CPU)
+        "VIEW_DISTANCE": str(server["view_distance"] or 8),
+        "SIMULATION_DISTANCE": str(min(6, server["view_distance"] or 8)),
+        "DIFFICULTY": server["difficulty"] or "easy",
+        "MODE": server["gamemode"] or "survival",
+        "PVP": "TRUE" if server["pvp"] else "FALSE",
+        "ALLOW_FLIGHT": "TRUE" if server["allow_flight"] else "FALSE",
+        "SPAWN_PROTECTION": str(server["spawn_protection"]),
         "TZ": config.TIMEZONE,
         # Konsole
         "ENABLE_RCON": "TRUE",

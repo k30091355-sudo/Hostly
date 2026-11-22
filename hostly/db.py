@@ -386,6 +386,53 @@ MIGRATIONS: list[str] = [
     UPDATE models SET cpu_limit = 3.0 WHERE key = 'eisen';
     UPDATE models SET cpu_limit = 4.0 WHERE key = 'diamant';
     """,
+    # 7 – Version 1.3.0: Server-Einstellungen, Gamerules, Leistung, Whitelist-Anfragen, Startbonus,
+    #     Einführung, Mini-PC-Werte, geplante Wartung
+    """
+    ALTER TABLE servers ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'easy';
+    ALTER TABLE servers ADD COLUMN gamemode TEXT NOT NULL DEFAULT 'survival';
+    ALTER TABLE servers ADD COLUMN pvp INTEGER NOT NULL DEFAULT 1;
+    ALTER TABLE servers ADD COLUMN view_distance INTEGER NOT NULL DEFAULT 8;
+    ALTER TABLE servers ADD COLUMN spawn_protection INTEGER NOT NULL DEFAULT 16;
+    ALTER TABLE servers ADD COLUMN allow_flight INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE servers ADD COLUMN gamerules TEXT NOT NULL DEFAULT '{}';
+
+    ALTER TABLE server_status ADD COLUMN cpu_percent REAL;
+    ALTER TABLE server_status ADD COLUMN mem_mb INTEGER;
+    ALTER TABLE server_status ADD COLUMN tps REAL;
+    ALTER TABLE player_samples ADD COLUMN cpu_percent REAL;
+    ALTER TABLE player_samples ADD COLUMN mem_mb INTEGER;
+    ALTER TABLE player_samples ADD COLUMN tps REAL;
+
+    CREATE TABLE whitelist_requests (
+        id              INTEGER PRIMARY KEY,
+        server_id       INTEGER NOT NULL REFERENCES servers(id),
+        user_id         INTEGER NOT NULL REFERENCES users(id),
+        minecraft_name  TEXT NOT NULL,
+        message         TEXT,
+        status          TEXT NOT NULL DEFAULT 'offen',     -- offen | angenommen | abgelehnt
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        decided_at      TEXT
+    );
+    CREATE INDEX whitelist_requests_server ON whitelist_requests(server_id, status);
+
+    -- Einführung nur für neue Accounts (bestehende gelten als „gesehen“)
+    ALTER TABLE users ADD COLUMN onboarded INTEGER NOT NULL DEFAULT 1;
+    -- Aktion „Startbonus“: zusätzliche Coins bei der Registrierung
+    ALTER TABLE promotions ADD COLUMN extra_coins INTEGER NOT NULL DEFAULT 0;
+    INSERT OR IGNORE INTO settings (key, value) VALUES ('welcome_coins', '100');
+
+    CREATE TABLE host_samples (
+        at            TEXT NOT NULL,
+        cpu_percent   REAL,
+        mem_used_mb   INTEGER,
+        mem_total_mb  INTEGER,
+        disk_used_gb  REAL,
+        disk_total_gb REAL,
+        temp_c        REAL
+    );
+    CREATE INDEX host_samples_at ON host_samples(at);
+    """,
 ]
 
 

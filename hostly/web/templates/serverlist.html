@@ -10,13 +10,14 @@
   <div class="mc-entry">
     <img src="/server/{{ s.id }}/icon.png" alt="" width="64" height="64">
     <div class="mc-body">
-      <div class="mc-top"><span class="mc-name">{{ s.name }}</span>
+      <div class="mc-top"><span class="mc-name">{{ s.name }}{% if s.whitelist_enabled %} 🔒{% endif %}</span>
         <span class="mc-players">{% if s.running and not s.paused %}{{ s.players_online }}/{{ s.max_players }}{% elif s.running %}0/{{ s.max_players }} 💤{% else %}{{ t('offline') }}{% endif %}
           <span class="ping {{ 'on' if s.running and not s.paused else 'off' }}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span></div>
       <div class="mc-motd">{{ (s.motd or s.name) | motd }}</div>
       <div class="mc-bottom"><code class="mono small">{{ s.public_address }}</code>
         <button type="button" class="btn small" data-copy="{{ s.public_address }}">{{ t('Kopieren') }}</button>
-        <a class="small" href="/s/{{ s.short_code }}">{{ t('Statistik') }}</a></div>
+        <a class="small" href="/s/{{ s.short_code }}">{{ t('Statistik') }}</a>
+        {% if s.whitelist_enabled %}<a class="small" href="/s/{{ s.short_code }}#anfrage">{{ t('Whitelist-Anfrage') }}</a>{% endif %}</div>
     </div>
   </div>
   {% endfor %}

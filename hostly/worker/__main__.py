@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from .. import config, db
-from . import tasks
+from . import host, tasks
 from .docker_ops import DockerOps
 from .jobs import Worker, claim_jobs
 
@@ -74,10 +74,13 @@ def main() -> None:
     sched.add_job(tasks.check_expiry, "interval", seconds=60, args=[w], max_instances=1, coalesce=True)
     sched.add_job(tasks.cleanup_downloads, "interval", hours=1, max_instances=1, coalesce=True)
     sched.add_job(tasks.cleanup_db, "cron", hour=4, minute=17, args=[w])
-    for func in (tasks.night_pauses, tasks.draw_giveaways, tasks.end_ram_promotions, tasks.notify_waitlist):
+    for func in (tasks.night_pauses, tasks.draw_giveaways, tasks.end_ram_promotions, tasks.notify_waitlist,
+                 tasks.planned_maintenance):
         sched.add_job(func, "interval", seconds=60, args=[w], max_instances=1, coalesce=True)
     sched.add_job(tasks.nightly_backups, "interval", minutes=10, args=[w], max_instances=1, coalesce=True)
     sched.add_job(tasks.cleanup_backups, "cron", hour=6, minute=30, args=[w])
+    sched.add_job(tasks.coins_reminder, "interval", minutes=30, args=[w], max_instances=1, coalesce=True)
+    sched.add_job(host.sample, "interval", minutes=5, args=[w], max_instances=1, coalesce=True)
     sched.add_job(tasks.backup_database, "cron", hour=2, minute=3)
     sched.add_job(tasks.disk_usage, "cron", hour=5, minute=41, args=[w])
     def stop(signum, frame):

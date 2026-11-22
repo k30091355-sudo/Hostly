@@ -3,10 +3,24 @@
 {% block content %}
 {% include "servers/_tabs.html" %}
 {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+{% if requests %}
+<section class="card highlight">
+  <h2>{{ t('Whitelist-Anfragen') }} ({{ requests | length }})</h2>
+  <ul class="events">
+  {% for r in requests %}
+    <li class="row-between"><span><strong>{{ r.minecraft_name }}</strong> <span class="small muted">({{ r.username }} · {{ r.created_at | localtime }})</span>
+      {% if r.message %}<br><span class="small">„{{ r.message }}“</span>{% endif %}</span>
+      <form method="post" action="/server/{{ server.id }}/anfrage/{{ r.id }}" class="inline-form"><input type="hidden" name="csrf" value="{{ csrf }}">
+        <button name="action" value="accept" class="btn primary small">{{ t('Annehmen') }}</button>
+        <button name="action" value="decline" class="btn small">{{ t('Ablehnen') }}</button></form></li>
+  {% endfor %}
+  </ul>
+</section>
+{% endif %}
 <div class="grid">
   <section class="card">
     <h2>Whitelist</h2>
-    <p class="small muted">{{ t('Wenn an, dürfen nur Spieler auf der Liste beitreten.') }} {{ t('Server mit Whitelist erscheinen nicht in der öffentlichen Serverliste.') }}</p>
+    <p class="small muted">{{ t('Wenn an, dürfen nur Spieler auf der Liste beitreten.') }} {{ t('Spieler können auf der öffentlichen Statistik-Seite deines Servers eine Anfrage stellen.') }}</p>
     <form method="post" action="/server/{{ server.id }}/whitelist">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       {% if server.whitelist_enabled %}

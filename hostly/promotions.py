@@ -23,6 +23,16 @@ def discount_percent(conn: sqlite3.Connection, model_id: int) -> int:
     return sum(p["percent"] for p in active(conn, "rabatt") if applies(p, model_id))
 
 
+def signup_bonus(conn: sqlite3.Connection) -> int:
+    """Start-Coins für neue Accounts: Grundwert (Admin-Einstellung) + laufende „Startbonus“-Aktionen."""
+    from . import db
+    try:
+        base = max(0, int(db.get_setting(conn, "welcome_coins") or 0))
+    except ValueError:
+        base = 0
+    return base + sum(p["extra_coins"] for p in active(conn, "start"))
+
+
 def ram_bonus(conn: sqlite3.Connection, model_id: int) -> tuple[float, str | None]:
     """(Extra-RAM in GB, bis wann) – gilt nur für Mieten, die während der Aktion gekauft werden."""
     best = (0.0, None)

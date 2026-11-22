@@ -14,6 +14,8 @@ def client(tmp_path, monkeypatch):
     from hostly.web.app import app
 
     with TestClient(app) as c:
+        # ältere Tests rechnen ohne Startbonus; test_v130 prüft ihn ausdrücklich
+        db.set_setting(db.connect(), "welcome_coins", "0")
         yield c
 
 
@@ -23,11 +25,14 @@ def csrf_of(client, url="/login"):
     return re.search(r'name="csrf" value="([^"]+)"', html).group(1)
 
 
-def register(client, username="steve", password="geheim123"):
+def register(client, username="steve", password="geheim123", onboarded=True):
     token = csrf_of(client, "/registrieren")
-    return client.post("/registrieren", data={
+    r = client.post("/registrieren", data={
         "username": username, "password": password, "password2": password, "csrf": token,
     }, follow_redirects=False)
+    if onboarded:   # Einführung (1.3.0) überspringen – wird in test_v130 geprüft
+        db.connect().execute("UPDATE users SET onboarded = 1 WHERE username = ?", (username,))
+    return r
 
 
 def login(client, username="steve", password="geheim123"):

@@ -11,11 +11,13 @@
 </div>
 {% endfor %}
 {% for n in notes %}
-<div class="alert {{ 'warn' if n.kind in ('auto_renew_failed', 'archived', 'crash', 'ram_promo_end') else 'success' }} banner-row">
+<div class="alert {{ 'warn' if n.kind in ('auto_renew_failed', 'archived', 'crash', 'ram_promo_end', 'coins_low') else 'success' }} banner-row">
   <span>{{ n.text }}</span>
   <span class="banner-actions">
     {% if n.server_id and n.kind in ('archived', 'auto_renew_failed') %}<a class="btn small" href="/server/{{ n.server_id }}/miete">{{ t('Reaktivieren') }}</a>{% endif %}
     {% if n.server_id and n.kind == 'crash' %}<a class="btn small" href="/server/{{ n.server_id }}/konsole">{{ t('Konsole') }}</a>{% endif %}
+    {% if n.kind == 'coins_low' %}<a class="btn small" href="/code">{{ t('Code einlösen') }}</a>{% endif %}
+    {% if n.server_id and n.kind == 'whitelist' %}<a class="btn small" href="/server/{{ n.server_id }}/spieler">{{ t('Anfragen ansehen') }}</a>{% endif %}
     {% if n.kind == 'space_free' %}<a class="btn small" href="/kaufen">{{ t('Server kaufen') }}</a>{% endif %}
     <form method="post" action="/meldung/{{ n.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
       <button class="link-btn small" aria-label="{{ t('Schließen') }}">✕</button></form>
@@ -28,11 +30,26 @@
   <div class="feature-text">
     <div class="feature-kicker">🔥 {{ t('Aktion') }}</div>
     <h2>{{ p.title }}: {{ label }}</h2>
-    <p class="small">{{ t('bis') }} {{ p.ends_at | localtime }}</p>
+    <p class="small">{{ t('Endet in') }} <strong class="countdown" data-countdown="{{ p.ends_at }}">…</strong> <span class="muted">({{ p.ends_at | localtime }})</span></p>
   </div>
-  <a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>
+  {% if p.kind == 'start' and not user %}<a class="btn primary" href="/registrieren">{{ t('nav.register') }}</a>
+  {% else %}<a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>{% endif %}
 </section>
 {% endfor %}
+{% if forecast and forecast['items'] %}
+<section class="card forecast">
+  <h2>{% include "_coin.html" %} {{ t('Coins-Prognose') }}</h2>
+  <p class="small muted">{{ t('Auto-Verlängern bucht am Ablauftag jeweils 7 Tage ab.') }}
+    {% if forecast.weeks == 1 %}{{ t('Deine Coins reichen für ungefähr 1 Woche.') }}{% elif forecast.weeks is not none %}{{ t('Deine Coins reichen für ungefähr {n} Wochen.', n=forecast.weeks) }}{% endif %}</p>
+  <ul class="events">
+  {% for i in forecast['items'] %}
+    <li class="row-between"><span><strong>{{ i.server.name }}</strong> <span class="small muted">· {{ i.server.rented_until | localtime }}</span></span>
+      <span class="{{ 'plus' if i.enough else 'minus' }}">{{ i.price | coins }} Coins {{ '✓' if i.enough else '⚠ ' ~ t('es fehlen {n}', n=i.missing) }}</span></li>
+  {% endfor %}
+  </ul>
+  {% if not forecast['items'][-1].enough %}<a class="btn primary small" href="/code">{{ t('Code einlösen') }}</a>{% endif %}
+</section>
+{% endif %}
 {% for g in giveaways %}{% include "_giveaway.html" %}{% endfor %}
 
 <section class="hero">

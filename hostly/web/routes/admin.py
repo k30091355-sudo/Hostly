@@ -1,14 +1,14 @@
 """Admin-Bereich: Übersicht, Codes, User, Tunnel, Server, Einstellungen."""
 import ipaddress
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Form
 from fastapi.responses import HTMLResponse
 
 from ... import codes, coins, config, db, security, servers
-from ...timeutil import fmt
+from ...timeutil import fmt, now_sql
 from ..deps import Ctx, Redirect, get_ctx
 from .auth import safe_next
 
@@ -72,8 +72,24 @@ def admin_home(ctx: Ctx = Depends(get_ctx)):
     stats["giveaways"] = _count(c, "SELECT COUNT(*) FROM giveaways WHERE drawn_at IS NULL")
     stats["promos"] = _count(c, "SELECT COUNT(*) FROM promotions WHERE starts_at <= datetime('now') AND ends_at > datetime('now')")
     stats["night"] = _count(c, "SELECT COUNT(*) FROM night_pause_log WHERE status = 'laeuft'")
+    from ... import stats as st
+    from ...worker import host
+    since7 = fmt(datetime.now(timezone.utc) - timedelta(days=7))
+    hs = c.execute("SELECT * FROM host_samples WHERE at >= ? ORDER BY at", (since7,)).fetchall()
+    last = hs[-1] if hs else None
+    charts = None
+    if hs:
+        mem_total = max((h["mem_total_mb"] or 0) for h in hs) or 1
+        disk_total = max((h["disk_total_gb"] or 0) for h in hs) or 1
+        charts = {
+            "cpu": st.line_chart(hs, "cpu_percent", 100, "CPU", hours=24 * 7),
+            "mem": st.line_chart(hs, "mem_used_mb", mem_total, "RAM", hours=24 * 7),
+            "disk": st.line_chart(hs, "disk_used_gb", disk_total, "Festplatte", hours=24 * 7),
+            "temp": st.line_chart(hs, "temp_c", 100, "Temperatur", hours=24 * 7)
+            if any(h["temp_c"] is not None for h in hs) else None,
+        }
     return ctx.render("admin/index.html", stats=stats, cap=cap, events=events, errors=errors, sys=system_info(),
-                      sizes=sizes)
+                      sizes=sizes, charts=charts, last=last, warnings=host.current_warnings(c))
 
 
 # ---------- Codes ----------
@@ -318,7 +334,42 @@ def settings_page(ctx: Ctx = Depends(get_ctx)):
     total, reserve = servers.ram_settings(ctx.conn)
     return ctx.render("admin/settings.html", total=total, reserve=reserve,
                       saved=ctx.request.query_params.get("ok") == "1",
-                      maintenance=db.get_setting(ctx.conn, "maintenance_mode") == "1")
+                      maintenance=db.get_setting(ctx.conn, "maintenance_mode") == "1",
+                      welcome_coins=db.get_setting(ctx.conn, "welcome_coins") or "0",
+                      planned_start=db.get_setting(ctx.conn, "maintenance_planned_start"),
+                      planned_end=db.get_setting(ctx.conn, "maintenance_planned_end"))
+
+
+@router.post("/admin/startcoins")
+def save_welcome_coins(welcome_coins: int = Form(0), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    ctx.require_admin()
+    ctx.check_csrf(csrf)
+    db.set_setting(ctx.conn, "welcome_coins", str(max(0, min(1000, welcome_coins))))
+    db.audit(ctx.conn, ctx.user["id"], "welcome_coins", str(welcome_coins))
+    raise Redirect("/admin/einstellungen?ok=1")
+
+
+@router.post("/admin/wartung-planen")
+def plan_maintenance(start: str = Form(""), end: str = Form(""), action: str = Form("plan"), csrf: str = Form(""),
+                     ctx: Ctx = Depends(get_ctx)):
+    """Wartung ankündigen (Countdown-Banner für alle); der worker schaltet sie zur Zeit an und wieder aus."""
+    from .events import _local_dt_to_utc
+    ctx.require_admin()
+    ctx.check_csrf(csrf)
+    if action == "cancel":
+        db.set_setting(ctx.conn, "maintenance_planned_start", "")
+        db.set_setting(ctx.conn, "maintenance_planned_end", "")
+    else:
+        try:
+            s = _local_dt_to_utc(start)
+            e = _local_dt_to_utc(end) if end else ""
+        except ValueError:
+            raise Redirect("/admin/einstellungen")
+        if s > now_sql() and (not e or e > s):
+            db.set_setting(ctx.conn, "maintenance_planned_start", s)
+            db.set_setting(ctx.conn, "maintenance_planned_end", e)
+            db.audit(ctx.conn, ctx.user["id"], "maintenance_planned", f"{s} – {e or 'offen'}")
+    raise Redirect("/admin/einstellungen?ok=1")
 
 
 @router.post("/admin/einstellungen")

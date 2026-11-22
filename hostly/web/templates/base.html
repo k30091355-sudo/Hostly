@@ -78,6 +78,7 @@
     </div>
   </header>
 
+  {% if ctx and ctx.maintenance_planned %}<div class="maintenance-bar planned">🛠️ {{ t('Geplante Wartung in') }} <strong class="countdown" data-countdown="{{ ctx.maintenance_planned }}">…</strong> ({{ ctx.maintenance_planned | localtime }}). {{ t('Minecraft-Server laufen weiter.') }}</div>{% endif %}
   {% if ctx and ctx.maintenance %}<div class="maintenance-bar">🛠️ {{ t('Wartungsmodus: Hostly wird gerade gewartet. Kaufen und Ändern ist kurz nicht möglich.') }}</div>{% endif %}
   <main class="container">
     {% block content %}{% endblock %}

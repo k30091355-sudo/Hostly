@@ -176,3 +176,34 @@ def pick_template_version(template_key: str) -> tuple[str, list[dict]]:
         except ExtensionError:
             continue
     raise ExtensionError("Diese Vorlage ist gerade nicht verfügbar. Bitte später erneut versuchen.")
+
+
+def find_updates(conn: sqlite3.Connection, server: sqlite3.Row) -> list[dict]:
+    """Neuere Versionen für installierte Modrinth-Plugins/Mods/Datapacks (gleiche Minecraft-Version)."""
+    if server["mc_version"] == "LATEST":
+        return []
+    result = []
+    rows = conn.execute("SELECT * FROM server_extensions WHERE server_id = ? AND enabled = 1 AND source = 'modrinth'",
+                        (server["id"],)).fetchall()
+    for row in rows:
+        try:
+            v = modrinth.best_version(row["project_id"], modrinth.loaders_for(row["kind"], server["type"]),
+                                      server["mc_version"])
+        except (modrinth.ModrinthError, KeyError):
+            continue
+        if v is None or v["id"] == row["version_id"]:
+            continue
+        if row["version_id"]:
+            try:   # nur wirklich neuere Versionen (nicht, wenn jemand absichtlich eine neuere Vorabversion gewählt hat)
+                cur = modrinth.version(row["version_id"])
+                if cur and (cur.get("date_published") or "") > (v.get("date_published") or ""):
+                    continue
+            except modrinth.ModrinthError:
+                pass
+        result.append({"row": dict(row), "version": v})
+    return result
+
+
+def apply_updates(conn: sqlite3.Connection, server: sqlite3.Row, updates: list[dict]) -> int:
+    apply_change(conn, server, {"update": updates, "disable": []})
+    return len(updates)

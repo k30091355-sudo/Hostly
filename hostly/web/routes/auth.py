@@ -4,7 +4,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ... import config, db, security
+from ... import coins, config, db, promotions, security
 from ..deps import Ctx, Redirect, cookie_secure, get_ctx
 
 router = APIRouter()
@@ -116,10 +116,15 @@ def register(
                 (username, password_hash, ctx.lang, ctx.theme),
             )
             user_id = cur.lastrowid
+            # Startbonus (Version 1.3.0) + Einführung für neue Spieler
+            bonus = promotions.signup_bonus(ctx.conn)
+            if bonus:
+                coins.book(ctx.conn, user_id, bonus, "startbonus")
+            ctx.conn.execute("UPDATE users SET onboarded = 0 WHERE id = ?", (user_id,))
             db.audit(ctx.conn, user_id, "register")
     except sqlite3.IntegrityError:  # gleichzeitig registriert
         return ctx.render("register.html", status_code=400, error=ctx.t("err.username_taken"), username=username)
-    return _login_and_redirect(ctx, user_id, "/?msg=welcome")
+    return _login_and_redirect(ctx, user_id, "/willkommen")
 
 
 # ---------- Abmelden ----------

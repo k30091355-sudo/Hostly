@@ -14,6 +14,31 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.3.0 (22.11.2026) – Großes Funktions-Update
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten. Die Datenbank wird beim Start automatisch erweitert.
+
+**Für Server-Besitzer**
+- **Neuer Reiter „Einstellungen“:** Schwierigkeit, Spielmodus, PvP, Fliegen, Sichtweite und Spawn-Schutz per Formular (gilt nach Neustart).
+- **Gamerules per Klick** (Inventar behalten, Tag/Nacht, Monster, Phantome, Schlaf-Prozent …) – gelten sofort, wenn der Server läuft.
+- **„Neue Welt“-Knopf** (optional mit Seed). Vorher wird automatisch eine Sicherung angelegt – wie auch vor jedem Versions-/Typwechsel.
+- **Mod-/Plugin-Updates:** Im Reiter „Plugins/Mods“ erscheint „🔄 Updates verfügbar“ – einzeln oder alle mit einem Klick.
+- **Fehler-Erklärer:** Hostly erkennt häufige Fehler im Protokoll (z. B. „Fabric API fehlt“, fehlende Abhängigkeit, zu wenig RAM, Ruckler) und erklärt sie einfach – oft mit Knopf zum Beheben.
+- **Leistung im Reiter „Statistik“:** TPS, RAM und CPU jetzt und als Grafik der letzten 24 Stunden.
+- **Whitelist-Anfragen:** Server mit Whitelist dürfen wieder in die öffentliche Serverliste (mit 🔒). Spieler stellen auf der Statistik-Seite eine Anfrage, der Besitzer nimmt sie im Reiter „Spieler“ an.
+
+**Coins**
+- **100 Start-Coins** für jeden neuen Account (Admin kann die Zahl ändern) + neue Aktions-Art **„Startbonus“** für mehr Coins bei der Registrierung.
+- **Countdown** bei Rabatt-Aktionen auf der Startseite.
+- **Coins-Prognose** auf der Startseite (reichen die Coins fürs Auto-Verlängern?) + Erinnerung 3 Tage vorher, wenn nicht.
+- **Einführung** für neue Spieler direkt nach dem Registrieren (Code einlösen / Server mieten / Überspringen).
+
+**Für den Admin**
+- **Mini-PC-Grafik** (CPU, RAM, Festplatte – letzte 7 Tage) im Admin-Bereich.
+- **Warnungen**, wenn die Festplatte fast voll ist, der Mini-PC zu heiß wird oder ein playit-Agent nicht läuft.
+- **Wartung planen** (Admin → Einstellungen): alle sehen einen Countdown, Hostly schaltet den Wartungsmodus automatisch an und aus.
+
+👉 **Nach dem Update:** Bestehende Server einmal **neu starten**, damit die neuen Einstellungen greifen.
+
 ### Version 1.2.0 (22.11.2026) – Neues Design
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
 - **Neues Logo** („Server-Rack“) – auch als Tab-Symbol und Handy-App-Symbol.

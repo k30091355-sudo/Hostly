@@ -5,13 +5,14 @@
 {% include "admin/_nav.html" %}
 <section class="card">
   <h2>{{ t('Aktion erstellen') }}</h2>
-  <p class="small muted">{{ t('Rabatt-Aktionen gelten für neue Mieten und Verlängerungen und werden zum Tage-Rabatt addiert (zusammen höchstens 75 %). RAM-Aktionen gelten nur für Server, die während der Aktion gekauft werden.') }}</p>
+  <p class="small muted">{{ t('Rabatt-Aktionen gelten für neue Mieten und Verlängerungen und werden zum Tage-Rabatt addiert (zusammen höchstens 75 %). RAM-Aktionen gelten nur für Server, die während der Aktion gekauft werden.') }} {{ t('Startbonus-Aktionen geben neuen Accounts zusätzlich zu den normalen Start-Coins (Einstellungen) mehr Coins.') }}</p>
   <form method="post" action="/admin/aktionen" class="form row-form">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <label>{{ t('Art') }}<select name="kind"><option value="rabatt">{{ t('Rabatt (%)') }}</option><option value="ram">{{ t('Extra-RAM (GB)') }}</option></select></label>
+    <label>{{ t('Art') }}<select name="kind"><option value="rabatt">{{ t('Rabatt (%)') }}</option><option value="ram">{{ t('Extra-RAM (GB)') }}</option><option value="start">{{ t('Startbonus (Coins bei Registrierung)') }}</option></select></label>
     <label>{{ t('Titel') }}<input name="title" required maxlength="80" placeholder="{{ t('z. B. Rabatt-Woche') }}"></label>
     <label>{{ t('Rabatt in %') }}<input type="number" name="percent" min="1" max="75" value="20"></label>
     <label>{{ t('Extra-RAM in GB') }}<input type="number" name="extra_ram_gb" min="0.5" max="8" step="0.5" value="1"></label>
+    <label>{{ t('Extra-Start-Coins') }}<input type="number" name="extra_coins" min="1" max="1000" value="50"></label>
     <label>{{ t('Von') }}<input type="date" name="starts" required></label>
     <label>{{ t('Bis') }}<input type="date" name="ends" required></label>
     <fieldset class="wide checks"><legend>{{ t('Modelle') }}</legend>

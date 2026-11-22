@@ -8,6 +8,23 @@
   <div class="card stat"><span class="stat-value">{{ data.total_hours }} h</span><span class="stat-label">{{ t('Gesamt-Spielzeit') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ '%d %%' % data.uptime if data.uptime is not none else '–' }}</span><span class="stat-label">{{ t('Verfügbarkeit (7 Tage)') }}</span></div>
 </div>
+<section class="card">
+  <h2>{{ t('Leistung') }}</h2>
+  {% set awake = st and st.running and not st.paused %}
+  <div class="perf-now">
+    <div><span class="perf-value {{ 'bad' if awake and st.tps and st.tps < 15 else ('warn' if awake and st.tps and st.tps < 19 else '') }}">{{ st.tps if awake and st.tps is not none else '–' }}</span><span class="stat-label">TPS ({{ t('20 = perfekt') }})</span></div>
+    <div><span class="perf-value">{{ '%.1f' % (st.mem_mb / 1024) if awake and st.mem_mb else '–' }}<small> / {{ '%.1f' % (mem_limit / 1024) }} GB</small></span><span class="stat-label">RAM</span></div>
+    <div><span class="perf-value">{{ '%d %%' % (st.cpu_percent / cores) if awake and st.cpu_percent is not none else '–' }}</span><span class="stat-label">CPU ({{ cores | int }} {{ t('Kerne') }})</span></div>
+  </div>
+  {% if not awake %}<p class="small muted">{{ t('Werte gibt es nur, während der Server läuft und nicht schläft.') }}</p>{% endif %}
+  {% if has_perf %}
+  <div class="perf-charts">
+    <div><h3 class="small">{{ t('TPS – letzte 24 Stunden') }}</h3>{{ chart_tps }}</div>
+    <div><h3 class="small">{{ t('RAM – letzte 24 Stunden') }}</h3>{{ chart_mem }}</div>
+    <div><h3 class="small">{{ t('CPU – letzte 24 Stunden') }}</h3>{{ chart_cpu }}</div>
+  </div>
+  {% endif %}
+</section>
 {% if data.peak %}
 <section class="card"><h2>{{ t('Spieler – letzte 24 Stunden') }}</h2>{{ chart24 }}</section>
 <section class="card"><h2>{{ t('Spieler – letzte 7 Tage') }}</h2>{{ chart7 }}</section>
@@ -28,15 +45,12 @@
   </section>
   <section class="card">
     <h2>{{ t('Öffentliche Serverliste') }}</h2>
-    {% if server.whitelist_enabled %}
-      <p class="small muted">{{ t('Server mit eingeschalteter Whitelist können nicht in der öffentlichen Serverliste erscheinen. Schalte die Whitelist im Reiter „Spieler“ aus, um ihn zu zeigen.') }}</p>
-    {% else %}
+    {% if server.whitelist_enabled %}<p class="small muted">{{ t('Deine Whitelist ist an: Besucher sehen in der Liste ein Schloss und können eine Whitelist-Anfrage stellen. Anfragen erscheinen im Reiter „Spieler“.') }}</p>{% endif %}
     <form method="post" action="/server/{{ server.id }}/oeffentlich" class="form">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <label class="radio"><input type="checkbox" name="public" value="1" {% if server.public_listed %}checked{% endif %}> {{ t('Meinen Server in der öffentlichen Serverliste zeigen') }}</label>
       <button class="btn primary">{{ t('settings.save') }}</button>
     </form>
-    {% endif %}
     <a href="/serverliste" class="small">{{ t('Zur Serverliste') }}</a>
   </section>
 </div>

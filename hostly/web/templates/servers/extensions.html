@@ -34,6 +34,7 @@
 <section class="card">
   <h2>{{ t('Installiert') }}</h2>
   {% if rows %}
+  <div hx-get="/server/{{ server.id }}/erweiterungen-updates" hx-trigger="load" hx-swap="innerHTML"></div>
   <ul class="ext-list">
     {% for r in rows %}
     <li class="ext-item {{ '' if r.enabled else 'disabled' }}">

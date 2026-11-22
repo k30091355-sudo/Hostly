@@ -4,6 +4,8 @@
 <h1>{{ t('nav.admin') }}</h1>
 {% include "admin/_nav.html" %}
 
+{% for key, text in warnings %}<div class="alert error" role="alert">⚠️ {{ text }}</div>{% endfor %}
+
 <div class="stats">
   <div class="card stat"><span class="stat-value">{{ sys.cpu if sys.cpu is not none else '–' }} %</span><span class="stat-label">{{ t('CPU-Last (1 Min.)') }}</span></div>
   {% if sys.mem_total %}<div class="card stat"><span class="stat-value">{{ '%.1f' % ((sys.mem_total - sys.mem_free) / 1073741824) }} / {{ '%.1f' % (sys.mem_total / 1073741824) }} GB</span><span class="stat-label">{{ t('RAM in WSL (echt belegt)') }}</span></div>{% endif %}
@@ -18,6 +20,20 @@
   <div class="card stat"><span class="stat-value">{{ stats.coins_total | coins }}</span><span class="stat-label">{{ t('Coins im Umlauf') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ stats.coins_redeemed | coins }} / {{ stats.coins_spent | coins }} / {{ stats.coins_refunded | coins }}</span><span class="stat-label">{{ t('eingelöst / ausgegeben / erstattet') }}</span></div>
 </div>
+
+<section class="card">
+  <h2>{{ t('Mini-PC – letzte 7 Tage') }}</h2>
+  {% if charts %}
+  <div class="perf-charts">
+    <div><h3 class="small">CPU{% if last and last.cpu_percent is not none %} · {{ '%.0f' % last.cpu_percent }} %{% endif %}</h3>{{ charts.cpu }}</div>
+    <div><h3 class="small">RAM{% if last and last.mem_used_mb %} · {{ '%.1f' % (last.mem_used_mb / 1024) }} / {{ '%.1f' % (last.mem_total_mb / 1024) }} GB{% endif %}</h3>{{ charts.mem }}</div>
+    <div><h3 class="small">{{ t('Festplatte') }}{% if last and last.disk_used_gb %} · {{ '%.0f' % last.disk_used_gb }} / {{ '%.0f' % last.disk_total_gb }} GB{% endif %}</h3>{{ charts.disk }}</div>
+  </div>
+  {% if charts.temp %}<div><h3 class="small">{{ t('Temperatur') }}{% if last and last.temp_c %} · {{ '%.0f' % last.temp_c }} °C{% endif %}</h3>{{ charts.temp }}</div>
+  {% else %}<p class="small muted">{{ t('Temperatur: In WSL kann Hostly die Temperatur nicht lesen. Unter Windows z. B. mit dem Task-Manager (Leistung) prüfen.') }}</p>{% endif %}
+  <p class="small muted">{{ t('Hostly misst alle 5 Minuten und warnt dich, wenn die Festplatte fast voll ist, der Mini-PC zu heiß wird oder ein playit-Agent nicht läuft.') }}</p>
+  {% else %}<p class="small muted">{{ t('Noch keine Messwerte – der worker misst alle 5 Minuten.') }}</p>{% endif %}
+</section>
 
 {% if errors %}
 <section class="card">

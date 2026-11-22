@@ -9,6 +9,8 @@ router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
 def home(ctx: Ctx = Depends(get_ctx)):
+    if ctx.user is not None and not ctx.user["onboarded"]:
+        raise Redirect("/willkommen")
     welcome = ctx.request.query_params.get("msg") == "welcome" and ctx.user is not None
     warnings, notes = [], []
     if ctx.user:
@@ -28,8 +30,9 @@ def home(ctx: Ctx = Depends(get_ctx)):
     free = [m["name"] for m in servers.models(ctx.conn) if servers.availability(ctx.conn, m)]
     capacity_text = (ctx.t("Gerade ist Platz frei für: {models}", models=", ".join(ctx.t(n) for n in free))
                      if free else ctx.t("Gerade ist alles belegt – du kannst dich beim Kaufen vormerken lassen."))
+    forecast = servers.renew_forecast(ctx.conn, ctx.user["id"]) if ctx.user else None
     return ctx.render("home.html", welcome=welcome, warnings=warnings, notes=notes, capacity_text=capacity_text,
-                      **home_events(ctx))
+                      forecast=forecast, **home_events(ctx))
 
 
 @router.post("/meldung/{note_id}")
@@ -53,3 +56,20 @@ def service_worker():
 @router.get("/offline", response_class=HTMLResponse)
 def offline(ctx: Ctx = Depends(get_ctx)):
     return ctx.render("offline.html")
+
+
+# ---------- Einführung für neue Spieler (Version 1.3.0) ----------
+
+@router.get("/willkommen", response_class=HTMLResponse)
+def welcome_tour(ctx: Ctx = Depends(get_ctx)):
+    ctx.require_login()
+    from ... import coins
+    return ctx.render("welcome.html", balance=coins.balance(ctx.conn, ctx.user["id"]))
+
+
+@router.post("/willkommen")
+def welcome_done(next: str = Form("/"), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    ctx.require_login()
+    ctx.check_csrf(csrf)
+    ctx.conn.execute("UPDATE users SET onboarded = 1 WHERE id = ?", (ctx.user["id"],))
+    raise Redirect(next if next in ("/", "/code", "/kaufen") else "/")

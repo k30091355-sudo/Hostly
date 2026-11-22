@@ -1,0 +1,24 @@
+{% if findings %}
+<section class="card diagnosis">
+  <h2>🔎 {{ t('Hostly hat ein Problem erkannt') }}</h2>
+  <ul class="diag-list">
+  {% for f in findings %}
+    <li class="diag {{ f.level }}">
+      <strong>{{ f.title }}</strong>
+      <div class="small">{{ f.text }}</div>
+      <div class="diag-actions">
+      {% if f.action == 'fabric_api' and server.type == 'FABRIC' %}
+        <form method="post" action="/server/{{ server.id }}/erweiterungen"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="project_id" value="fabric-api"><input type="hidden" name="kind" value="mod">
+          <button class="btn primary small">{{ t('Fabric API jetzt hinzufügen') }}</button></form>
+      {% elif f.action == 'mods' %}<a class="btn small" href="/server/{{ server.id }}/erweiterungen">{{ t('Zu Plugins/Mods') }}</a>
+      {% elif f.action == 'version' %}<a class="btn small" href="/server/{{ server.id }}/version">{{ t('Zur Version') }}</a>
+      {% elif f.action == 'upgrade' %}<a class="btn small" href="/server/{{ server.id }}/einstellungen">{{ t('Zu den Einstellungen') }}</a> <a class="btn small" href="/server/{{ server.id }}/miete">{{ t('Größeres Modell') }}</a>
+      {% endif %}
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
+  <p class="small muted">{{ t('Nach dem Beheben den Server neu starten.') }}</p>
+</section>
+{% endif %}

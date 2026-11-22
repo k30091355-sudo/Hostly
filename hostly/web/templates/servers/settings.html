@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Einstellungen') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+{% if ok == '1' %}<div class="alert success">{{ t('Gespeichert. Gilt nach dem nächsten Neustart des Servers.') }}</div>{% endif %}
+{% if ok == '2' %}<div class="alert success">{{ t('Gamerules gespeichert. Läuft der Server, gelten sie sofort – sonst beim nächsten Start.') }}</div>{% endif %}
+
+<section class="card">
+  <h2>{{ t('Spiel') }}</h2>
+  <form method="post" action="/server/{{ server.id }}/einstellungen" class="form settings-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="form-grid">
+      <label>{{ t('Schwierigkeit') }}
+        <select name="difficulty">{% for k, v in gs.DIFFICULTIES.items() %}<option value="{{ k }}" {{ 'selected' if server.difficulty == k }}>{{ t(v) }}</option>{% endfor %}</select>
+      </label>
+      <label>{{ t('Spielmodus') }}
+        <select name="gamemode">{% for k, v in gs.GAMEMODES.items() %}<option value="{{ k }}" {{ 'selected' if server.gamemode == k }}>{{ t(v) }}</option>{% endfor %}</select>
+        <span class="hint">{{ t('Gilt für neue Spieler. Bereits bekannte Spieler wechselst du mit /gamemode in der Konsole.') }}</span>
+      </label>
+      <label>{{ t('Sichtweite (Chunks)') }}
+        <input type="number" name="view_distance" min="{{ gs.VIEW_DISTANCE[0] }}" max="{{ gs.VIEW_DISTANCE[1] }}" value="{{ server.view_distance }}">
+        <span class="hint">{{ t('Weniger = flüssiger und weniger Verbindungsabbrüche. Empfohlen: 8.') }}</span>
+      </label>
+      <label>{{ t('Spawn-Schutz (Blöcke)') }}
+        <input type="number" name="spawn_protection" min="{{ gs.SPAWN_PROTECTION[0] }}" max="{{ gs.SPAWN_PROTECTION[1] }}" value="{{ server.spawn_protection }}">
+        <span class="hint">{{ t('Nur OPs dürfen in diesem Umkreis um den Spawn bauen. 0 = aus.') }}</span>
+      </label>
+    </div>
+    <label class="radio"><input type="checkbox" name="pvp" value="1" {{ 'checked' if server.pvp }}> {{ t('PvP – Spieler können sich gegenseitig schaden') }}</label>
+    <label class="radio"><input type="checkbox" name="allow_flight" value="1" {{ 'checked' if server.allow_flight }}> {{ t('Fliegen erlauben (für Mods/Plugins mit Flug, sonst werden Spieler gekickt)') }}</label>
+    <div><button class="btn primary">{{ t('Speichern') }}</button></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>{{ t('Gamerules') }}</h2>
+  <p class="small muted">{{ t('Spielregeln der Welt. Ein Klick genügt – kein Befehl nötig.') }}</p>
+  <form method="post" action="/server/{{ server.id }}/gamerules" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="rule-grid">
+      {% for key, (old, default, label) in gs.GAMERULES.items() %}
+      <label class="switch-row"><input type="checkbox" class="switch" name="{{ key }}" value="1" {{ 'checked' if rules[key] }}><span>{{ t(label) }}</span></label>
+      {% endfor %}
+    </div>
+    <label>{{ t('Wie viel Prozent der Spieler müssen schlafen, damit es Tag wird?') }}
+      <input type="number" name="{{ gs.SLEEP_RULE[0] }}" min="0" max="100" value="{{ rules[gs.SLEEP_RULE[0]] }}" style="max-width: 8rem">
+    </label>
+    <div><button class="btn primary">{{ t('Gamerules speichern') }}</button></div>
+  </form>
+</section>
+
+<section class="card danger-zone">
+  <h2>{{ t('Neue Welt') }}</h2>
+  <p class="small">{{ t('Löscht die aktuelle Welt (mit Nether und End) und erstellt eine neue. Vorher wird automatisch eine Sicherung angelegt – der Admin kann sie wiederherstellen.') }}</p>
+  <form method="post" action="/server/{{ server.id }}/neue-welt" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('Seed (optional)') }}<input name="seed" maxlength="64" placeholder="{{ t('leer = zufällig') }}" autocomplete="off"></label>
+    <label class="radio"><input type="checkbox" name="confirm" value="1" required> {{ t('Ja, die alte Welt darf gelöscht werden.') }}</label>
+    <div><button class="btn danger" {% if busy %}disabled{% endif %}>{{ t('Neue Welt erstellen') }}</button></div>
+  </form>
+</section>
+{% endblock %}

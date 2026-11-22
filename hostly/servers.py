@@ -199,6 +199,23 @@ def extend(conn: sqlite3.Connection, server: sqlite3.Row, days: int, user_id: in
     return price
 
 
+def renew_forecast(conn: sqlite3.Connection, user_id: int) -> dict:
+    """Coins-Prognose (Version 1.3.0): kommende Auto-Verlängerungen (je 7 Tage) und ob die Coins reichen."""
+    from . import coins
+    balance = coins.balance(conn, user_id)
+    rows = conn.execute(
+        "SELECT * FROM servers WHERE owner_id = ? AND state = 'active' AND auto_renew = 1 ORDER BY rented_until",
+        (user_id,)).fetchall()
+    items, left = [], balance
+    for s in rows:
+        price = price_for(conn, model(conn, s["model_id"]), 7).final
+        left -= price
+        items.append({"server": s, "price": price, "enough": left >= 0, "missing": max(0, -left)})
+    weekly = sum(i["price"] for i in items)
+    return {"balance": balance, "items": items, "weekly": weekly,
+            "weeks": (balance // weekly) if weekly else None}
+
+
 def try_auto_renew(conn: sqlite3.Connection, server: sqlite3.Row) -> bool:
     """Am Ablauftag: immer 7 Tage, Rabatte gelten. False = zu wenig Coins."""
     try:

@@ -11,10 +11,10 @@ def test_home_without_login(client):
 
 
 def test_register_logs_in_and_hashes_password(client):
-    r = register(client)
+    r = register(client, onboarded=False)
     assert r.status_code == 303
-    assert r.headers["location"] == "/?msg=welcome"
-    assert "Willkommen bei Hostly, steve" in client.get("/?msg=welcome").text
+    assert r.headers["location"] == "/willkommen"           # Einführung (1.3.0)
+    assert "Willkommen bei Hostly, steve" in client.get("/willkommen").text
     row = conn().execute("SELECT password_hash FROM users WHERE username='steve'").fetchone()
     assert row["password_hash"].startswith("$argon2id$")
     assert "geheim123" not in row["password_hash"]
@@ -80,9 +80,10 @@ def test_no_login_lock_after_failed_attempts(client):
     assert login(client).status_code == 303
 
 
-def test_one_time_account_wipe_migration(client):
+def test_one_time_account_wipe_migration(client, monkeypatch):
     """Migration 5 löscht beim Update einmalig alle Accounts; Codes und Tunnel bleiben."""
     from hostly import db
+    monkeypatch.setattr(db, "MIGRATIONS", db.MIGRATIONS[:6])   # spätere Migrationen sind schon gelaufen
     register(client, "alt")
     c = conn()
     c.execute("INSERT INTO codes (code, coins, max_uses, uses, created_by) VALUES ('aaaa-bbbb-cccc-dddd', 100, 5, 1, 1)")

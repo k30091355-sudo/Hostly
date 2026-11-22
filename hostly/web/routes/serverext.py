@@ -118,6 +118,28 @@ def ext_change(server_id: int, ext_id: int, action: str = Form(...), version_id:
     raise Redirect(f"/server/{server_id}/erweiterungen")
 
 
+@router.get("/server/{server_id}/erweiterungen-updates", response_class=HTMLResponse)
+def ext_updates(server_id: int, ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    require_active(server)
+    return ctx.render("servers/_ext_updates.html", server=server, updates=extensions.find_updates(ctx.conn, server))
+
+
+@router.post("/server/{server_id}/erweiterungen-updates")
+def ext_apply_updates(server_id: int, ext_id: str = Form("all"), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    require_active(server)
+    ctx.check_csrf(csrf)
+    updates = extensions.find_updates(ctx.conn, server)
+    if ext_id != "all":
+        updates = [u for u in updates if str(u["row"]["id"]) == ext_id]
+    if updates:
+        with db.transaction(ctx.conn):
+            extensions.apply_updates(ctx.conn, server, updates)
+            extensions.mark_changed(ctx.conn, server_id, ctx.user["id"])
+    raise Redirect(f"/server/{server_id}/erweiterungen")
+
+
 @router.get("/server/{server_id}/erweiterungen/{ext_id}/versionen", response_class=HTMLResponse)
 def ext_versions(server_id: int, ext_id: int, ctx: Ctx = Depends(get_ctx)):
     server = load(ctx, server_id)
@@ -442,16 +464,25 @@ def stats_tab(server_id: int, ctx: Ctx = Depends(get_ctx)):
 
     server = load(ctx, server_id)
     data = stats.server_stats(ctx.conn, server_id)
+    perf = stats.performance(ctx.conn, server_id)
+    model = ctx.conn.execute("SELECT * FROM models WHERE id = ?", (server["model_id"],)).fetchone()
+    from ... import config, servers as srv
+    mem_limit = int((srv.effective_ram(server, model) + config.CONTAINER_EXTRA_GB) * 1024)
+    cores = model["cpu_limit"]
+    has_perf = any(p["cpu_percent"] is not None or p["tps"] is not None for p in perf)
     return page(ctx, "servers/stats_tab.html", server, data=data,
                 chart24=stats.chart(data["samples"], 24, server["max_players"]),
-                chart7=stats.chart(data["samples"], 24 * 7, server["max_players"]))
+                chart7=stats.chart(data["samples"], 24 * 7, server["max_players"]),
+                has_perf=has_perf, mem_limit=mem_limit, cores=cores,
+                chart_tps=stats.line_chart(perf, "tps", 20, "TPS"),
+                chart_cpu=stats.line_chart(perf, "cpu_percent", cores * 100, "CPU"),
+                chart_mem=stats.line_chart(perf, "mem_mb", mem_limit, "RAM"))
 
 
 @router.post("/server/{server_id}/oeffentlich")
 def set_public(server_id: int, public: str = Form(""), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
     server = load(ctx, server_id)
     ctx.check_csrf(csrf)
-    # Server mit Whitelist erscheinen nicht in der öffentlichen Liste (Fremde könnten eh nicht beitreten)
-    ctx.conn.execute("UPDATE servers SET public_listed = ? WHERE id = ?",
-                     (1 if public and not server["whitelist_enabled"] else 0, server_id))
+    # auch mit Whitelist erlaubt – Besucher können dann eine Whitelist-Anfrage stellen
+    ctx.conn.execute("UPDATE servers SET public_listed = ? WHERE id = ?", (1 if public else 0, server_id))
     raise Redirect(f"/server/{server_id}/statistik")

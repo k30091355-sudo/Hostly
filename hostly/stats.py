@@ -47,3 +47,45 @@ def chart(samples, hours: int, max_players: int) -> Markup:
     return Markup(
         f'<svg class="chart" viewBox="0 0 {w} {h}" role="img" aria-label="Spieler-Verlauf">'
         f'<line x1="0" y1="{h - 0.5}" x2="{w}" y2="{h - 0.5}" class="axis"/>{bars}</svg>')
+
+
+def performance(conn: sqlite3.Connection, server_id: int) -> list:
+    since = fmt(datetime.now(timezone.utc) - timedelta(hours=24))
+    return conn.execute(
+        "SELECT at, cpu_percent, mem_mb, tps FROM player_samples WHERE server_id = ? AND at >= ? ORDER BY at",
+        (server_id, since)).fetchall()
+
+
+def line_chart(samples, key: str, max_value: float, label: str, hours: int = 24) -> Markup:
+    """Linie (Durchschnitt pro Zeitabschnitt) für Leistungswerte; Lücken = Server aus/schläft."""
+    now = datetime.now(timezone.utc)
+    buckets = 72
+    size = timedelta(hours=hours) / buckets
+    start = now - timedelta(hours=hours)
+    sums, counts = [0.0] * buckets, [0] * buckets
+    for s in samples:
+        if s[key] is None:
+            continue
+        at = datetime.strptime(s["at"], FMT).replace(tzinfo=timezone.utc)
+        if at < start:
+            continue
+        i = min(buckets - 1, int((at - start) / size))
+        sums[i] += s[key]
+        counts[i] += 1
+    w, h = 560, 100
+    top = max(max_value, 1e-9)
+    paths, cur = [], []
+    for i in range(buckets):
+        if counts[i]:
+            v = min(sums[i] / counts[i], top)
+            cur.append(f"{i * w / (buckets - 1):.1f},{h - 2 - v / top * (h - 6):.1f}")
+        elif cur:
+            paths.append(cur)
+            cur = []
+    if cur:
+        paths.append(cur)
+    lines = "".join(f'<polyline points="{" ".join(p)}" class="line"/>' if len(p) > 1 else
+                    f'<circle cx="{p[0].split(",")[0]}" cy="{p[0].split(",")[1]}" r="2.5" class="dot"/>' for p in paths)
+    return Markup(
+        f'<svg class="chart" viewBox="0 0 {w} {h}" role="img" aria-label="{label}">'
+        f'<line x1="0" y1="{h - 0.5}" x2="{w}" y2="{h - 0.5}" class="axis"/>{lines}</svg>')
