@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('login.title') }} · Hostly{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('login.title') }}</h1>
+  {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/login" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>{{ t('field.username') }}
+      <input name="username" value="{{ username }}" autocomplete="username" autocapitalize="none" required autofocus>
+    </label>
+    <label>{{ t('field.password') }}
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="btn primary block">{{ t('login.submit') }}</button>
+  </form>
+  <p class="muted small">{{ t('login.forgot') }} <a href="mailto:{{ SUPPORT_EMAIL }}">{{ SUPPORT_EMAIL }}</a></p>
+  <p class="small">{{ t('login.no_account') }} <a href="/registrieren">{{ t('nav.register') }}</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.settings') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('nav.settings') }}</h1>
+{% if user.must_change_password %}
+<div class="alert warn" role="alert">{{ t('settings.must_change') }}</div>
+{% endif %}
+{% if success %}<div class="alert success" role="status">{{ success }}</div>{% endif %}
+
+<div class="grid">
+  <section class="card" id="passwort">
+    <h2>{{ t('settings.password_title') }}</h2>
+    {% if error_password %}<div class="alert error" role="alert">{{ error_password }}</div>{% endif %}
+    <form method="post" action="/einstellungen/passwort" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="text" name="username" value="{{ user.username }}" autocomplete="username" hidden>
+      <label>{{ t('field.old_password') }}
+        <input type="password" name="old_password" autocomplete="current-password" required>
+      </label>
+      <label>{{ t('field.new_password') }}
+        <input type="password" name="new_password" autocomplete="new-password" required minlength="8">
+        <span class="hint">{{ t('register.password_rules') }}</span>
+      </label>
+      <label>{{ t('field.password_repeat') }}
+        <input type="password" name="new_password2" autocomplete="new-password" required minlength="8">
+      </label>
+      <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+
+  {% if not user.must_change_password %}
+  <section class="card" id="benutzername">
+    <h2>{{ t('settings.username_title') }}</h2>
+    {% if error_username %}<div class="alert error" role="alert">{{ error_username }}</div>{% endif %}
+    <form method="post" action="/einstellungen/benutzername" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('field.new_username') }}
+        <input name="username" value="{{ new_username or user.username }}" autocapitalize="none" required
+               minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+">
+        <span class="hint">{{ t('register.username_rules') }}</span>
+      </label>
+      <label>{{ t('field.password_confirm') }}
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+
+  <section class="card" id="darstellung">
+    <h2>{{ t('settings.display_title') }}</h2>
+    <form method="post" action="/einstellungen/darstellung" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('field.language') }}
+        <select name="language">
+          <option value="de" {% if ctx.lang == 'de' %}selected{% endif %}>Deutsch</option>
+          <option value="en" {% if ctx.lang == 'en' %}selected{% endif %}>English</option>
+        </select>
+      </label>
+      <label>{{ t('field.theme') }}
+        <select name="theme">
+          <option value="system" {% if ctx.theme == 'system' %}selected{% endif %}>{{ t('theme.system') }}</option>
+          <option value="light" {% if ctx.theme == 'light' %}selected{% endif %}>{{ t('theme.light') }}</option>
+          <option value="dark" {% if ctx.theme == 'dark' %}selected{% endif %}>{{ t('theme.dark') }}</option>
+        </select>
+      </label>
+      <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

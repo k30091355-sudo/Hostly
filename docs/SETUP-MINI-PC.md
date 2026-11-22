@@ -112,7 +112,30 @@ sudo chown $USER:$USER /srv/hostly
 cd /srv/hostly
 git clone https://github.com/k30091355-sudo/hostly.git app
 ```
-(Programmcode kommt erst nach „fang an“ – bis dahin ist hier nur das Konzept.)
+
+### Hostly starten (ab Stufe 1)
+```
+mkdir -p /srv/hostly/db
+cd /srv/hostly/app
+docker compose up -d --build
+```
+- Test im Windows-Browser: `http://localhost:8000`
+- Auf der Website **sofort deinen eigenen Account erstellen**, dann im Ubuntu-Fenster zum Admin machen:
+```
+docker compose exec web python -m hostly.cli admin DEIN_BENUTZERNAME
+```
+- Eigenes Passwort vergessen? Neues zufälliges Passwort erzeugen:
+```
+docker compose exec web python -m hostly.cli passwort DEIN_BENUTZERNAME
+```
+
+### Hostly aktualisieren (nach jeder neuen Stufe)
+```
+cd /srv/hostly/app
+git pull
+docker compose up -d --build
+```
+Die Datenbank (`/srv/hostly/db`) bleibt dabei erhalten.
 
 ---
 

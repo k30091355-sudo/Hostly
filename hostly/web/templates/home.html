@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+{% if welcome %}
+<div class="alert success">{{ t('home.welcome', name=user.username) }}</div>
+{% endif %}
+
+<section class="hero">
+  <h1>{{ t('home.title') }}</h1>
+  <p class="lead">{{ t('home.lead') }}</p>
+  <div class="actions">
+    {% if user %}
+      <a class="btn primary" href="/einstellungen">{{ t('nav.settings') }}</a>
+    {% else %}
+      <a class="btn primary" href="/registrieren">{{ t('nav.register') }}</a>
+      <a class="btn" href="/login">{{ t('nav.login') }}</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="steps">
+  <div class="card step">
+    <span class="step-num">1</span>
+    <h2>{{ t('home.step1_title') }}</h2>
+    <p>{{ t('home.step1_text') }}</p>
+  </div>
+  <div class="card step">
+    <span class="step-num">2</span>
+    <h2>{{ t('home.step2_title') }}</h2>
+    <p>{{ t('home.step2_text') }}</p>
+  </div>
+  <div class="card step">
+    <span class="step-num">3</span>
+    <h2>{{ t('home.step3_title') }}</h2>
+    <p>{{ t('home.step3_text') }}</p>
+  </div>
+</section>
+
+<p class="muted center">{{ t('home.soon') }}</p>
+{% endblock %}

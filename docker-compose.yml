@@ -1,0 +1,19 @@
+# Hostly starten:   docker compose up -d --build
+# Logs ansehen:     docker compose logs -f web
+services:
+  web:
+    build: .
+    container_name: hostly-web
+    restart: unless-stopped
+    # nur auf dem Mini-PC selbst erreichbar; nach außen geht es über Tailscale Funnel
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /srv/hostly/db:/srv/hostly/db
+    networks:
+      - hostly-int
+    mem_limit: 512m
+
+networks:
+  hostly-int:
+    name: hostly-int

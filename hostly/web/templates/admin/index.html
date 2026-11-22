@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.admin') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('nav.admin') }}</h1>
+
+<div class="stats">
+  <div class="card stat"><span class="stat-value">{{ stats.users }}</span><span class="stat-label">{{ t('admin.users') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.new_users }}</span><span class="stat-label">{{ t('admin.new_users') }}</span></div>
+</div>
+
+<section class="card">
+  <h2>{{ t('admin.users') }}</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>{{ t('field.username') }}</th><th>{{ t('admin.role') }}</th><th>{{ t('admin.registered') }}</th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.username }}</td>
+          <td>{{ t('admin.role_admin') if u.is_admin else t('admin.role_user') }}</td>
+          <td>{{ u.created_at | localtime }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>{{ t('admin.events') }}</h2>
+  {% if events %}
+  <ul class="events">
+    {% for e in events %}
+      <li><span class="muted small">{{ e.created_at | localtime }}</span> · <strong>{{ e.username or '–' }}</strong> · {{ t('event.' ~ e.action) }}{% if e.details %} <span class="muted">({{ e.details }})</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">{{ t('admin.no_events') }}</p>
+  {% endif %}
+</section>
+{% endblock %}

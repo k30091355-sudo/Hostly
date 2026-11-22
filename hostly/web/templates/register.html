@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.register') }} · Hostly{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('nav.register') }}</h1>
+  {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/registrieren" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('field.username') }}
+      <input name="username" value="{{ username }}" autocomplete="username" autocapitalize="none" required autofocus
+             minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+"
+             hx-get="/registrieren/name-pruefen" hx-trigger="input changed delay:400ms" hx-target="#name-hint">
+      <span class="hint">{{ t('register.username_rules') }}</span>
+      <span id="name-hint" aria-live="polite"></span>
+    </label>
+    <label>{{ t('field.password') }}
+      <input type="password" name="password" autocomplete="new-password" required minlength="8">
+      <span class="hint">{{ t('register.password_rules') }}</span>
+    </label>
+    <label>{{ t('field.password_repeat') }}
+      <input type="password" name="password2" autocomplete="new-password" required minlength="8">
+    </label>
+    <button type="submit" class="btn primary block">{{ t('register.submit') }}</button>
+  </form>
+  <p class="small">{{ t('register.have_account') }} <a href="/login">{{ t('nav.login') }}</a></p>
+</div>
+{% endblock %}

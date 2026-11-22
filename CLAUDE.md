@@ -54,7 +54,15 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 8b. Dateimanager, Absturz-Schutz, Vorlagen, Kürzel & Statistik, Serverliste
 9. Feinschliff: Englisch, PWA, Installations-Anleitung
 
-**Aktueller Stand:** Konzept fertig. Nächster Schritt: **Stufe 1**.
+**Aktueller Stand:** Stufe 1 fertig (Code in `hostly/`, Tests in `tests/`). Nächster Schritt: **Stufe 2**.
+
+## Code-Aufbau
+- `hostly/db.py`: SQLite + Migrationen (neue Tabellen = neuer Eintrag in `MIGRATIONS`, nie alte ändern).
+- `hostly/security.py`: Argon2id, Sitzungen (nur Token-Hash in DB), Login-Sperre, CSRF (Double-Submit-Cookie, Feld `csrf`).
+- `hostly/web/deps.py`: `Ctx` pro Anfrage (`ctx.require_login()`, `ctx.require_admin()`, `ctx.check_csrf()`, `ctx.render()`).
+- `hostly/web/routes/`: Seiten. Texte nur über `hostly/locales/de.json` + `en.json`.
+- `hostly/cli.py`: Admin setzen / Passwort zurücksetzen per Kommandozeile.
+- Tests: `pytest` (alle müssen grün sein).
 
 ## Werkzeuge in diesem Repo
 - `caveman`-Plugin (über `.claude/settings.json`) für kürzere Antworten. Für Erklärungen an den Besitzer trotzdem verständlich bleiben.
