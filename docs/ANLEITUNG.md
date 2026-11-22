@@ -63,6 +63,8 @@ Nach dem Neustart öffnet sich automatisch ein Fenster „Ubuntu“ (falls nicht
 1. **„Enter new UNIX username“**: einen kurzen Namen in Kleinbuchstaben eingeben, z. B. `kevin` → `Enter`.
 2. **„New password“**: ein Passwort ausdenken (wird beim Tippen nicht angezeigt) → `Enter` → nochmal eingeben → `Enter`.
 3. **Benutzername und Passwort aufschreiben!** Das Passwort brauchst du bei jedem `sudo`-Befehl.
+   - Tipp: Passwort **nur aus Buchstaben und Zahlen** (z. B. `Minecraft2026`), keine Umlaute/Sonderzeichen.
+   - Test im Ubuntu-Fenster: `sudo -v` → Passwort eingeben. Kommt **„Sorry, try again“**, wurde das Passwort nicht gespeichert. Dann: `Strg + C`, PowerShell (Administrator) öffnen, `wsl -d Ubuntu-24.04 -u root` eingeben, dann `passwd DEINNAME` → neues Passwort 2× eingeben → `exit`.
 
 ✅ Du siehst eine Zeile wie `kevin@MINIPC:~$` – das ist 🐧 **Ubuntu**.
 
