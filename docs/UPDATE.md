@@ -8,6 +8,14 @@
 
 ## Besondere Hinweise – neuestes Update zuerst
 
+### Update 4 (22.11.2026, nachts) – playit-Verbindung + Konsole
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
+- **Verbindungsabbrüche („Timed out“ ca. 30 Sekunden nach dem Betreten):** Der playit-Agent läuft jetzt direkt im Netz von WSL statt in einem eigenen Docker-Netz, damit große Datenpakete (Welt-Daten) nicht hängen bleiben. Außerdem hat er mehr Arbeitsspeicher (512 MB statt 128 MB), und Server schicken beim Betreten weniger Daten auf einmal (Sichtweite 8 statt 10 Chunks).
+- Deine Tunnel im playit-Dashboard bleiben gleich (weiter `172.30.0.11:25565` usw.).
+- **Konsole:** Die Antworten des Servers stehen jetzt immer sichtbar unter der Eingabezeile. Mit den Pfeiltasten ↑ ↓ holst du frühere Befehle zurück. Das Protokoll springt nicht mehr weg, während du etwas markierst.
+
+👉 **Nach dem Update:** Server einmal **neu starten**, damit die neue Sichtweite gilt.
+
 ### Update 2 (22.11.2026, abends) – Fehlerbehebungen
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten. Deine Accounts und Server bleiben.
 - **Behoben:** Server startete mit Fehler `AccessDeniedException: ./world/session.lock` (falsche Ordner-Rechte). Wird beim Update automatisch repariert.
