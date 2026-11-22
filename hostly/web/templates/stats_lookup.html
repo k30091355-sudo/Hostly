@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Server-Statistiken') }} · Hostly{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('Server-Statistiken') }}</h1>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <form method="get" action="/statistik" class="form">
+    <label>{{ t('Server-Kürzel') }}<input name="code" class="mono" placeholder="k7x2pq" maxlength="12" required autocapitalize="none"></label>
+    <button class="btn primary block">{{ t('Anzeigen') }}</button>
+  </form>
+  <p class="small muted">{{ t('Das Kürzel bekommst du vom Server-Besitzer oder im Spiel mit /trigger code.') }}</p>
+</div>
+{% endblock %}

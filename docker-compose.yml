@@ -31,7 +31,34 @@ services:
       hostly-mc:
         ipv4_address: 172.30.0.2
     mem_limit: 384m
+    cpus: 1.0               # Backups/ZIPs laufen langsam und leise
     stop_grace_period: 90s
+
+  # playit.gg-Agenten (Minecraft von außen erreichbar). Starten nur, wenn in .env
+  # COMPOSE_PROFILES=playit und die Schlüssel eingetragen sind (siehe docs/SETUP-MINI-PC.md).
+  playit-1:
+    image: ghcr.io/playit-cloud/playit-agent:0.16
+    container_name: hostly-playit-1
+    restart: unless-stopped
+    profiles: ["playit"]
+    environment:
+      - SECRET_KEY=${PLAYIT_SECRET_1:-}
+    networks:
+      hostly-mc:
+        ipv4_address: 172.30.0.3
+    mem_limit: 128m
+
+  playit-2:
+    image: ghcr.io/playit-cloud/playit-agent:0.16
+    container_name: hostly-playit-2
+    restart: unless-stopped
+    profiles: ["playit2"]
+    environment:
+      - SECRET_KEY=${PLAYIT_SECRET_2:-}
+    networks:
+      hostly-mc:
+        ipv4_address: 172.30.0.4
+    mem_limit: 128m
 
 networks:
   hostly-int:

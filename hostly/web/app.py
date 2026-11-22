@@ -9,8 +9,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .. import config, db, security
 from ..i18n import translate
-from .deps import CsrfError, Redirect, cookie_secure, templates
-from .routes import account, admin, auth, coins, myservers, pages, shop
+from .deps import CsrfError, MaintenanceError, Redirect, cookie_secure, templates
+from .routes import account, admin, auth, coins, events, myservers, pages, public, serverext, shop
 
 
 @asynccontextmanager
@@ -34,6 +34,9 @@ app.include_router(admin.router)
 app.include_router(coins.router)
 app.include_router(shop.router)
 app.include_router(myservers.router)
+app.include_router(serverext.router)
+app.include_router(events.router)
+app.include_router(public.router)
 
 
 @app.middleware("http")
@@ -73,6 +76,12 @@ def _lang(request: Request) -> str:
 async def handle_csrf(request: Request, exc: CsrfError):
     lang = _lang(request)
     return _simple_page(request, lang, 400, translate(lang, "err.csrf"))
+
+
+@app.exception_handler(MaintenanceError)
+async def handle_maintenance(request: Request, exc: MaintenanceError):
+    lang = _lang(request)
+    return _simple_page(request, lang, 503, translate(lang, "Hostly wird gerade gewartet. Du kannst gerade nichts kaufen oder ändern – bitte versuch es später noch einmal."))
 
 
 @app.exception_handler(StarletteHTTPException)

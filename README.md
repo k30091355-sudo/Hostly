@@ -3,9 +3,9 @@
 Kostenlose Minecraft-Hosting-Plattform für einen Mini-PC (Windows 11 + WSL2, 16 GB RAM).
 Spieler lösen Codes ein, bekommen Coins und mieten damit Minecraft-Server.
 
-**Aktueller Stand:** Stufe 1–5 fertig: Website & Login, Coins & Codes, Server kaufen/steuern/Konsole, Ablauf & Archiv, Komfort (MOTD, Icon, Whitelist, OP, Profilbild, Download).
+**Aktueller Stand:** Alle Stufen (1–9) fertig. Installation: [docs/SETUP-MINI-PC.md](docs/SETUP-MINI-PC.md).
 
-**Starten / Aktualisieren:** siehe [docs/SETUP-MINI-PC.md](docs/SETUP-MINI-PC.md), Kapitel 5.
+**Starten / Aktualisieren:** siehe [docs/SETUP-MINI-PC.md](docs/SETUP-MINI-PC.md), Kapitel 5 und 7.
 
 **Tests (für Entwickler):** `pip install -r requirements-dev.txt && pytest`
 

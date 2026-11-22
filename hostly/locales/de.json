@@ -10,7 +10,6 @@
   "nav.support": "Support",
   "nav.logout": "Abmelden",
   "nav.theme": "Hell/Dunkel umschalten",
-
   "home.title": "Dein eigener Minecraft-Server – kostenlos",
   "home.lead": "Code einlösen, Coins sammeln, Server mieten. So einfach ist Hostly.",
   "home.welcome": "Willkommen bei Hostly, {name}! Dein Account ist bereit.",
@@ -21,7 +20,6 @@
   "home.step3_title": "Server mieten",
   "home.step3_text": "Mit deinen Coins mietest du einen Minecraft-Server – Holz, Eisen oder Diamant.",
   "home.soon": "Codes einlösen und Server mieten kommt bald.",
-
   "field.username": "Benutzername",
   "field.password": "Passwort",
   "field.password_repeat": "Passwort wiederholen",
@@ -31,18 +29,15 @@
   "field.password_confirm": "Zur Bestätigung: dein Passwort",
   "field.language": "Sprache",
   "field.theme": "Design",
-
   "login.title": "Login",
   "login.submit": "Einloggen",
   "login.forgot": "Passwort vergessen? Schreib eine E-Mail an",
   "login.no_account": "Noch kein Account?",
-
   "register.submit": "Account erstellen",
   "register.username_rules": "3–20 Zeichen: Buchstaben, Zahlen und _",
   "register.password_rules": "Mindestens 8 Zeichen",
   "register.name_free": "✓ Benutzername ist frei",
   "register.have_account": "Schon einen Account?",
-
   "settings.password_title": "Passwort ändern",
   "settings.username_title": "Benutzername ändern",
   "settings.display_title": "Sprache & Design",
@@ -51,11 +46,9 @@
   "settings.saved_username": "Benutzername geändert.",
   "settings.saved_display": "Gespeichert.",
   "settings.must_change": "Du hast ein neues Passwort vom Admin bekommen. Bitte wähle jetzt ein eigenes Passwort.",
-
   "theme.system": "Wie Gerät",
   "theme.light": "Hell",
   "theme.dark": "Dunkel",
-
   "admin.users": "User",
   "admin.new_users": "Neue User (7 Tage)",
   "admin.role": "Rolle",
@@ -64,16 +57,13 @@
   "admin.registered": "Registriert",
   "admin.events": "Letzte Ereignisse",
   "admin.no_events": "Noch keine Ereignisse.",
-
   "event.register": "hat sich registriert",
   "event.password_changed": "hat das Passwort geändert",
   "event.username_changed": "hat den Benutzernamen geändert",
   "event.admin_set": "wurde zum Admin gemacht",
   "event.password_reset": "Passwort wurde zurückgesetzt",
-
   "error.title": "Hoppla",
   "error.home": "Zur Startseite",
-
   "err.username_length": "Der Benutzername muss 3–20 Zeichen lang sein.",
   "err.username_chars": "Erlaubt sind nur Buchstaben, Zahlen und _.",
   "err.username_taken": "Dieser Benutzername ist schon vergeben.",
@@ -86,5 +76,14 @@
   "err.locked": "Zu viele Fehlversuche. Bitte warte 15 Minuten.",
   "err.csrf": "Das Formular ist abgelaufen. Bitte lade die Seite neu und versuche es nochmal.",
   "err.not_found": "Diese Seite gibt es nicht.",
-  "err.generic": "Da ist etwas schiefgelaufen."
+  "err.generic": "Da ist etwas schiefgelaufen.",
+  "event.codes_created": "hat Codes erstellt",
+  "event.server_bought": "hat einen Server gemietet",
+  "event.server_deleted": "Server gelöscht",
+  "event.admin_coins": "Admin-Buchung",
+  "event.coins_transferred": "hat Coins übertragen",
+  "event.server_transferred": "hat einen Server übertragen",
+  "event.account_deleted": "hat den Account gelöscht",
+  "event.maintenance": "Wartungsmodus",
+  "event.server_version": "hat Version/Typ gewechselt"
 }

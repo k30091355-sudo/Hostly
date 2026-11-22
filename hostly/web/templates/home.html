@@ -11,15 +11,29 @@
 </div>
 {% endfor %}
 {% for n in notes %}
-<div class="alert {{ 'warn' if n.kind in ('auto_renew_failed', 'archived') else 'success' }} banner-row">
+<div class="alert {{ 'warn' if n.kind in ('auto_renew_failed', 'archived', 'crash', 'ram_promo_end') else 'success' }} banner-row">
   <span>{{ n.text }}</span>
   <span class="banner-actions">
     {% if n.server_id and n.kind in ('archived', 'auto_renew_failed') %}<a class="btn small" href="/server/{{ n.server_id }}/miete">{{ t('Reaktivieren') }}</a>{% endif %}
+    {% if n.server_id and n.kind == 'crash' %}<a class="btn small" href="/server/{{ n.server_id }}/konsole">{{ t('Konsole') }}</a>{% endif %}
+    {% if n.kind == 'space_free' %}<a class="btn small" href="/kaufen">{{ t('Server kaufen') }}</a>{% endif %}
     <form method="post" action="/meldung/{{ n.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
       <button class="link-btn small" aria-label="{{ t('Schließen') }}">✕</button></form>
   </span>
 </div>
 {% endfor %}
+
+{% for p, label in promos %}
+<section class="card feature promo">
+  <div class="feature-text">
+    <div class="feature-kicker">🔥 {{ t('Aktion') }}</div>
+    <h2>{{ p.title }}: {{ label }}</h2>
+    <p class="small">{{ t('bis') }} {{ p.ends_at | localtime }}</p>
+  </div>
+  <a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>
+</section>
+{% endfor %}
+{% for g in giveaways %}{% include "_giveaway.html" %}{% endfor %}
 
 <section class="hero">
   <h1>{{ t('home.title') }}</h1>
@@ -35,9 +49,10 @@
   </div>
 </section>
 
-<section class="steps">
+<section class="steps" id="so-gehts">
   <div class="card step"><span class="step-num">1</span><h2>{{ t('home.step1_title') }}</h2><p>{{ t('home.step1_text') }}</p></div>
   <div class="card step"><span class="step-num">2</span><h2>{{ t('home.step2_title') }}</h2><p>{{ t('home.step2_text') }}</p></div>
   <div class="card step"><span class="step-num">3</span><h2>{{ t('home.step3_title') }}</h2><p>{{ t('home.step3_text') }}</p></div>
 </section>
+{% if capacity_text %}<p class="center small muted">{{ capacity_text }}</p>{% endif %}
 {% endblock %}

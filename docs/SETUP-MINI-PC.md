@@ -4,6 +4,10 @@
 > **Windows bleibt installiert, keine Daten gehen verloren** (ENTSCHIEDEN).
 > Befehle in `grauen Kästen` werden in **PowerShell (als Administrator)** oder im **Ubuntu-Fenster** eingegeben – steht jeweils dabei.
 > Dauer gesamt: ca. 1–2 Stunden (je nach Internet).
+>
+> **Kurzfassung:** Kapitel 1–4 (WSL + Docker) → Kapitel 5 (Hostly starten, eigenen Account anlegen) →
+> Kapitel 6 (Tailscale: Website von außen) → Kapitel 7 (playit: Minecraft von außen, Tunnel im Admin-Bereich eintragen) →
+> Kapitel 8–9 (Autostart, leise) → Checkliste in Kapitel 11.
 
 ---
 
@@ -116,7 +120,7 @@ git clone https://github.com/k30091355-sudo/hostly.git app
 ### Hostly starten
 Ordner anlegen (einmalig):
 ```
-mkdir -p /srv/hostly/db /srv/hostly/uploads /srv/hostly/servers /srv/hostly/archives /srv/hostly/downloads
+mkdir -p /srv/hostly/db /srv/hostly/uploads /srv/hostly/servers /srv/hostly/archives /srv/hostly/downloads /srv/hostly/backups /srv/hostly/db-backups
 ```
 Starten:
 ```
@@ -129,6 +133,7 @@ docker compose up -d --build
 - Im Admin-Bereich → **Tunnel**: deine playit-Tunnel eintragen (ohne Tunnel kann niemand kaufen).
 - Im Admin-Bereich → **Codes**: Codes erstellen und verteilen.
 - Der erste Server-Kauf lädt einmalig das Minecraft-Image herunter (ca. 1 GB, dauert ein paar Minuten).
+- Am Handy: Website öffnen → Browser-Menü → **„Zum Startbildschirm hinzufügen“** → Hostly ist wie eine App.
 
 Falls nötig (Notfall-Befehle im Ubuntu-Fenster):
 ```
@@ -171,14 +176,34 @@ sudo tailscale funnel --bg 8000
 ---
 
 ## 7. playit.gg (Minecraft von außen)
-- Zwei playit-Agenten laufen später als Docker-Container (je Account einer).
-- Beim ersten Start zeigt jeder Agent einen **Link zum „Claimen“** → mit Account 1 bzw. 2 anmelden.
-- Im playit-Dashboard Tunnel anlegen:
-  - Typ: **Minecraft Java**
-  - Lokale Adresse: fester Tunnel-Platz, z. B. `172.30.0.11`, Port `25565` (siehe TECHNIK.md Kapitel 4.2)
-- Öffentliche Adressen notieren → im Hostly-Admin-Bereich eintragen.
+Die playit-Agenten laufen als Docker-Container und gehören zu Hostly (siehe `docker-compose.yml`).
 
----
+**1. Schlüssel holen** (Browser, kostenloser playit-Account):
+- Auf playit.gg einloggen → **Agents** → **Add Agent** → Art **Docker** wählen.
+- Es wird ein **Secret Key** angezeigt (lange Zeichenkette) → kopieren.
+- Für den zweiten playit-Account dasselbe nochmal (optional).
+
+**2. Schlüssel eintragen** (Ubuntu-Fenster):
+```
+cd /srv/hostly/app
+cp .env.example .env
+nano .env
+```
+- Hinter `PLAYIT_SECRET_1=` den Schlüssel einfügen (Rechtsklick = Einfügen).
+- Zweiter Account: Schlüssel bei `PLAYIT_SECRET_2=` einfügen und `COMPOSE_PROFILES=playit,playit2` schreiben.
+- Speichern: `Strg+O`, `Enter`, dann `Strg+X`.
+```
+docker compose up -d
+```
+
+**3. Tunnel anlegen** (playit-Dashboard im Browser), für jeden Server-Platz einen:
+- Typ: **Minecraft Java**
+- Lokale Adresse: **`172.30.0.11`**, Port **`25565`** (nächster Tunnel: `172.30.0.12`, dann `.13` …)
+- Die öffentliche Adresse (z. B. `blue-cat.joinmc.link`) notieren.
+
+**4. In Hostly eintragen:** Admin-Bereich → **Tunnel** → Name, Account (1/2), öffentliche Adresse, interner Platz (Hostly schlägt den nächsten freien vor).
+
+> Wie viele Tunnel? So viele, wie gleichzeitig Server laufen sollen. Mit 12 GB passen z. B. 4× Holz – also 4 Tunnel.
 
 ## 8. Autostart beim Hochfahren
 **Ziel:** Nach jedem Windows-Neustart läuft Hostly wieder – auch ohne Anmeldung.
@@ -217,11 +242,11 @@ sudo tailscale funnel --bg 8000
 
 ---
 
-## 10. Leise-Grenze ermitteln (gemeinsam)
-1. Alles läuft, keine Spieler online, alle Server eingefroren → Lüfter sollte leise sein.
-2. Hostly startet einen Testlauf mit 10 % CPU, dann 20 %, 30 % … (je 2 Minuten).
-3. Du sagst, ab wann der Lüfter hörbar wird.
-4. Eine Stufe darunter = **Leise-Grenze** → wird gespeichert (für Backups ab 06:00 und Downloads).
+## 10. Leise-Betrieb (nichts zu tun)
+Hostly ist von sich aus leise eingestellt – du musst nichts messen:
+- Server ohne Spieler **frieren nach 5 Minuten ein** (praktisch 0 % CPU).
+- **Backups** laufen nachts ab 2 Uhr mit niedrigster Priorität und gedrosselt (ca. 5 MB/s).
+- Downloads (ZIP) werden mit niedrigster Priorität gepackt; der worker darf höchstens 1 CPU-Kern benutzen.
 
 ---
 
@@ -232,7 +257,9 @@ sudo tailscale funnel --bg 8000
 - [ ] Tailscale verbunden
 - [ ] playit-Agenten geclaimt, Tunnel angelegt, Adressen notiert
 - [ ] Autostart nach Neustart getestet (ohne Anmeldung)
-- [ ] Energieoptionen gesetzt, Leise-Grenze ermittelt
+- [ ] Energieoptionen gesetzt
+- [ ] Hostly läuft (`docker compose ps` zeigt web, worker, playit), eigener Account ist Admin
+- [ ] Tunnel im Admin-Bereich eingetragen, Test-Server gekauft und mit Minecraft verbunden
 - [ ] Nutzungszeit 06:00–24:00 gesetzt
 
 ---

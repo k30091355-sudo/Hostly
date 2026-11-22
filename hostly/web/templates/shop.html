@@ -3,16 +3,24 @@
 {% block content %}
 <h1>{{ t('Server kaufen') }}</h1>
 {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+{% if request.query_params.get('vorgemerkt') %}<div class="alert success">{{ t('Vorgemerkt! Sobald Platz frei ist, siehst du eine Meldung auf der Startseite.') }}</div>{% endif %}
 
 <div class="table-wrap card">
   <table class="compare">
     <thead><tr><th></th>{% for m in models %}<th>{{ t(m.name) }}</th>{% endfor %}</tr></thead>
     <tbody>
-      <tr><th>RAM</th>{% for m in models %}<td>{{ m.ram_gb | int }} GB</td>{% endfor %}</tr>
+      <tr><th>RAM</th>{% for m in models %}<td>{{ m.ram_gb | int }} GB{% if ram_promo[m.id] %} <span class="pill on">+{{ '%g' % ram_promo[m.id] }} GB!</span>{% endif %}</td>{% endfor %}</tr>
       <tr><th>{{ t('Spieler') }}</th>{% for m in models %}<td>{{ m.max_players }}</td>{% endfor %}</tr>
       <tr><th>{{ t('Preis/Tag') }}</th>{% for m in models %}<td>{{ m.price_per_day }} Coins</td>{% endfor %}</tr>
-      <tr><th>{{ t('Aktion') }}</th>{% for m in models %}<td>{{ '−%d %%' % promo[m.id] if promo[m.id] else '–' }}</td>{% endfor %}</tr>
-      <tr><th>{{ t('Platz frei') }}</th>{% for m in models %}<td>{{ '✓' if available[m.id] else '✗' }}</td>{% endfor %}</tr>
+      <tr><th>{{ t('Aktion') }}</th>{% for m in models %}<td>{% if promo[m.id] %}<span class="pill on">−{{ promo[m.id] }} %</span>{% else %}–{% endif %}</td>{% endfor %}</tr>
+      <tr><th>{{ t('Platz frei') }}</th>{% for m in models %}<td>
+        {% if available[m.id] %}✓{% else %}✗
+          {% if user %}
+            {% if m.id in waiting %}<div class="small muted">{{ t('vorgemerkt') }}</div>
+            {% else %}<form method="post" action="/kaufen/vormerken"><input type="hidden" name="csrf" value="{{ csrf }}">
+              <input type="hidden" name="model_id" value="{{ m.id }}"><button class="link-btn small">{{ t('Benachrichtige mich') }}</button></form>{% endif %}
+          {% endif %}
+        {% endif %}</td>{% endfor %}</tr>
     </tbody>
   </table>
 </div>
@@ -32,12 +40,26 @@
     {% endfor %}
   </fieldset>
 
-  <fieldset class="choice">
-    <legend>{{ t('2. Server-Typ') }}</legend>
+  <fieldset class="choice templates">
+    <legend>{{ t('2. Vorlage oder Server-Typ') }}</legend>
+    <label class="choice-card">
+      <input type="radio" name="template" value="" {% if not form.template %}checked{% endif %} data-toggle-types="1">
+      <span><strong>{{ t('Selbst wählen') }}</strong><br><span class="small muted">{{ t('Vanilla, Paper oder Fabric ohne Extras') }}</span></span>
+    </label>
+    {% for key, tpl in templates.items() %}
+      <label class="choice-card">
+        <input type="radio" name="template" value="{{ key }}" {% if form.template == key %}checked{% endif %} data-toggle-types="0">
+        <span><strong>{{ t(tpl.name) }}</strong> <span class="pill">{{ tpl.type | capitalize }}</span><br><span class="small muted">{{ t(tpl.text) }}</span></span>
+      </label>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset class="choice" id="type-choice">
+    <legend>{{ t('Server-Typ') }}</legend>
     {% for ty in types %}
       <label class="choice-card">
         <input type="radio" name="server_type" value="{{ ty }}" {% if form.type == ty %}checked{% endif %}>
-        <span><strong>{{ ty | capitalize }}</strong><br><span class="small muted">{{ {'VANILLA': t('Original-Minecraft'), 'PAPER': t('Plugins, schnell'), 'FABRIC': t('Mods')}[ty] }}</span></span>
+        <span><strong>{{ ty | capitalize }}</strong><br><span class="small muted">{{ {'VANILLA': t('Original-Minecraft, Datapacks'), 'PAPER': t('Plugins, schnell'), 'FABRIC': t('Mods')}[ty] }}</span></span>
       </label>
     {% endfor %}
   </fieldset>
@@ -47,13 +69,21 @@
     <span class="hint">{{ t('Ab 2 Tagen gibt es Rabatt: Tage = Prozent, bis 50 %.') }}</span>
   </label>
 
-  <label>{{ t('4. Servername') }}
+  <fieldset class="np">
+    <legend>{{ t('4. Nachtpause (optional)') }}</legend>
+    <label class="radio"><input type="checkbox" name="np_on" value="1" {% if form.np_on %}checked{% endif %}> {{ t('Server nachts automatisch ausschalten – dafür Coins zurück (1 % pro Stunde)') }}</label>
+    <div class="np-times">
+      <label>{{ t('von') }} <select name="np_start">{% for h in range(24) %}<option value="{{ h }}" {% if h == form.np_start %}selected{% endif %}>{{ '%02d' % h }}:00</option>{% endfor %}</select></label>
+      <label>{{ t('bis') }} <select name="np_end">{% for h in range(24) %}<option value="{{ h }}" {% if h == form.np_end %}selected{% endif %}>{{ '%02d' % h }}:00</option>{% endfor %}</select></label>
+    </div>
+  </fieldset>
+
+  <label>{{ t('5. Servername') }}
     <input name="name" value="{{ form.name }}" maxlength="32" required placeholder="{{ t('z. B. Mein Survival') }}">
   </label>
+  <label class="radio"><input type="checkbox" name="public" value="1" {% if form.public %}checked{% endif %}> {{ t('In der öffentlichen Serverliste zeigen') }}</label>
 
-  <div id="price" aria-live="polite">
-    {% include "_price.html" %}
-  </div>
+  <div id="price" aria-live="polite">{% include "_price.html" %}</div>
 
   {% if user %}
     <button type="submit" class="btn primary block">{{ t('Jetzt kaufen') }}</button>

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Statistik') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+<div class="grid">
+  <section class="card">
+    <h2>{{ t('Server-Kürzel') }}</h2>
+    <p class="big mono">{{ server.short_code }}</p>
+    <p class="small muted">{{ t('Jeder mit dem Kürzel kann die Statistiken sehen (auch Spielernamen). Im Spiel zeigt /trigger code das Kürzel an.') }}</p>
+    <div class="copy-row"><a class="btn" href="/s/{{ server.short_code }}">{{ t('Statistiken ansehen') }}</a>
+      <button type="button" class="btn" data-copy="{{ request.base_url }}s/{{ server.short_code }}">{{ t('Link kopieren') }}</button></div>
+  </section>
+  <section class="card">
+    <h2>{{ t('Öffentliche Serverliste') }}</h2>
+    <form method="post" action="/server/{{ server.id }}/oeffentlich" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="radio"><input type="checkbox" name="public" value="1" {% if server.public_listed %}checked{% endif %}> {{ t('Meinen Server in der öffentlichen Serverliste zeigen') }}</label>
+      <button class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+    <a href="/serverliste" class="small">{{ t('Zur Serverliste') }}</a>
+  </section>
+</div>
+{% endblock %}

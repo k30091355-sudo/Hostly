@@ -35,7 +35,8 @@ def main() -> None:
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     db.init_db()
     fix_db_owner()
-    for d in (config.SERVERS_DIR, config.ARCHIVES_DIR, config.DOWNLOADS_DIR, config.UPLOADS_DIR / "icons"):
+    for d in (config.SERVERS_DIR, config.ARCHIVES_DIR, config.DOWNLOADS_DIR, config.UPLOADS_DIR / "icons",
+              config.DATA_DIR / "backups"):
         d.mkdir(parents=True, exist_ok=True)
 
     w = Worker(DockerOps())
@@ -67,6 +68,12 @@ def main() -> None:
     sched.add_job(tasks.check_expiry, "interval", seconds=60, args=[w], max_instances=1, coalesce=True)
     sched.add_job(tasks.cleanup_downloads, "interval", hours=1, max_instances=1, coalesce=True)
     sched.add_job(tasks.cleanup_db, "cron", hour=4, minute=17, args=[w])
+    for func in (tasks.night_pauses, tasks.draw_giveaways, tasks.end_ram_promotions, tasks.notify_waitlist):
+        sched.add_job(func, "interval", seconds=60, args=[w], max_instances=1, coalesce=True)
+    sched.add_job(tasks.nightly_backups, "interval", minutes=10, args=[w], max_instances=1, coalesce=True)
+    sched.add_job(tasks.cleanup_backups, "cron", hour=6, minute=30, args=[w])
+    sched.add_job(tasks.backup_database, "cron", hour=2, minute=3)
+    sched.add_job(tasks.disk_usage, "cron", hour=5, minute=41, args=[w])
     log.info("hostly-worker läuft")
     # beim Start sofort einmal prüfen (holt Verpasstes nach, z. B. nach Stromausfall)
     tasks.check_expiry(w)

@@ -1,12 +1,16 @@
 """Zeitgesteuerte Aufgaben des workers: Status, Join-Verlauf, Ablauf, Aufräumen."""
 import logging
+import random
 import re
+import shutil
+import sqlite3
 import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from .. import config, db, minecraft, rcon, servers
-from ..timeutil import fmt, now_sql
+from .. import coins, config, db, minecraft, nightpause, rcon, servers
+from ..timeutil import fmt, now, now_sql, parse
+from . import files
 
 log = logging.getLogger("hostly.worker")
 
@@ -36,14 +40,50 @@ def update_status(w, conn, server_id: int) -> None:
                 players = ", ".join(p.strip() for p in m.group(3).split(",") if p.strip())
         except rcon.RconError:
             pass
+    restarts = st.get("restart_count", 0)
+    old = conn.execute("SELECT restart_count FROM server_status WHERE server_id = ?", (server_id,)).fetchone()
     conn.execute(
-        """INSERT INTO server_status (server_id, running, paused, health, players_online, players_max, players, checked_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """INSERT INTO server_status (server_id, running, paused, health, players_online, players_max, players,
+                                      checked_at, restart_count)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(server_id) DO UPDATE SET running = excluded.running, paused = excluded.paused,
              health = excluded.health, players_online = excluded.players_online,
-             players_max = excluded.players_max, players = excluded.players, checked_at = excluded.checked_at""",
-        (server_id, int(st["running"]), int(paused), st["health"], online, model["max_players"], players, now_sql()),
+             players_max = excluded.players_max, players = excluded.players, checked_at = excluded.checked_at,
+             restart_count = excluded.restart_count""",
+        (server_id, int(st["running"]), int(paused), st["health"], online, model["max_players"], players, now_sql(),
+         restarts),
     )
+    if old is not None and restarts > old["restart_count"]:
+        handle_crash(w, conn, server)
+
+
+def handle_crash(w, conn, server) -> None:
+    """Absturz-Schutz: Docker startet automatisch neu. Nach 3 Abstürzen in 10 Minuten ist Schluss."""
+    excerpt = ""
+    if hasattr(w.ops, "logs_tail"):
+        excerpt = w.ops.logs_tail(minecraft.container_name(server["id"]), 25)[-3000:]
+    conn.execute("INSERT INTO crashes (server_id, log_excerpt) VALUES (?, ?)", (server["id"], excerpt))
+    recent = conn.execute(
+        "SELECT COUNT(*) FROM crashes WHERE server_id = ? AND created_at > datetime('now', '-10 minutes')",
+        (server["id"],)).fetchone()[0]
+    if recent >= 3:
+        w.ops.stop(minecraft.container_name(server["id"]), timeout=30)
+        conn.execute("UPDATE servers SET crash_locked = 1 WHERE id = ?", (server["id"],))
+        db.notify(conn, server["owner_id"], "crash",
+                  f"„{server['name']}“ ist 3× hintereinander abgestürzt und wurde angehalten. "
+                  "Schau in die Konsole (Reiter „Konsole“) und starte ihn dann neu.", server["id"])
+    else:
+        db.notify(conn, server["owner_id"], "crash",
+                  f"„{server['name']}“ ist abgestürzt und wurde automatisch neu gestartet.", server["id"])
+
+
+def record_samples(conn) -> None:
+    """Spielerzahlen für die Statistik (1× pro Minute, 8 Tage aufbewahren)."""
+    conn.execute(
+        """INSERT INTO player_samples (server_id, at, running, players)
+           SELECT st.server_id, ?, st.running, st.players_online FROM server_status st
+           JOIN servers s ON s.id = st.server_id WHERE s.state = 'active'""", (now_sql(),))
+    conn.execute("DELETE FROM player_samples WHERE at < datetime('now', '-8 days')")
 
 
 def status_all(w) -> None:
@@ -55,6 +95,7 @@ def status_all(w) -> None:
                 read_log(conn, row["id"])
             except Exception:
                 log.exception("Status für Server %s fehlgeschlagen", row["id"])
+        record_samples(conn)
     finally:
         conn.close()
 
@@ -129,6 +170,8 @@ def check_expiry(w) -> None:
     """Abgelaufene Server: Auto-Verlängern versuchen, sonst archivieren."""
     conn = w.conn()
     try:
+        if db.get_setting(conn, "maintenance_mode") == "1":
+            return  # im Wartungsmodus werden Abläufe danach nachgeholt
         due = conn.execute(
             "SELECT * FROM servers WHERE state = 'active' AND rented_until <= ?", (now_sql(),)
         ).fetchall()
@@ -175,5 +218,184 @@ def cleanup_db(w) -> None:
         conn.execute("DELETE FROM jobs WHERE status IN ('done', 'error') AND created_at < datetime('now', '-30 days')")
         conn.execute("DELETE FROM sessions WHERE expires_at <= datetime('now')")
         conn.execute("DELETE FROM login_attempts WHERE created_at < datetime('now', '-1 day')")
+    finally:
+        conn.close()
+
+
+# ---------- Nachtpause ----------
+
+def night_pauses(w, current: datetime | None = None) -> None:
+    current = current or now()
+    conn = w.conn()
+    try:
+        # 1) beendete Pausen abrechnen
+        for log_row in conn.execute("SELECT * FROM night_pause_log WHERE status = 'laeuft' AND end_at <= ?",
+                                    (fmt(current),)).fetchall():
+            with db.transaction(conn):
+                server = w.load(conn, log_row["server_id"])
+                if server["state"] != "active" or server["night_pause_start"] is None:
+                    conn.execute("UPDATE night_pause_log SET status = 'abgebrochen' WHERE id = ?", (log_row["id"],))
+                    continue
+                hours = nightpause.real_hours(parse(log_row["start_at"]), parse(log_row["end_at"]))
+                amount = nightpause.refund(server["paid_total"], server["paid_days"], hours, server["discount_percent"])
+                s_h, e_h = parse(log_row["start_at"]).astimezone(nightpause.tz()).hour, \
+                    parse(log_row["end_at"]).astimezone(nightpause.tz()).hour
+                if amount > 0:
+                    coins.book(conn, server["owner_id"], amount, "nachtpause",
+                               note=f"{server['name']} · {s_h:02d}–{e_h:02d} Uhr", ref_type="server", ref_id=server["id"])
+                conn.execute("UPDATE night_pause_log SET status = 'erstattet', refund_coins = ? WHERE id = ?",
+                             (amount, log_row["id"]))
+                db.add_job(conn, "start", server["id"])   # Server wieder an (friert ein, bis jemand kommt)
+
+        # 2) neue Pausen beginnen, Spieler vorher warnen
+        rows = conn.execute(
+            "SELECT * FROM servers WHERE state = 'active' AND night_pause_start IS NOT NULL").fetchall()
+        for server in rows:
+            win = nightpause.window_containing(current, server["night_pause_start"], server["night_pause_end"])
+            if win:
+                start_at = fmt(win[0])
+                try:
+                    conn.execute(
+                        "INSERT INTO night_pause_log (server_id, start_at, end_at, planned_hours, status) VALUES (?, ?, ?, ?, 'laeuft')",
+                        (server["id"], start_at, fmt(win[1]),
+                         nightpause.planned_hours(server["night_pause_start"], server["night_pause_end"])))
+                except sqlite3.IntegrityError:
+                    continue  # diese Pause läuft schon
+                db.add_job(conn, "stop", server["id"])
+            else:
+                minutes = (nightpause.next_start(current, server["night_pause_start"]) - current).total_seconds() / 60
+                if 4 < minutes <= 5:
+                    db.add_job(conn, "rcon", server["id"], payload={
+                        "commands": ["say Nachtpause: Der Server geht in 5 Minuten offline."]})
+    finally:
+        conn.close()
+
+
+# ---------- Gewinnspiele ----------
+
+def draw_giveaways(w) -> None:
+    conn = w.conn()
+    try:
+        for g in conn.execute("SELECT * FROM giveaways WHERE drawn_at IS NULL AND ends_at <= ?", (now_sql(),)).fetchall():
+            with db.transaction(conn):
+                entries = [r["user_id"] for r in conn.execute(
+                    "SELECT user_id FROM giveaway_entries WHERE giveaway_id = ?", (g["id"],))]
+                # weniger Teilnehmer als Gewinner → alle gewinnen
+                winners = random.SystemRandom().sample(entries, min(len(entries), g["winner_count"]))
+                for uid in winners:
+                    conn.execute("UPDATE giveaway_entries SET is_winner = 1 WHERE giveaway_id = ? AND user_id = ?",
+                                 (g["id"], uid))
+                    coins.book(conn, uid, g["coins_per_winner"], "gewinnspiel", note=g["title"],
+                               ref_type="giveaway", ref_id=g["id"])
+                    db.notify(conn, uid, "giveaway_won",
+                              f"🎉 Du hast beim Gewinnspiel „{g['title']}“ {g['coins_per_winner']} Coins gewonnen!")
+                conn.execute("UPDATE giveaways SET drawn_at = datetime('now') WHERE id = ?", (g["id"],))
+    finally:
+        conn.close()
+
+
+# ---------- Ende von RAM-Aktionen ----------
+
+def end_ram_promotions(w) -> None:
+    conn = w.conn()
+    try:
+        for s in conn.execute("""SELECT * FROM servers WHERE extra_ram_gb > 0 AND extra_ram_until <= ?
+                                 AND state != 'deleted'""", (now_sql(),)).fetchall():
+            conn.execute("UPDATE servers SET extra_ram_gb = 0, extra_ram_until = NULL, needs_restart = 1 WHERE id = ?",
+                         (s["id"],))
+            if s["state"] == "active":
+                db.notify(conn, s["owner_id"], "ram_promo_end",
+                          f"Die RAM-Aktion für „{s['name']}“ ist vorbei. Nach dem nächsten Neustart hat er wieder den normalen RAM.",
+                          s["id"])
+    finally:
+        conn.close()
+
+
+# ---------- „Benachrichtige mich, wenn Platz frei ist" ----------
+
+def notify_waitlist(w) -> None:
+    conn = w.conn()
+    try:
+        # wer zuerst vorgemerkt ist, wird zuerst benachrichtigt (eine Meldung pro Modell und Minute)
+        done_models = set()
+        for row in conn.execute("SELECT * FROM waitlist WHERE notified_at IS NULL ORDER BY id").fetchall():
+            if row["model_id"] in done_models:
+                continue
+            m = servers.model(conn, row["model_id"])
+            if m and servers.availability(conn, m):
+                conn.execute("UPDATE waitlist SET notified_at = datetime('now') WHERE id = ?", (row["id"],))
+                db.notify(conn, row["user_id"], "space_free",
+                          f"Es ist wieder Platz für einen {m['name']}-Server frei – jetzt kaufen!")
+                done_models.add(row["model_id"])
+    finally:
+        conn.close()
+
+
+# ---------- Backups (nachts, Schnecken-Tempo) ----------
+
+def nightly_backups(w) -> None:
+    """Ab 02:00 jeden aktiven Server einmal pro Tag sichern, einen nach dem anderen.
+    Wird alle 10 Minuten aufgerufen – holt Verpasstes nach (z. B. nach Stromausfall)."""
+    local = datetime.now(ZoneInfo(config.TIMEZONE))
+    if local.hour < 2:
+        return
+    day_start = fmt(local.replace(hour=2, minute=0, second=0, microsecond=0))
+    conn = w.conn()
+    try:
+        todo = conn.execute(
+            """SELECT * FROM servers s WHERE state = 'active' AND NOT EXISTS (
+                 SELECT 1 FROM backups b WHERE b.server_id = s.id AND b.kind = 'taeglich' AND b.created_at >= ?)
+               AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.server_id = s.id AND j.status IN ('pending', 'running'))
+               ORDER BY id""", (day_start,)).fetchall()
+        for server in todo:
+            try:
+                w.backup(conn, server, "taeglich")
+            except Exception:
+                log.exception("Backup für Server %s fehlgeschlagen", server["id"])
+    finally:
+        conn.close()
+
+
+def cleanup_backups(w) -> None:
+    """Älter als 7 Tage → löschen, wenn neuere existieren und nicht angepinnt."""
+    conn = w.conn()
+    try:
+        old = conn.execute(
+            """SELECT * FROM backups b WHERE pinned = 0 AND created_at < datetime('now', '-7 days')
+               AND EXISTS (SELECT 1 FROM backups n WHERE n.server_id = b.server_id AND n.status = 'fertig'
+                           AND n.id > b.id)""").fetchall()
+        for b in old:
+            shutil.rmtree(minecraft.backup_dir(b["server_id"]) / b["folder"], ignore_errors=True)
+            conn.execute("DELETE FROM backups WHERE id = ?", (b["id"],))
+    finally:
+        conn.close()
+
+
+def backup_database() -> None:
+    """Tägliche Kopie der Datenbank (30 Tage behalten)."""
+    target_dir = config.DATA_DIR / "db-backups"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / f"hostly-{time.strftime('%Y-%m-%d')}.sqlite"
+    src = db.connect()
+    try:
+        dst = sqlite3.connect(target)
+        src.backup(dst)
+        dst.close()
+    finally:
+        src.close()
+    limit = time.time() - 30 * 86400
+    for f in target_dir.glob("hostly-*.sqlite"):
+        if f.stat().st_mtime < limit:
+            f.unlink(missing_ok=True)
+
+
+def disk_usage(w) -> None:
+    """Größe von Backups/Archiven/Servern – einmal täglich, nicht live (spart Last)."""
+    conn = w.conn()
+    try:
+        for key, path in (("size_backups", config.DATA_DIR / "backups"), ("size_archives", config.ARCHIVES_DIR),
+                          ("size_servers", config.SERVERS_DIR)):
+            db.set_setting(conn, key, str(files.dir_size(path)))
+        db.set_setting(conn, "size_checked_at", now_sql())
     finally:
         conn.close()

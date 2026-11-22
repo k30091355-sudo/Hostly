@@ -5,12 +5,16 @@
 {% include "admin/_nav.html" %}
 
 <div class="stats">
+  <div class="card stat"><span class="stat-value">{{ sys.cpu if sys.cpu is not none else '–' }} %</span><span class="stat-label">{{ t('CPU-Last (1 Min.)') }}</span></div>
+  {% if sys.mem_total %}<div class="card stat"><span class="stat-value">{{ '%.1f' % ((sys.mem_total - sys.mem_free) / 1073741824) }} / {{ '%.1f' % (sys.mem_total / 1073741824) }} GB</span><span class="stat-label">{{ t('RAM in WSL (echt belegt)') }}</span></div>{% endif %}
+  {% if sys.disk_total %}<div class="card stat"><span class="stat-value">{{ '%.0f' % (sys.disk_free / 1073741824) }} GB {{ t('frei') }}</span><span class="stat-label">{{ t('Festplatte') }} · {{ t('Backups') }} {{ '%.1f' % (sizes.size_backups / 1073741824) }} GB · {{ t('Archive') }} {{ '%.1f' % (sizes.size_archives / 1073741824) }} GB</span></div>{% endif %}
   <div class="card stat"><span class="stat-value">{{ '%.1f' % cap.used }} / {{ '%.1f' % (cap.total - cap.reserve) }} GB</span><span class="stat-label">{{ t('RAM belegt (Reserve {r} GB frei)', r=cap.reserve) }}</span></div>
   <div class="card stat"><span class="stat-value">{{ cap.tunnels_used }} / {{ cap.tunnels_total }}</span><span class="stat-label">{{ t('Tunnel belegt') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ stats.active }}</span><span class="stat-label">{{ t('Server aktiv') }} · {{ stats.online }} {{ t('online') }} · {{ stats.sleeping }} {{ t('schlafen') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ stats.archived }}</span><span class="stat-label">{{ t('Server archiviert') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ stats.users }}</span><span class="stat-label">{{ t('User') }} · {{ stats.new_users }} {{ t('neu (7 Tage)') }}</span></div>
-  <div class="card stat"><span class="stat-value">{{ stats.codes_active }}</span><span class="stat-label">{{ t('Aktive Codes') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.codes_active }} / {{ stats.giveaways }} / {{ stats.promos }}</span><span class="stat-label">{{ t('Aktive Codes / Gewinnspiele / Aktionen') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.night }}</span><span class="stat-label">{{ t('Server in Nachtpause') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ stats.coins_total | coins }}</span><span class="stat-label">{{ t('Coins im Umlauf') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ stats.coins_redeemed | coins }} / {{ stats.coins_spent | coins }} / {{ stats.coins_refunded | coins }}</span><span class="stat-label">{{ t('eingelöst / ausgegeben / erstattet') }}</span></div>
 </div>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Backups') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+<section class="card">
+  <h2>{{ t('Backups') }}</h2>
+  <p class="small muted">{{ t('Jede Nacht ab 2 Uhr automatisch, ganz langsam (damit der PC leise bleibt). Backups älter als 7 Tage werden gelöscht. Vor dem Wiederherstellen wird der aktuelle Stand gesichert.') }}</p>
+  {% if rows %}
+  <ul class="events">
+    {% for b in rows %}
+      <li class="row-between"><span>{{ b.created_at | localtime }} · {{ t({'taeglich': 'täglich', 'vor-aenderung': 'vor Änderung', 'vor-wiederherstellung': 'vor Wiederherstellung'}.get(b.kind, b.kind)) }}
+        {% if b.pinned %}📌{% endif %}{% if b.status != 'fertig' %} <span class="pill busy">{{ t(b.status) }}</span>{% endif %}</span>
+        {% if b.status == 'fertig' %}
+        <form method="post" action="/server/{{ server.id }}/backups/{{ b.id }}/wiederherstellen" onsubmit="return confirm('{{ t('Aktueller Stand wird ersetzt (wird vorher gesichert). Der Server startet neu. Fortfahren?') }}')">
+          <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn small">{{ t('Wiederherstellen') }}</button></form>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ t('Noch keine Backups. Das erste kommt heute Nacht.') }}</p>{% endif %}
+</section>
+{% endblock %}

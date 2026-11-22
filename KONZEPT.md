@@ -786,6 +786,10 @@ Erst wenn der Besitzer „fang an“ sagt. Jede Stufe ist für sich lauffähig.
 1. **RAM-Reserve:** innerhalb der 12 GB für WSL bleiben **1,5 GB** frei (Windows hat seine 4 GB schon außerhalb) → ca. **10,5 GB für Minecraft-Server** (Claude hat entschieden).
 2. **Java-Speicher: Variante A** – User bekommt den vollen beworbenen RAM, Container-Grenze = Modell-RAM + 0,5 GB, RAM-Prüfung rechnet mit der Container-Grenze (ENTSCHIEDEN).
 3. **Statistiken:** **Jeder mit dem Kürzel sieht alles**, auch die Spielernamen (ENTSCHIEDEN).
+4. **Nur Modrinth** für Plugins/Mods/Datapacks/Resourcepacks – **kein CurseForge** (ENTSCHIEDEN). Eigene Dateien nur über Support; der Admin kann beliebige Dateien hochladen.
+5. **Keine Leise-Grenze ermitteln** – Backups und ZIPs laufen immer gedrosselt (ENTSCHIEDEN).
+6. **Erster registrierter Account wird Admin** (ENTSCHIEDEN).
+7. **Alle *Vorschläge* in diesem Konzept sind bestätigt** (ENTSCHIEDEN).
 
 **Noch zu bestätigen:**
 - Alle mit *Vorschlag* markierten Punkte.

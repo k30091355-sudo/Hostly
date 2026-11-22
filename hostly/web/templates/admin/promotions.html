@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Aktionen') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Aktionen') }}</h1>
+{% include "admin/_nav.html" %}
+<section class="card">
+  <h2>{{ t('Aktion erstellen') }}</h2>
+  <p class="small muted">{{ t('Rabatt-Aktionen gelten für neue Mieten und Verlängerungen und werden zum Tage-Rabatt addiert (zusammen höchstens 75 %). RAM-Aktionen gelten nur für Server, die während der Aktion gekauft werden.') }}</p>
+  <form method="post" action="/admin/aktionen" class="form row-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('Art') }}<select name="kind"><option value="rabatt">{{ t('Rabatt (%)') }}</option><option value="ram">{{ t('Extra-RAM (GB)') }}</option></select></label>
+    <label>{{ t('Titel') }}<input name="title" required maxlength="80" placeholder="{{ t('z. B. Rabatt-Woche') }}"></label>
+    <label>{{ t('Rabatt in %') }}<input type="number" name="percent" min="1" max="75" value="20"></label>
+    <label>{{ t('Extra-RAM in GB') }}<input type="number" name="extra_ram_gb" min="0.5" max="8" step="0.5" value="1"></label>
+    <label>{{ t('Von') }}<input type="date" name="starts" required></label>
+    <label>{{ t('Bis') }}<input type="date" name="ends" required></label>
+    <fieldset class="wide checks"><legend>{{ t('Modelle') }}</legend>
+      {% for m in models %}<label class="radio"><input type="checkbox" name="model_ids" value="{{ m.id }}" checked> {{ t(m.name) }}</label>{% endfor %}
+    </fieldset>
+    <button class="btn primary">{{ t('Erstellen') }}</button>
+  </form>
+</section>
+<section class="card">
+  <h2>{{ t('Alle Aktionen') }}</h2>
+  {% if rows %}
+  <ul class="events">
+    {% for p in rows %}
+      <li class="row-between"><span><strong>{{ p.title }}</strong> · {{ label(p) }}<br>
+        <span class="small muted">{{ p.starts_at | localtime }} – {{ p.ends_at | localtime }}</span>
+        {% if p.starts_at <= now < p.ends_at %}<span class="pill on">{{ t('läuft') }}</span>{% elif p.ends_at <= now %}<span class="pill off">{{ t('vorbei') }}</span>{% else %}<span class="pill busy">{{ t('geplant') }}</span>{% endif %}</span>
+        {% if p.ends_at > now %}<form method="post" action="/admin/aktionen/{{ p.id }}/beenden"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn small">{{ t('Beenden') }}</button></form>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ t('Noch keine Aktionen.') }}</p>{% endif %}
+</section>
+{% endblock %}

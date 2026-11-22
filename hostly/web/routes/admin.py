@@ -68,7 +68,12 @@ def admin_home(ctx: Ctx = Depends(get_ctx)):
         """SELECT j.*, s.name AS server_name FROM jobs j LEFT JOIN servers s ON s.id = j.server_id
            WHERE j.status = 'error' ORDER BY j.id DESC LIMIT 10"""
     ).fetchall()
-    return ctx.render("admin/index.html", stats=stats, cap=cap, events=events, errors=errors)
+    sizes = {k: int(db.get_setting(c, k, "0")) for k in ("size_backups", "size_archives")}
+    stats["giveaways"] = _count(c, "SELECT COUNT(*) FROM giveaways WHERE drawn_at IS NULL")
+    stats["promos"] = _count(c, "SELECT COUNT(*) FROM promotions WHERE starts_at <= datetime('now') AND ends_at > datetime('now')")
+    stats["night"] = _count(c, "SELECT COUNT(*) FROM night_pause_log WHERE status = 'laeuft'")
+    return ctx.render("admin/index.html", stats=stats, cap=cap, events=events, errors=errors, sys=system_info(),
+                      sizes=sizes)
 
 
 # ---------- Codes ----------
@@ -310,7 +315,8 @@ def settings_page(ctx: Ctx = Depends(get_ctx)):
     ctx.require_admin()
     total, reserve = servers.ram_settings(ctx.conn)
     return ctx.render("admin/settings.html", total=total, reserve=reserve,
-                      saved=ctx.request.query_params.get("ok") == "1")
+                      saved=ctx.request.query_params.get("ok") == "1",
+                      maintenance=db.get_setting(ctx.conn, "maintenance_mode") == "1")
 
 
 @router.post("/admin/einstellungen")
@@ -322,3 +328,79 @@ def save_settings(ram_total_gb: float = Form(...), ram_reserve_gb: float = Form(
         db.set_setting(ctx.conn, "ram_total_gb", str(ram_total_gb))
         db.set_setting(ctx.conn, "ram_reserve_gb", str(ram_reserve_gb))
     raise Redirect("/admin/einstellungen?ok=1")
+
+
+# ---------- Backups & Archive (Stufe 7) ----------
+
+@router.get("/admin/backups", response_class=HTMLResponse)
+def backups_page(ctx: Ctx = Depends(get_ctx)):
+    ctx.require_admin()
+    backups = ctx.conn.execute(
+        """SELECT b.*, s.name AS server_name FROM backups b JOIN servers s ON s.id = b.server_id
+           ORDER BY b.id DESC LIMIT 300""").fetchall()
+    archives = ctx.conn.execute(
+        """SELECT s.*, u.username FROM servers s JOIN users u ON u.id = s.owner_id
+           WHERE s.state = 'archived' ORDER BY s.archived_at""").fetchall()
+    sizes = {k: int(db.get_setting(ctx.conn, k, "0")) for k in ("size_backups", "size_archives", "size_servers")}
+    return ctx.render("admin/backups.html", backups=backups, archives=archives, sizes=sizes,
+                      checked=db.get_setting(ctx.conn, "size_checked_at"))
+
+
+@router.post("/admin/backups/{backup_id}")
+def backup_action(backup_id: int, action: str = Form(...), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    ctx.require_admin()
+    ctx.check_csrf(csrf)
+    b = ctx.conn.execute("SELECT * FROM backups WHERE id = ?", (backup_id,)).fetchone()
+    if b and action == "pin":
+        ctx.conn.execute("UPDATE backups SET pinned = 1 - pinned WHERE id = ?", (backup_id,))
+    elif b and action == "delete":
+        db.add_job(ctx.conn, "backup_delete", b["server_id"], ctx.user["id"], {"backup_id": backup_id})
+    raise Redirect("/admin/backups")
+
+
+@router.post("/admin/archiv/{server_id}/loeschen")
+def archive_delete(server_id: int, csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    ctx.require_admin()
+    ctx.check_csrf(csrf)
+    with db.transaction(ctx.conn):
+        server = ctx.conn.execute("SELECT * FROM servers WHERE id = ? AND state = 'archived'", (server_id,)).fetchone()
+        if server:
+            servers.delete(ctx.conn, server, ctx.user["id"], with_refund=False)
+    raise Redirect("/admin/backups")
+
+
+@router.post("/admin/wartung")
+def maintenance(enabled: str = Form("0"), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    ctx.require_admin()
+    ctx.check_csrf(csrf)
+    db.set_setting(ctx.conn, "maintenance_mode", "1" if enabled == "1" else "0")
+    db.audit(ctx.conn, ctx.user["id"], "maintenance", "an" if enabled == "1" else "aus")
+    raise Redirect("/admin/einstellungen?ok=1")
+
+
+def system_info() -> dict:
+    """CPU-Last, RAM, Festplatte – direkt aus Linux gelesen (billig, kein Weckruf)."""
+    import os
+    import shutil
+
+    info = {"cpu": None, "mem_total": None, "mem_free": None, "disk_total": None, "disk_free": None}
+    try:
+        load1 = os.getloadavg()[0]
+        info["cpu"] = min(100, round(load1 / (os.cpu_count() or 1) * 100))
+    except OSError:
+        pass
+    try:
+        mem = {}
+        with open("/proc/meminfo") as f:
+            for line in f:
+                k, v = line.split(":", 1)
+                mem[k] = int(v.split()[0]) * 1024
+        info["mem_total"], info["mem_free"] = mem.get("MemTotal"), mem.get("MemAvailable")
+    except OSError:
+        pass
+    try:
+        du = shutil.disk_usage(config.DATA_DIR if config.DATA_DIR.exists() else "/")
+        info["disk_total"], info["disk_free"] = du.total, du.free
+    except OSError:
+        pass
+    return info

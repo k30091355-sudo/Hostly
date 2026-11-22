@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Backups & Archive') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Backups & Archive') }}</h1>
+{% include "admin/_nav.html" %}
+<div class="stats">
+  <div class="card stat"><span class="stat-value">{{ '%.1f' % (sizes.size_backups / 1073741824) }} GB</span><span class="stat-label">{{ t('Backups') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ '%.1f' % (sizes.size_archives / 1073741824) }} GB</span><span class="stat-label">{{ t('Archive') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ '%.1f' % (sizes.size_servers / 1073741824) }} GB</span><span class="stat-label">{{ t('Laufende Server') }}</span></div>
+</div>
+<p class="small muted">{{ t('Größen werden einmal täglich berechnet') }}{% if checked %} ({{ checked | localtime }}){% endif %}.</p>
+
+<section class="card">
+  <h2>{{ t('Archive') }}</h2>
+  <p class="small muted">{{ t('Archive bleiben für immer, bis du sie löschst.') }}</p>
+  {% if archives %}
+  <ul class="events">{% for a in archives %}
+    <li class="row-between"><span><a href="/server/{{ a.id }}">{{ a.name }}</a> · {{ a.username }} · {{ t('seit') }} {{ a.archived_at | localtime }}</span>
+      <form method="post" action="/admin/archiv/{{ a.id }}/loeschen" onsubmit="return confirm('{{ t('Archiv endgültig löschen?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn small danger">{{ t('Löschen') }}</button></form></li>
+  {% endfor %}</ul>
+  {% else %}<p class="muted small">{{ t('Keine Archive.') }}</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('Backups') }}</h2>
+  <p class="small muted">{{ t('Angepinnte Backups (📌) werden nie automatisch gelöscht.') }}</p>
+  {% if backups %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t('Server') }}</th><th>{{ t('Datum') }}</th><th>{{ t('Art') }}</th><th class="num">{{ t('Neu kopiert') }}</th><th></th></tr></thead>
+    <tbody>{% for b in backups %}
+      <tr><td><a href="/server/{{ b.server_id }}/backups">{{ b.server_name }}</a></td><td>{{ b.created_at | localtime }}</td>
+        <td>{{ b.kind }}{% if b.status != 'fertig' %} <span class="pill busy">{{ b.status }}</span>{% endif %}</td>
+        <td class="num">{{ '%.1f' % (b.size_bytes / 1048576) }} MB</td>
+        <td class="actions-cell">
+          <form method="post" action="/admin/backups/{{ b.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+            <button name="action" value="pin" class="btn small">{{ '📌 ' ~ t('Lösen') if b.pinned else t('Behalten') }}</button></form>
+          <form method="post" action="/admin/backups/{{ b.id }}" onsubmit="return confirm('{{ t('Backup löschen?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}">
+            <button name="action" value="delete" class="btn small danger">{{ t('Löschen') }}</button></form>
+        </td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted small">{{ t('Noch keine Backups.') }}</p>{% endif %}
+</section>
+{% endblock %}

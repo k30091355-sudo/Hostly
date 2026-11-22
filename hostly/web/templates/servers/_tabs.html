@@ -18,7 +18,15 @@
   <a href="{{ base }}/darstellung" class="{{ 'active' if p.endswith('/darstellung') }}">{{ t('Darstellung') }}</a>
   <a href="{{ base }}/spieler" class="{{ 'active' if p.endswith('/spieler') }}">{{ t('Spieler') }}</a>
   {% endif %}
+  {% if server.state == 'active' %}
+  <a href="{{ base }}/erweiterungen" class="{{ 'active' if p.endswith('/erweiterungen') }}">{{ t('Plugins/Mods') }}</a>
+  <a href="{{ base }}/welten" class="{{ 'active' if p.endswith('/welten') }}">{{ t('Welten') }}</a>
+  <a href="{{ base }}/version" class="{{ 'active' if p.endswith('/version') }}">{{ t('Version') }}</a>
+  <a href="{{ base }}/dateien" class="{{ 'active' if '/dateien' in p }}">{{ t('Dateien') }}</a>
+  <a href="{{ base }}/backups" class="{{ 'active' if p.endswith('/backups') }}">{{ t('Backups') }}</a>
+  {% endif %}
   <a href="{{ base }}/miete" class="{{ 'active' if p.endswith('/miete') }}">{{ t('Miete') }}</a>
+  <a href="{{ base }}/statistik" class="{{ 'active' if p.endswith('/statistik') }}">{{ t('Statistik') }}</a>
 </nav>
 {% if server.needs_restart and server.state == 'active' %}
 <div class="alert warn banner-row">

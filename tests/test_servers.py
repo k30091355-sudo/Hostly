@@ -242,7 +242,7 @@ def test_download_zip(client):
     w = make_worker()
     run_jobs(w)
     world = minecraft.data_dir(1) / "world"
-    world.mkdir(parents=True)
+    world.mkdir(parents=True, exist_ok=True)
     (world / "level.dat").write_bytes(b"x" * 100)
     (minecraft.data_dir(1) / "server.properties").write_text("level-name=world\n")
     token = csrf_of(client, "/server/1")
@@ -256,7 +256,8 @@ def test_download_zip(client):
     assert r.status_code == 200 and r.headers["content-type"] == "application/zip"
     import io
     import zipfile
-    assert zipfile.ZipFile(io.BytesIO(r.content)).namelist() == ["world/level.dat"]
+    names = zipfile.ZipFile(io.BytesIO(r.content)).namelist()
+    assert "world/level.dat" in names and all(n.startswith("world/") for n in names)
     logout(client)
     register(client, "bob")
     assert client.get(f"/download/{job_id}").status_code == 404

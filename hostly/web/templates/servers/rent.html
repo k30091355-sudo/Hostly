@@ -47,6 +47,55 @@
   </section>
 {% endif %}
 
+{% if server.state == 'active' %}
+  <section class="card" id="nachtpause">
+    <h2>{{ t('Nachtpause') }}</h2>
+    <p class="small muted">{{ t('Der Server ist jede Nacht in dieser Zeit aus. Nach jeder vollständigen Pause bekommst du Coins zurück (1 % pro Stunde, höchstens 15 Stunden). Startest du ihn in der Pause selbst, gibt es für diese Nacht nichts zurück.') }}</p>
+    <form method="post" action="/server/{{ server.id }}/nachtpause" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="radio"><input type="checkbox" name="enabled" value="1" {% if server.night_pause_start is not none %}checked{% endif %}> {{ t('Nachtpause an') }}</label>
+      <div class="np-times">
+        <label>{{ t('von') }} <select name="start">{% for h in range(24) %}<option value="{{ h }}" {% if h == (server.night_pause_start if server.night_pause_start is not none else 1) %}selected{% endif %}>{{ '%02d' % h }}:00</option>{% endfor %}</select></label>
+        <label>{{ t('bis') }} <select name="end">{% for h in range(24) %}<option value="{{ h }}" {% if h == (server.night_pause_end if server.night_pause_end is not none else 8) %}selected{% endif %}>{{ '%02d' % h }}:00</option>{% endfor %}</select></label>
+      </div>
+      {% if np_refund is not none %}<p class="small">{{ t('Erstattung pro Nacht: {n} Coins', n=np_refund) }}</p>{% endif %}
+      <button class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+    {% if np_log %}
+    <details class="small"><summary>{{ t('Letzte Nächte') }}</summary>
+      <ul class="events">{% for n in np_log %}<li>{{ n.start_at | localtime }} – {{ n.end_at | localtime }} ·
+        {% if n.status == 'erstattet' %}<span class="plus">+{{ n.refund_coins }} Coins</span>{% elif n.status == 'laeuft' %}{{ t('läuft') }}{% elif n.status == 'unterbrochen' %}{{ t('Nachtpause unterbrochen') }}{% else %}{{ t('abgebrochen') }}{% endif %}</li>{% endfor %}</ul>
+    </details>
+    {% endif %}
+  </section>
+
+  <section class="card" id="modell">
+    <h2>{{ t('Modell wechseln') }}</h2>
+    <p class="small muted">{{ t('Upgrade: du zahlst nur die Differenz für die Resttage. Downgrade: du bekommst die Differenz anteilig zurück. Der Server startet danach neu.') }}</p>
+    <form method="post" action="/server/{{ server.id }}/modell" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      {% for om, amount in model_changes %}
+        <label class="radio"><input type="radio" name="model_id" value="{{ om.id }}" required>
+          {{ t(om.name) }} ({{ om.ram_gb | int }} GB, {{ om.max_players }} {{ t('Spieler') }}) –
+          {% if amount > 0 %}<strong>{{ amount }} Coins</strong>{% elif amount < 0 %}<span class="plus">+{{ -amount }} Coins {{ t('zurück') }}</span>{% else %}0 Coins{% endif %}</label>
+      {% endfor %}
+      <p class="small muted">{{ t('Hinweis: Mit weniger RAM laufen große Mods/Plugins eventuell nicht mehr.') }}</p>
+      <button class="btn primary">{{ t('Modell wechseln') }}</button>
+    </form>
+  </section>
+{% endif %}
+
+  <section class="card" id="uebertragen">
+    <h2>{{ t('Server übertragen') }}</h2>
+    <p class="small muted">{{ t('Der Server gehört danach dem anderen User. OP und Whitelist bleiben, der neue Besitzer bekommt OP dazu.') }}</p>
+    <form method="post" action="/server/{{ server.id }}/uebertragen" class="form" onsubmit="return confirm('{{ t('Server wirklich übertragen?') }}')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Benutzername des Empfängers') }}<input name="username" required autocapitalize="none"></label>
+      <label>{{ t('field.password_confirm') }}<input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn">{{ t('Übertragen') }}</button>
+    </form>
+  </section>
+
   <section class="card danger-zone">
     <h2>{{ t('Server löschen') }}</h2>
     <p class="small">{{ t('Alles wird endgültig gelöscht (auch das Archiv).') }}

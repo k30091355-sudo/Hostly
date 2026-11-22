@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Welten') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+<div class="grid">
+  <section class="card">
+    <h2>{{ t('Welten') }}</h2>
+    <p class="small muted">{{ t('Aktiv:') }} <strong>{{ server.level_name }}</strong>{% if server.level_name not in worlds %} ({{ t('wird beim nächsten Start erzeugt') }}){% endif %}</p>
+    {% if worlds %}
+    <ul class="events">
+      {% for w in worlds %}
+      <li class="row-between"><span>{{ w }}{% if w == server.level_name %} <span class="pill on">{{ t('aktiv') }}</span>{% endif %}</span>
+        {% if w != server.level_name %}
+        <span class="actions-cell">
+          <form method="post" action="/server/{{ server.id }}/welten"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="name" value="{{ w }}">
+            <button name="action" value="activate" class="btn small">{{ t('Aktivieren') }}</button></form>
+          <form method="post" action="/server/{{ server.id }}/welten" onsubmit="return confirm('{{ t('Welt wirklich löschen?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="name" value="{{ w }}">
+            <button name="action" value="delete" class="btn small danger">{{ t('Löschen') }}</button></form>
+        </span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Neue Welt') }}</h2>
+    <form method="post" action="/server/{{ server.id }}/welten" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="new">
+      <label>{{ t('Name') }}<input name="name" required pattern="[A-Za-z0-9_\-]{1,32}" placeholder="welt2"></label>
+      <label>{{ t('Seed (optional)') }}<input name="seed" maxlength="40"></label>
+      <label>{{ t('Welttyp') }}<select name="level_type"><option value="normal">{{ t('Normal') }}</option><option value="flat">{{ t('Flach') }}</option><option value="large_biomes">{{ t('Große Biome') }}</option><option value="amplified">{{ t('Zerklüftet') }}</option></select></label>
+      <button class="btn primary">{{ t('Erstellen (beim nächsten Neustart)') }}</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Welt hochladen') }}</h2>
+    <form method="post" action="/server/{{ server.id }}/welten" enctype="multipart/form-data" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="upload">
+      <label>{{ t('Name') }}<input name="name" required pattern="[A-Za-z0-9_\-]{1,32}" placeholder="meinewelt"></label>
+      <label>{{ t('ZIP-Datei (höchstens 1 GB)') }}<input type="file" name="file" accept=".zip" required></label>
+      <button class="btn primary">{{ t('Hochladen') }}</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Resourcepack') }}</h2>
+    {% if server.resource_pack_url %}
+      <p class="small">{{ t('Aktiv') }}: <span class="mono">{{ server.resource_pack_sha1[:12] }}…</span></p>
+      <form method="post" action="/server/{{ server.id }}/welten" class="form">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="pack_enforce">
+        <label class="radio"><input type="checkbox" name="enforce" value="1" {% if server.resource_pack_enforce %}checked{% endif %} onchange="this.form.submit()"> {{ t('Pflicht (wer ablehnt, wird getrennt)') }}</label>
+      </form>
+      <form method="post" action="/server/{{ server.id }}/welten"><input type="hidden" name="csrf" value="{{ csrf }}">
+        <button name="action" value="pack_remove" class="btn small">{{ t('Entfernen') }}</button></form>
+    {% endif %}
+    <form method="post" action="/server/{{ server.id }}/welten" enctype="multipart/form-data" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="pack_upload">
+      <label>{{ t('ZIP hochladen (höchstens 100 MB)') }}<input type="file" name="file" accept=".zip" required></label>
+      <button class="btn">{{ t('Hochladen') }}</button>
+    </form>
+    <form class="search-form" hx-get="/server/{{ server.id }}/welten/packsuche" hx-target="#pack-results">
+      <input name="q" placeholder="{{ t('Auf Modrinth suchen') }}" aria-label="{{ t('Suche') }}"><button class="btn">{{ t('Suchen') }}</button>
+    </form>
+    <div id="pack-results"></div>
+  </section>
+</div>
+{% endblock %}

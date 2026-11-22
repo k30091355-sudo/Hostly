@@ -36,6 +36,17 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) { prompt("Kopieren:", btn.dataset.copy); }
   });
 
+  // Kauf-Seite: Server-Typ nur zeigen, wenn keine Vorlage gewählt ist
+  const typeChoice = document.getElementById("type-choice");
+  if (typeChoice) {
+    const update = () => {
+      const tpl = document.querySelector('input[name="template"]:checked');
+      typeChoice.hidden = !!(tpl && tpl.value);
+    };
+    document.querySelectorAll('input[name="template"]').forEach((r) => r.addEventListener("change", update));
+    update();
+  }
+
   setupCroppers();
   setupMotdEditor();
   scrollConsoles();
@@ -128,3 +139,18 @@ function setupMotdEditor() {
     });
   });
 }
+
+// PWA: Service-Worker anmelden und „Als App installieren“ anbieten
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  const btn = document.getElementById("install-app");
+  if (btn) {
+    btn.style.display = "inline";
+    btn.addEventListener("click", () => { installPrompt.prompt(); btn.style.display = "none"; }, { once: true });
+  }
+});

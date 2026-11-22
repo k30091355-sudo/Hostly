@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Serverliste') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Serverliste') }}</h1>
+<p class="muted small">{{ t('Server, deren Besitzer sie öffentlich zeigen. Adresse kopieren und in Minecraft unter Mehrspieler hinzufügen.') }}</p>
+{% if rows %}
+<div class="mc-list">
+  {% for s in rows %}
+  <div class="mc-entry">
+    <img src="/server/{{ s.id }}/icon.png" alt="" width="64" height="64">
+    <div class="mc-body">
+      <div class="mc-top"><span class="mc-name">{{ s.name }}</span>
+        <span class="mc-players">{% if s.running and not s.paused %}{{ s.players_online }}/{{ s.max_players }}{% elif s.running %}0/{{ s.max_players }} 💤{% else %}{{ t('offline') }}{% endif %}
+          <span class="ping {{ 'on' if s.running and not s.paused else 'off' }}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span></div>
+      <div class="mc-motd">{{ (s.motd or s.name) | motd }}</div>
+      <div class="mc-bottom"><code class="mono small">{{ s.public_address }}</code>
+        <button type="button" class="btn small" data-copy="{{ s.public_address }}">{{ t('Kopieren') }}</button>
+        <a class="small" href="/s/{{ s.short_code }}">{{ t('Statistik') }}</a></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}<div class="card"><p class="muted">{{ t('Noch keine öffentlichen Server.') }}</p></div>{% endif %}
+{% endblock %}

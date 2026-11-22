@@ -1,0 +1,12 @@
+{% if hits %}
+<ul class="ext-list">
+  {% for h in hits %}
+  <li class="ext-item">
+    <div class="ext-info"><strong>{{ h.title }}</strong><div class="small">{{ h.description[:120] }}</div></div>
+    <form method="post" action="/server/{{ server.id }}/welten"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="action" value="pack_modrinth"><input type="hidden" name="project" value="{{ h.project_id }}">
+      <button class="btn small primary">{{ t('Verwenden') }}</button></form>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="muted small">{{ t('Nichts gefunden.') }}</p>{% endif %}

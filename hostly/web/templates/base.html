@@ -6,6 +6,10 @@
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}Hostly{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <meta name="theme-color" content="#2f7d4f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="/static/css/hostly.css">
   <script src="/static/js/htmx.min.js" defer></script>
   <script src="/static/js/hostly.js" defer></script>
@@ -41,6 +45,9 @@
               <a href="/server">{{ t('Meine Server') }}</a>
               <a href="/kaufen">{{ t('Server kaufen') }}</a>
               <a href="/code">{{ t('Code einlösen') }}</a>
+              <a href="/gewinnspiele">{{ t('Gewinnspiele') }}</a>
+              <a href="/serverliste">{{ t('Serverliste') }}</a>
+              <a href="/statistik">{{ t('Server-Statistiken') }}</a>
               <a href="/einstellungen">{{ t('nav.settings') }}</a>
               {% if user.is_admin %}
                 {% if ctx.is_admin %}<a href="/admin">{{ t('nav.admin') }}</a>{% endif %}
@@ -59,6 +66,9 @@
               <a href="/login">{{ t('nav.login') }}</a>
               <a href="/registrieren">{{ t('nav.register') }}</a>
               <a href="/kaufen">{{ t('Server kaufen') }}</a>
+              <a href="/gewinnspiele">{{ t('Gewinnspiele') }}</a>
+              <a href="/serverliste">{{ t('Serverliste') }}</a>
+              <a href="/statistik">{{ t('Server-Statistiken') }}</a>
               <a href="mailto:{{ SUPPORT_EMAIL }}">{{ t('nav.support') }}</a>
             {% endif %}
           </nav>
@@ -68,12 +78,14 @@
     </div>
   </header>
 
+  {% if ctx and ctx.maintenance %}<div class="maintenance-bar">🛠️ {{ t('Wartungsmodus: Hostly wird gerade gewartet. Kaufen und Ändern ist kurz nicht möglich.') }}</div>{% endif %}
   <main class="container">
     {% block content %}{% endblock %}
   </main>
 
   <footer class="footer">
     <span>Hostly</span>
+    <button type="button" class="link-btn install-hint" id="install-app">{{ t('Als App installieren') }}</button>
     {% if ctx %}
     <form method="post" action="/sprache" class="lang-form">
       <input type="hidden" name="csrf" value="{{ csrf }}">

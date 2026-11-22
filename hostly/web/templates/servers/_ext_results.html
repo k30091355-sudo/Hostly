@@ -1,0 +1,20 @@
+{% if hits %}
+<ul class="ext-list">
+  {% for h in hits %}
+  <li class="ext-item">
+    {% if h.icon_url %}<img src="{{ h.icon_url }}" alt="" width="40" height="40" class="ext-icon" loading="lazy" referrerpolicy="no-referrer">{% endif %}
+    <div class="ext-info">
+      <strong>{{ h.title }}</strong> <span class="small muted">{{ '{:,}'.format(h.downloads).replace(',', '.') }} Downloads</span>
+      <div class="small">{{ h.description[:160] }}</div>
+    </div>
+    {% if h.project_id in installed %}
+      <span class="pill on">{{ t('installiert') }}</span>
+    {% else %}
+      <form method="post" action="/server/{{ server.id }}/erweiterungen"><input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="project_id" value="{{ h.project_id }}"><input type="hidden" name="kind" value="{{ kind }}">
+        <button class="btn small primary">{{ t('Installieren') }}</button></form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="muted small">{{ t('Nichts gefunden.') }}</p>{% endif %}

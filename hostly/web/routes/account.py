@@ -175,3 +175,48 @@ def avatar(user_id: int):
     if not path.exists():
         raise HTTPException(404)
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+# ---------- Coins übertragen, Account löschen (Stufe 6) ----------
+
+@router.post("/einstellungen/coins-uebertragen")
+def transfer_coins(username: str = Form(""), amount: int = Form(0), password: str = Form(""), csrf: str = Form(""),
+                   ctx: Ctx = Depends(get_ctx)):
+    from ... import servers
+
+    ctx.require_login()
+    ctx.check_csrf(csrf)
+    if not security.verify_password(ctx.user["password_hash"], password):
+        return _page(ctx, 400, error_transfer=ctx.t("err.old_password_wrong"))
+    try:
+        with db.transaction(ctx.conn):
+            to = servers.transfer_coins(ctx.conn, ctx.user["id"], username, amount)
+    except servers.ServerError as exc:
+        return _page(ctx, 400, error_transfer=ctx.t(exc.message))
+    ctx.cache.pop("balance", None)
+    return _page(ctx, success=ctx.t("{n} Coins an {name} übertragen.", n=amount, name=to["username"]))
+
+
+@router.post("/einstellungen/account-loeschen")
+def delete_account(password: str = Form(""), confirm: str = Form(""), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    """Alle Server (auch Archive) und Coins werden gelöscht, der Benutzername wird wieder frei."""
+    from ... import coins as coins_mod, servers
+
+    ctx.require_login()
+    ctx.check_csrf(csrf)
+    if not security.verify_password(ctx.user["password_hash"], password) or confirm != "1":
+        return _page(ctx, 400, error_delete=ctx.t("Bitte Passwort eingeben und bestätigen."))
+    uid = ctx.user["id"]
+    with db.transaction(ctx.conn):
+        for server in ctx.conn.execute("SELECT * FROM servers WHERE owner_id = ? AND state != 'deleted'", (uid,)).fetchall():
+            servers.delete(ctx.conn, server, uid, with_refund=False)
+        rest = coins_mod.balance(ctx.conn, uid)
+        if rest:
+            coins_mod.book(ctx.conn, uid, -rest, "account_geloescht")
+        ctx.conn.execute("UPDATE users SET deleted_at = datetime('now'), is_admin = 0, minecraft_name = NULL WHERE id = ?", (uid,))
+        ctx.conn.execute("DELETE FROM sessions WHERE user_id = ?", (uid,))
+        ctx.conn.execute("DELETE FROM waitlist WHERE user_id = ?", (uid,))
+        db.audit(ctx.conn, uid, "account_deleted", ctx.user["username"])
+    avatar_file(uid).unlink(missing_ok=True)
+    ctx.cookies[config.SESSION_COOKIE] = (None, 0)
+    raise Redirect("/")

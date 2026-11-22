@@ -9,6 +9,7 @@ from urllib.parse import quote
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from jinja2 import pass_context
 
 from .. import config, db, security
 from ..i18n import translate
@@ -30,21 +31,26 @@ def _localtime(value: str | None) -> str:
 templates.env.filters["localtime"] = _localtime
 
 
-def _remaining(until: str | None) -> str:
-    """Restlaufzeit als Text, z. B. "12 Tage" oder "5 Std."."""
+@pass_context
+def _remaining(context, until: str | None) -> str:
+    """Restlaufzeit als Text, z. B. "12 Tage" / "12 days" (Sprache des Users)."""
     if not until:
         return ""
+    ctx = context.get("ctx")
+    en = (ctx.lang if ctx else context.get("lang")) == "en"
     seconds = (datetime.strptime(until, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                - datetime.now(timezone.utc)).total_seconds()
     if seconds <= 0:
-        return "abgelaufen"
+        return "expired" if en else "abgelaufen"
     days = int(seconds // 86400)
     if days >= 2:
-        return f"{days} Tage"
+        return f"{days} days" if en else f"{days} Tage"
     if days == 1:
-        return "1 Tag"
+        return "1 day" if en else "1 Tag"
     hours = int(seconds // 3600)
-    return f"{hours} Std." if hours >= 1 else f"{int(seconds // 60)} Min."
+    if hours >= 1:
+        return f"{hours} h" if en else f"{hours} Std."
+    return f"{int(seconds // 60)} min" if en else f"{int(seconds // 60)} Min."
 
 
 templates.env.filters["remaining"] = _remaining
@@ -66,6 +72,15 @@ class CsrfError(Exception):
     pass
 
 
+class MaintenanceError(Exception):
+    pass
+
+
+# Was im Wartungsmodus für normale User noch geht
+_MAINTENANCE_ALLOWED = ("/login", "/abmelden", "/design", "/sprache", "/meldung/")
+_public_url_seen: set = set()
+
+
 @dataclass
 class Ctx:
     request: Request
@@ -78,6 +93,7 @@ class Ctx:
     new_csrf: bool = False
     cookies: dict = field(default_factory=dict)  # Cookies, die gesetzt werden sollen
     cache: dict = field(default_factory=dict)
+    maintenance: bool = False
 
     # --- Hilfen ---
     def t(self, key: str, **values) -> str:
@@ -163,6 +179,17 @@ def get_ctx(request: Request):
             csrf = security.new_csrf_token()
 
         ctx = Ctx(request, conn, user, session, lang, theme, csrf, new_csrf)
+
+        ctx.maintenance = db.get_setting(conn, "maintenance_mode") == "1"
+        if (ctx.maintenance and request.method == "POST" and not (user is not None and user["is_admin"])
+                and not request.url.path.startswith(_MAINTENANCE_ALLOWED)):
+            raise MaintenanceError()
+
+        # öffentliche Adresse merken (für Resourcepack-Links und /trigger code)
+        host = request.headers.get("host", "")
+        if host.endswith(".ts.net") and host not in _public_url_seen:
+            db.set_setting(conn, "public_url", f"https://{host}")
+            _public_url_seen.add(host)
 
         if user is not None and user["must_change_password"]:
             if not request.url.path.startswith(_MUST_CHANGE_ALLOWED):

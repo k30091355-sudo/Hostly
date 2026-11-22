@@ -1,0 +1,7 @@
+{% if versions %}
+<form method="post" action="/server/{{ server.id }}/erweiterungen/{{ row.id }}" class="inline-form">
+  <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="version">
+  <select name="version_id" aria-label="{{ t('Version') }}">{% for v in versions %}<option value="{{ v.id }}" {% if v.id == row.version_id %}selected{% endif %}>{{ v.version_number }}{% if v.version_type != 'release' %} ({{ v.version_type }}){% endif %}</option>{% endfor %}</select>
+  <button class="btn small">{{ t('Übernehmen') }}</button>
+</form>
+{% else %}<span class="small muted">{{ t('Keine anderen Versionen für diese Minecraft-Version.') }}</span>{% endif %}

@@ -1,8 +1,10 @@
 <div id="status" class="status-box" hx-get="/server/{{ server.id }}/status" hx-trigger="every {{ '4s' if busy or status_class == 'busy' else '30s' }}" hx-swap="outerHTML">
   <div class="status-line">
     <span class="pill big {{ status_class }}">{{ t(status_label) }}</span>
-    {% if busy %}<span class="muted small">{{ t('Aktion läuft:') }} {{ t({'create': 'Erstellen', 'start': 'Starten', 'stop': 'Stoppen', 'restart': 'Neustarten', 'reload': 'Reload', 'archive': 'Archivieren', 'reactivate': 'Reaktivieren', 'delete': 'Löschen'}.get(busy.kind, busy.kind)) }} …</span>{% endif %}
+    {% if busy %}<span class="muted small">{{ t('Aktion läuft:') }} {{ t({'create': 'Erstellen', 'start': 'Starten', 'stop': 'Stoppen', 'restart': 'Neustarten', 'reload': 'Reload', 'archive': 'Archivieren', 'reactivate': 'Reaktivieren', 'delete': 'Löschen', 'restore': 'Wiederherstellen', 'rebuild': 'Umbauen', 'backup': 'Backup', 'ext_sync': 'Plugins/Mods', 'world_upload': 'Welt hochladen', 'world_delete': 'Welt löschen', 'file_write': 'Speichern', 'file_delete': 'Löschen', 'file_put': 'Hochladen'}.get(busy.kind, busy.kind)) }} …</span>{% endif %}
   </div>
+  {% if night %}<div class="small muted">{{ t('Nachtpause bis') }} {{ night.end_at | localtime }}. {{ t('Wenn du jetzt startest, gibt es für diese Nacht keine Erstattung.') }}</div>{% endif %}
+  {% if server.crash_locked %}<div class="alert error small">{{ t('Der Server ist mehrmals abgestürzt und wurde angehalten. Schau in die Konsole, behebe den Fehler (z. B. Plugin deaktivieren) und starte ihn dann.') }}</div>{% endif %}
   {% if st and st.players and status_class == 'on' %}<div class="small">{{ t('Online:') }} {{ st.players }}</div>{% endif %}
   {% if server.state == 'active' %}
   <form method="post" action="/server/{{ server.id }}/aktion" class="control-buttons">
@@ -12,6 +14,7 @@
     {% if running %}
       <button name="action" value="stop" class="btn" {% if busy %}disabled{% endif %}>{{ t('Stoppen') }}</button>
       <button name="action" value="restart" class="btn" {% if busy %}disabled{% endif %}>{{ t('Neustarten') }}</button>
+      <button name="action" value="restart_warn" class="btn" {% if busy %}disabled{% endif %} title="{{ t('Spieler warnen und in 1 Minute neu starten') }}">{{ t('Neustart mit Vorwarnung') }}</button>
       <button name="action" value="reload" class="btn" {% if busy %}disabled{% endif %}
         {% if server.type == 'PAPER' %}onclick="return confirm('{{ t('Reload bei Paper kann Plugins durcheinanderbringen. Besser Neustarten. Trotzdem?') }}')"{% endif %}>{{ t('Reload') }}</button>
     {% endif %}

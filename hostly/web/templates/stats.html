@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ server.name }} · {{ t('Statistik') }} · Hostly{% endblock %}
+{% block content %}
+<div class="title-row"><div class="title-with-icon">
+  <img class="server-icon" src="/server/{{ server.id }}/icon.png" alt="" width="48" height="48">
+  <div><h1>{{ server.name }}</h1><div class="small muted">{{ t(server.model_name) }} · {{ server.type | capitalize }} {{ server.mc_version if server.mc_version != 'LATEST' }} · <span class="mono">{{ server.short_code }}</span></div></div>
+</div></div>
+<div class="stats">
+  <div class="card stat"><span class="stat-value">{% if st and st.running and not st.paused %}{{ st.players_online }}/{{ server.max_players }}{% elif st and st.running %}💤{% else %}–{% endif %}</span><span class="stat-label">{{ t('Spieler jetzt') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ data.peak }}</span><span class="stat-label">{{ t('Höchstwert (7 Tage)') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ data.total_hours }} h</span><span class="stat-label">{{ t('Gesamt-Spielzeit') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ '%d %%' % data.uptime if data.uptime is not none else '–' }}</span><span class="stat-label">{{ t('Verfügbarkeit (7 Tage)') }}</span></div>
+</div>
+<section class="card"><h2>{{ t('Spieler – letzte 24 Stunden') }}</h2>{{ chart24 }}</section>
+<section class="card"><h2>{{ t('Spieler – letzte 7 Tage') }}</h2>{{ chart7 }}</section>
+<div class="grid">
+  <section class="card"><h2>{{ t('Häufigste Spieler') }}</h2>
+    {% if data.top %}<ul class="events">{% for p in data.top %}<li class="row-between"><span>{{ p.minecraft_name }}</span><span class="small muted">{{ (p.minutes / 60) | round(1) }} h · {{ p.joins }}×</span></li>{% endfor %}</ul>
+    {% else %}<p class="muted small">{{ t('Noch niemand war auf dem Server.') }}</p>{% endif %}</section>
+  <section class="card"><h2>{{ t('Plugins/Mods') }}</h2>
+    {% if exts %}<ul class="events">{% for e in exts %}<li>{{ e.title }}</li>{% endfor %}</ul>
+    {% else %}<p class="muted small">{{ t('Keine.') }}</p>{% endif %}
+    {% if server.public_address and server.state == 'active' %}<p class="small">{{ t('Adresse') }}: <code class="mono">{{ server.public_address }}</code></p>{% endif %}</section>
+</div>
+{% endblock %}

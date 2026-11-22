@@ -40,4 +40,9 @@ REASONS = {
     "reaktivierung": "Server reaktiviert",
     "erstattung": "Rückerstattung",
     "admin": "Admin-Buchung",
+    "upgrade": "Modell-Upgrade",
+    "uebertragung": "Übertragung",
+    "nachtpause": "Nachtpausen-Erstattung",
+    "gewinnspiel": "Gewinnspiel gewonnen",
+    "account_geloescht": "Account gelöscht",
 }

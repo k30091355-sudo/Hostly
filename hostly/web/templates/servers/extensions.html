@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Plugins/Mods') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+
+<section class="card">
+  <h2>{{ t('Suchen und installieren') }}</h2>
+  <p class="small muted">
+    {% if server.type == 'PAPER' %}{{ t('Paper-Server: Plugins und Datapacks von Modrinth.') }}
+    {% elif server.type == 'FABRIC' %}{{ t('Fabric-Server: Mods und Datapacks von Modrinth. Benötigte Mods (z. B. Fabric API) werden automatisch mitinstalliert.') }}
+    {% else %}{{ t('Vanilla-Server: Datapacks von Modrinth.') }}{% endif %}
+    {{ t('Eigene Plugins oder Mods, die es auf Modrinth nicht gibt?') }} <a href="mailto:{{ SUPPORT_EMAIL }}">{{ t('Schreib dem Support') }}</a> – {{ t('der Admin lädt sie für dich hoch.') }}
+  </p>
+  <form class="search-form" hx-get="/server/{{ server.id }}/erweiterungen/suche" hx-target="#ext-results" hx-trigger="submit, load">
+    <input name="q" placeholder="{{ t('z. B. WorldEdit, Lithium …') }}" aria-label="{{ t('Suche') }}">
+    <select name="kind" aria-label="{{ t('Art') }}">{% for k in kinds %}<option value="{{ k }}">{{ {'plugin': t('Plugins'), 'mod': t('Mods'), 'datapack': t('Datapacks')}[k] }}</option>{% endfor %}</select>
+    <button class="btn">{{ t('Suchen') }}</button>
+  </form>
+  <div id="ext-results"></div>
+</section>
+
+<section class="card">
+  <h2>{{ t('Installiert') }}</h2>
+  {% if rows %}
+  <ul class="ext-list">
+    {% for r in rows %}
+    <li class="ext-item {{ '' if r.enabled else 'disabled' }}">
+      <div class="ext-info">
+        <strong>{{ r.title }}</strong> <span class="pill">{{ {'plugin': t('Plugin'), 'mod': t('Mod'), 'datapack': t('Datapack')}[r.kind] }}</span>
+        {% if r.is_dependency %}<span class="pill">{{ t('Abhängigkeit') }}</span>{% endif %}
+        {% if r.source == 'upload' %}<span class="pill busy">{{ t('vom Admin') }}</span>{% endif %}
+        <div class="small muted">{{ r.version_number or r.filename }}</div>
+        <div class="ext-versions" id="ext-v-{{ r.id }}"></div>
+      </div>
+      <div class="actions-cell">
+        <form method="post" action="/server/{{ server.id }}/erweiterungen/{{ r.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <button name="action" value="toggle" class="btn small">{{ t('Deaktivieren') if r.enabled else t('Aktivieren') }}</button></form>
+        {% if r.source == 'modrinth' %}
+        <button class="btn small" hx-get="/server/{{ server.id }}/erweiterungen/{{ r.id }}/versionen" hx-target="#ext-v-{{ r.id }}">{{ t('Version') }}</button>
+        {% endif %}
+        <form method="post" action="/server/{{ server.id }}/erweiterungen/{{ r.id }}" onsubmit="return confirm('{{ t('Wirklich entfernen?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}">
+          <button name="action" value="remove" class="btn small danger">{{ t('Entfernen') }}</button></form>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ t('Noch nichts installiert.') }}</p>{% endif %}
+  {% if server.type == 'FABRIC' and rows %}
+  <div class="alert success small">
+    {{ t('Modpack für Spieler: Deine Freunde brauchen die Mods auch. Diese Datei in die Modrinth App oder Prism Launcher ziehen:') }}
+    <div class="copy-row"><a class="btn small" href="/modpack/{{ server.short_code }}.mrpack">{{ t('Modpack herunterladen') }}</a>
+      <button type="button" class="btn small" data-copy="{{ request.base_url }}modpack/{{ server.short_code }}.mrpack">{{ t('Link kopieren') }}</button></div>
+  </div>
+  {% endif %}
+</section>
+
+{% if ctx.is_admin %}
+<section class="card highlight">
+  <h2>{{ t('Admin: eigene Datei hochladen') }}</h2>
+  <p class="small muted">{{ t('Für Support-Fälle: Plugin, Mod oder Datapack, das es nicht auf Modrinth gibt. Andere Dateien über den Reiter „Dateien“.') }}</p>
+  <form method="post" action="/server/{{ server.id }}/erweiterungen-upload" enctype="multipart/form-data" class="form row-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('Art') }}<select name="kind"><option value="plugin">{{ t('Plugin') }}</option><option value="mod">{{ t('Mod') }}</option><option value="datapack">{{ t('Datapack') }}</option></select></label>
+    <label>{{ t('Datei') }}<input type="file" name="file" required></label>
+    <button class="btn primary">{{ t('Hochladen') }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

@@ -20,9 +20,15 @@ def icon_file(server_id: int):
     return config.UPLOADS_DIR / "icons" / f"{server_id}.png"
 
 
+def backup_dir(server_id: int):
+    return config.DATA_DIR / "backups" / str(server_id)
+
+
 def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
                ops: list[str], whitelist: list[str]) -> dict:
-    ram = model["ram_gb"]
+    from .servers import effective_ram
+
+    ram = effective_ram(server, model)
     env = {
         "EULA": "TRUE",
         "TYPE": server["type"],
@@ -47,6 +53,15 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
     }
     if server["type"] == "PAPER":
         env["JVM_DD_OPTS"] = "disable.watchdog:true"
+    env["LEVEL"] = server["level_name"] or "world"
+    if server["world_seed"]:
+        env["SEED"] = server["world_seed"]
+    if server["world_type"]:
+        env["LEVEL_TYPE"] = server["world_type"]
+    if server["resource_pack_url"]:
+        env["RESOURCE_PACK"] = server["resource_pack_url"]
+        env["RESOURCE_PACK_SHA1"] = server["resource_pack_sha1"] or ""
+        env["RESOURCE_PACK_ENFORCE"] = "TRUE" if server["resource_pack_enforce"] else "FALSE"
     if ops:
         env["OPS"] = ",".join(ops)
     if server["whitelist_enabled"]:

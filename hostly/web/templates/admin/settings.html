@@ -5,6 +5,15 @@
 {% include "admin/_nav.html" %}
 {% if saved %}<div class="alert success" role="status">{{ t('settings.saved_display') }}</div>{% endif %}
 <section class="card narrow-left">
+  <h2>{{ t('Wartungsmodus') }}</h2>
+  <p class="small muted">{{ t('User sehen einen Hinweis und können nichts kaufen oder ändern. Du als Admin kannst alles. Minecraft-Server laufen weiter, Abläufe werden danach nachgeholt.') }}</p>
+  <form method="post" action="/admin/wartung">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    {% if maintenance %}<span class="pill busy">{{ t('an') }}</span> <button name="enabled" value="0" class="btn">{{ t('Ausschalten') }}</button>
+    {% else %}<span class="pill off">{{ t('aus') }}</span> <button name="enabled" value="1" class="btn">{{ t('Einschalten') }}</button>{% endif %}
+  </form>
+</section>
+<section class="card narrow-left">
   <h2>{{ t('RAM-Prüfung') }}</h2>
   <p class="small muted">{{ t('Container-Grenze = Modell-RAM + 0,5 GB. Nach jedem Kauf muss die Reserve frei bleiben.') }}</p>
   <form method="post" action="/admin/einstellungen" class="form">

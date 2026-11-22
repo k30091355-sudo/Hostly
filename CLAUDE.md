@@ -54,7 +54,8 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 8b. Dateimanager, Absturz-Schutz, Vorlagen, Kürzel & Statistik, Serverliste
 9. Feinschliff: Englisch, PWA, Installations-Anleitung
 
-**Aktueller Stand:** Stufe 1–5 fertig (Code in `hostly/`, Tests in `tests/`). Nächster Schritt: **Stufe 6**. Erster registrierter Account = Admin.
+**Aktueller Stand:** Stufe 1–9 fertig (Code in `hostly/`, Tests in `tests/`). Erster registrierter Account = Admin.
+Entscheidungen des Besitzers (Nov. 2026): **nur Modrinth** (kein CurseForge); eigene Plugins/Mods nur über Support, Admin lädt Dateien hoch; **keine Leise-Grenze** – Backups/ZIPs immer gedrosselt; alle *Vorschläge* im Konzept sind bestätigt.
 
 ## Code-Aufbau
 - `hostly/db.py`: SQLite + Migrationen (neue Tabellen = neuer Eintrag in `MIGRATIONS`, nie alte ändern).
@@ -65,7 +66,9 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 - `hostly/coins.py`, `codes.py`, `pricing.py`, `servers.py`: Regeln (Ledger, Codes, Preise, Kauf/Verlängern/Reaktivieren/Löschen). Laufen in `db.transaction()`.
 - `hostly/minecraft.py`: itzg-Container-Einstellungen. `hostly/worker/`: Aufträge (`jobs`), Docker, Status (nie bei `.paused`), Ablauf, Downloads.
 - Web → worker nur über `db.add_job()`. Web liest Server-Dateien nur (Konsole = `logs/latest.log`).
-- Neue Texte: `t('Deutscher Text')` – deutscher Text ist der Schlüssel, Englisch kommt in Stufe 9 nach `en.json`.
+- Neue Texte: `t('Deutscher Text')` – deutscher Text ist der Schlüssel, englische Übersetzung in `hostly/locales/en.json` ergänzen.
+- `hostly/modrinth.py`, `extensions.py`: Modrinth-Suche, Abhängigkeiten, Vorlagen, Versionswechsel-Plan. `hostly/nightpause.py`, `promotions.py`, `stats.py`, `filemanager.py`.
+- Worker-Dateiarbeit in `hostly/worker/files.py` (Plugin-Abgleich, rsync-Backups, Welt-Upload, `/trigger code`-Datapack).
 - Tests: `pytest` (alle müssen grün sein).
 
 ## Werkzeuge in diesem Repo

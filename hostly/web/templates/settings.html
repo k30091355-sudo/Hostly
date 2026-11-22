@@ -78,6 +78,19 @@
     </form>
   </section>
 
+  <section class="card" id="uebertragen">
+    <h2>{{ t('Coins übertragen') }}</h2>
+    {% if error_transfer %}<div class="alert error" role="alert">{{ error_transfer }}</div>{% endif %}
+    <p class="small muted">{{ t('Kontostand') }}: {{ ctx.balance | coins }} Coins · {{ t('Server überträgst du im Reiter „Miete“ des Servers.') }}</p>
+    <form method="post" action="/einstellungen/coins-uebertragen" class="form" onsubmit="return confirm('{{ t('Coins wirklich übertragen?') }}')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Benutzername des Empfängers') }}<input name="username" required autocapitalize="none"></label>
+      <label>{{ t('Betrag') }}<input type="number" name="amount" min="1" required></label>
+      <label>{{ t('field.password_confirm') }}<input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn primary">{{ t('Übertragen') }}</button>
+    </form>
+  </section>
+
   <section class="card" id="darstellung">
     <h2>{{ t('settings.display_title') }}</h2>
     <form method="post" action="/einstellungen/darstellung" class="form">
@@ -96,6 +109,17 @@
         </select>
       </label>
       <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+  <section class="card danger-zone" id="account-loeschen">
+    <h2>{{ t('Account löschen') }}</h2>
+    <p class="small">{{ t('Alle deine Server (auch archivierte) und alle Coins werden gelöscht. Vorher kannst du Coins und Server an andere übertragen.') }}</p>
+    {% if error_delete %}<div class="alert error" role="alert">{{ error_delete }}</div>{% endif %}
+    <form method="post" action="/einstellungen/account-loeschen" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="radio"><input type="checkbox" name="confirm" value="1" required> {{ t('Ja, ich will meinen Account endgültig löschen.') }}</label>
+      <label>{{ t('field.password_confirm') }}<input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn danger">{{ t('Account endgültig löschen') }}</button>
     </form>
   </section>
   {% endif %}

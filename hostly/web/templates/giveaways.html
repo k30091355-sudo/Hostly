@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Gewinnspiele') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Gewinnspiele') }}</h1>
+{% if request.query_params.get('ok') %}<div class="alert success">{{ t('Du nimmst teil. Viel Glück! 🍀') }}</div>{% endif %}
+{% if active %}
+  {% for g in active %}{% include "_giveaway.html" %}{% endfor %}
+{% else %}
+  <div class="card"><p class="muted">{{ t('Gerade läuft kein Gewinnspiel.') }}</p></div>
+{% endif %}
+{% if past %}
+<section class="card">
+  <h2>{{ t('Beendete Gewinnspiele') }}</h2>
+  <ul class="events">
+    {% for g in past %}
+      <li><strong>{{ g.title }}</strong> · {{ g.coins_per_winner }} Coins · {{ g.drawn_at | localtime }}<br>
+        <span class="small">{{ t('Gewinner') }}: {{ winners[g.id] | join(', ') if winners[g.id] else t('keine Teilnehmer') }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

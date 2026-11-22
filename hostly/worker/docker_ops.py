@@ -38,13 +38,20 @@ class DockerOps:
         try:
             c = self.client.containers.get(name)
         except self.docker.errors.NotFound:
-            return {"exists": False, "running": False, "health": None}
+            return {"exists": False, "running": False, "health": None, "restart_count": 0}
         s = c.attrs.get("State", {})
         return {
             "exists": True,
             "running": bool(s.get("Running")),
             "health": (s.get("Health") or {}).get("Status"),
+            "restart_count": int(c.attrs.get("RestartCount") or 0),
         }
+
+    def logs_tail(self, name: str, lines: int = 30) -> str:
+        try:
+            return self.client.containers.get(name).logs(tail=lines).decode("utf-8", errors="replace")
+        except self.docker.errors.NotFound:
+            return ""
 
     def recreate(self, spec: dict) -> None:
         """Container mit den aktuellen Einstellungen neu anlegen und starten (Daten bleiben im Ordner)."""

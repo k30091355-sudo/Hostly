@@ -5,13 +5,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
-from ... import config, console, db, images, minecraft, motd, servers
+from ... import config, console, db, images, minecraft, motd, nightpause, security, servers
 from ..deps import Ctx, Redirect, get_ctx
 
 router = APIRouter()
 
 LOG_TAIL_BYTES = 64 * 1024
-ACTIONS = ("start", "stop", "restart", "reload")
+ACTIONS = ("start", "stop", "restart", "restart_warn", "reload")
 
 
 # ---------- Hilfen ----------
@@ -45,7 +45,9 @@ def busy_job(ctx: Ctx, server_id: int):
 
 def page(ctx: Ctx, template: str, server, status_code: int = 200, **values):
     st = status_of(ctx, server["id"])
-    label, cls = servers.display_status(server, st)
+    night = servers.night_pause_running(ctx.conn, server["id"])
+    label, cls = servers.display_status(server, st, night_paused=night is not None)
+    values.setdefault("night", night)
     return ctx.render(template, status_code=status_code, server=server, st=st, status_label=label,
                       status_class=cls, busy=busy_job(ctx, server["id"]), **values)
 
@@ -67,7 +69,8 @@ def my_servers(ctx: Ctx = Depends(get_ctx)):
            WHERE s.owner_id = ? AND s.state != 'deleted' ORDER BY s.state = 'archived', s.id DESC""",
         (ctx.user["id"],),
     ).fetchall()
-    items = [(r, *servers.display_status(r, r if r["running"] is not None else None)) for r in rows]
+    items = [(r, *servers.display_status(r, r if r["running"] is not None else None,
+                                         servers.night_pause_running(ctx.conn, r["id"]) is not None)) for r in rows]
     return ctx.render("servers/list.html", items=items)
 
 
@@ -96,7 +99,14 @@ def action(server_id: int, action: str = Form(...), csrf: str = Form(""), ctx: C
     server = load(ctx, server_id)
     ctx.check_csrf(csrf)
     if action in ACTIONS and is_active(server) and busy_job(ctx, server_id) is None:
-        db.add_job(ctx.conn, action, server_id, ctx.user["id"])
+        if action in ("start", "restart", "restart_warn"):
+            # manueller Start während der Nachtpause → keine Erstattung für diese Nacht
+            ctx.conn.execute("UPDATE night_pause_log SET status = 'unterbrochen' WHERE server_id = ? AND status = 'laeuft'",
+                             (server_id,))
+        if action == "restart_warn":
+            db.add_job(ctx.conn, "restart", server_id, ctx.user["id"], {"warn": True})
+        else:
+            db.add_job(ctx.conn, action, server_id, ctx.user["id"])
     raise Redirect(f"/server/{server_id}")
 
 
@@ -259,15 +269,24 @@ def whitelist(server_id: int, action: str = Form(...), name: str = Form(""), csr
 def _rent_page(ctx: Ctx, server, status_code: int = 200, **values):
     m = servers.model(ctx.conn, server["model_id"])
     examples = [(d, servers.price_for(ctx.conn, m, d)) for d in (7, 14, 30)]
+    model_changes = [(om, servers.change_model_price(server, m, om)) for om in servers.models(ctx.conn) if om["id"] != m["id"]]
+    np_log = ctx.conn.execute("SELECT * FROM night_pause_log WHERE server_id = ? ORDER BY id DESC LIMIT 10",
+                              (server["id"],)).fetchall()
+    np_refund = None
+    if server["night_pause_start"] is not None:
+        np_refund = nightpause.refund(server["paid_total"], server["paid_days"],
+                                      nightpause.planned_hours(server["night_pause_start"], server["night_pause_end"]),
+                                      server["discount_percent"])
     return page(ctx, "servers/rent.html", server, status_code, refund=servers.refund_amount(server),
-                examples=examples, request_id=secrets.token_urlsafe(16),
-                available=servers.availability(ctx.conn, m), **values)
+                examples=examples, request_id=secrets.token_urlsafe(16), model_changes=model_changes,
+                np_log=np_log, np_refund=np_refund, available=servers.availability(ctx.conn, m), **values)
 
 
 @router.get("/server/{server_id}/miete", response_class=HTMLResponse)
 def rent(server_id: int, ctx: Ctx = Depends(get_ctx)):
     server = load(ctx, server_id)
-    msg = {"ext": "Verlängert.", "react": "Server wird reaktiviert …"}.get(ctx.request.query_params.get("ok", ""))
+    msg = {"ext": "Verlängert.", "react": "Server wird reaktiviert …", "np": "Nachtpause gespeichert.",
+           "model": "Modell gewechselt – der Server startet neu."}.get(ctx.request.query_params.get("ok", ""))
     return _rent_page(ctx, server, success=ctx.t(msg) if msg else None)
 
 
@@ -348,3 +367,48 @@ def download(job_id: int, ctx: Ctx = Depends(get_ctx)):
     safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in server["name"])[:40] or "server"
     part = "welt" if path.name.endswith("-world.zip") else "dateien"
     return FileResponse(path, media_type="application/zip", filename=f"{safe}-{part}.zip")
+
+
+# ---------- Nachtpause, Modellwechsel, Übertragen (Stufe 6) ----------
+
+@router.post("/server/{server_id}/nachtpause")
+def set_night_pause(server_id: int, enabled: str = Form(""), start: int = Form(1), end: int = Form(8),
+                    csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    ctx.check_csrf(csrf)
+    if enabled:
+        err = nightpause.check(start, end)
+        if err:
+            return _rent_page(ctx, server, 400, error=ctx.t(err))
+        ctx.conn.execute("UPDATE servers SET night_pause_start = ?, night_pause_end = ? WHERE id = ?",
+                         (start, end, server_id))
+    else:
+        ctx.conn.execute("UPDATE servers SET night_pause_start = NULL, night_pause_end = NULL WHERE id = ?", (server_id,))
+    raise Redirect(f"/server/{server_id}/miete?ok=np")
+
+
+@router.post("/server/{server_id}/modell")
+def change_model(server_id: int, model_id: int = Form(...), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    ctx.check_csrf(csrf)
+    try:
+        with db.transaction(ctx.conn):
+            servers.change_model(ctx.conn, server, model_id, ctx.user["id"])
+    except servers.ServerError as exc:
+        return _rent_page(ctx, server, 400, error=ctx.t(exc.message))
+    raise Redirect(f"/server/{server_id}/miete?ok=model")
+
+
+@router.post("/server/{server_id}/uebertragen")
+def transfer(server_id: int, username: str = Form(""), password: str = Form(""), csrf: str = Form(""),
+             ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    ctx.check_csrf(csrf)
+    if not security.verify_password(ctx.user["password_hash"], password):
+        return _rent_page(ctx, server, 400, error=ctx.t("err.old_password_wrong"))
+    try:
+        with db.transaction(ctx.conn):
+            servers.transfer_server(ctx.conn, server, ctx.user["id"], username)
+    except servers.ServerError as exc:
+        return _rent_page(ctx, server, 400, error=ctx.t(exc.message))
+    raise Redirect("/server" if not ctx.is_admin else f"/server/{server_id}")

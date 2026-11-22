@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Version') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+<section class="card">
+  <h2>{{ t('Minecraft-Version und Server-Typ') }}</h2>
+  <p>{{ t('Aktuell:') }} <strong>{{ server.type | capitalize }} {{ server.mc_version if server.mc_version != 'LATEST' else t('(neueste, wird beim ersten Start festgelegt)') }}</strong></p>
+  <p class="small muted">{{ t('Vor jedem Wechsel macht Hostly automatisch ein Backup. Ein Wechsel auf eine ältere Version kann Welten beschädigen – dann hilft das Backup.') }}</p>
+  <form method="get" action="/server/{{ server.id }}/version" class="form row-form">
+    <label>{{ t('Neue Version') }}<select name="to_version">{% for v in versions_list %}<option value="{{ v }}" {% if v == (to_version or server.mc_version) %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+    <label>{{ t('Server-Typ') }}<select name="to_type">{% for ty in types %}<option value="{{ ty }}" {% if ty == (to_type or server.type) %}selected{% endif %}>{{ ty | capitalize }}</option>{% endfor %}</select></label>
+    <button class="btn">{{ t('Prüfen') }}</button>
+  </form>
+</section>
+{% if plan %}
+<section class="card highlight">
+  <h2>{{ t('Vorab-Prüfung') }}: {{ to_type | capitalize }} {{ to_version }}</h2>
+  <p>{{ t('{n} Erweiterungen werden automatisch aktualisiert.', n=plan['update'] | length) }}</p>
+  {% if plan['update'] %}<ul class="small">{% for u in plan['update'] %}<li>{{ u.row.title }}: {{ u.row.version_number }} → {{ u.version.version_number }}</li>{% endfor %}</ul>{% endif %}
+  <p>{{ t('{n} Erweiterungen gibt es dafür nicht – sie werden deaktiviert.', n=plan.disable | length) }}</p>
+  {% if plan.disable %}<ul class="small">{% for d in plan.disable %}<li>{{ d.row.title }} ({{ t(d.reason) }})</li>{% endfor %}</ul>{% endif %}
+  {% if to_type != server.type %}<p class="small muted">{{ t('Die Welt bleibt erhalten.') }}</p>{% endif %}
+  <form method="post" action="/server/{{ server.id }}/version" onsubmit="return confirm('{{ t('Jetzt wechseln? Der Server wird neu gestartet.') }}')">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="to_version" value="{{ to_version }}"><input type="hidden" name="to_type" value="{{ to_type }}">
+    <button class="btn primary">{{ t('Backup machen und wechseln') }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

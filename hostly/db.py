@@ -232,6 +232,127 @@ MIGRATIONS: list[str] = [
     ALTER TABLE users ADD COLUMN avatar_mode TEXT NOT NULL DEFAULT 'none';
     ALTER TABLE users ADD COLUMN avatar_version INTEGER NOT NULL DEFAULT 0;
     """,
+    # 4 – Stufe 6 bis 8b: Gewinnspiele, Aktionen, Nachtpause, Backups, Erweiterungen, Statistik
+    """
+    CREATE TABLE giveaways (
+        id                INTEGER PRIMARY KEY,
+        title             TEXT NOT NULL,
+        description       TEXT,
+        coins_per_winner  INTEGER NOT NULL,
+        winner_count      INTEGER NOT NULL,
+        ends_at           TEXT NOT NULL,
+        drawn_at          TEXT,
+        created_by        INTEGER REFERENCES users(id),
+        created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE giveaway_entries (
+        giveaway_id  INTEGER NOT NULL REFERENCES giveaways(id),
+        user_id      INTEGER NOT NULL REFERENCES users(id),
+        is_winner    INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (giveaway_id, user_id)
+    );
+
+    -- kind: rabatt (Prozent) | ram (Extra-RAM für neue Mieten)
+    CREATE TABLE promotions (
+        id            INTEGER PRIMARY KEY,
+        kind          TEXT NOT NULL,
+        title         TEXT NOT NULL,
+        percent       INTEGER NOT NULL DEFAULT 0,
+        extra_ram_gb  REAL NOT NULL DEFAULT 0,
+        model_ids     TEXT NOT NULL,
+        starts_at     TEXT NOT NULL,
+        ends_at       TEXT NOT NULL,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    ALTER TABLE servers ADD COLUMN extra_ram_gb REAL NOT NULL DEFAULT 0;
+    ALTER TABLE servers ADD COLUMN extra_ram_until TEXT;
+    ALTER TABLE servers ADD COLUMN night_pause_start INTEGER;
+    ALTER TABLE servers ADD COLUMN night_pause_end INTEGER;
+    ALTER TABLE servers ADD COLUMN public_listed INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE servers ADD COLUMN level_name TEXT NOT NULL DEFAULT 'world';
+    ALTER TABLE servers ADD COLUMN world_seed TEXT;
+    ALTER TABLE servers ADD COLUMN world_type TEXT;
+    ALTER TABLE servers ADD COLUMN resource_pack_url TEXT;
+    ALTER TABLE servers ADD COLUMN resource_pack_sha1 TEXT;
+    ALTER TABLE servers ADD COLUMN resource_pack_enforce INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE servers ADD COLUMN crash_locked INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE servers ADD COLUMN template TEXT;
+
+    CREATE TABLE night_pause_log (
+        id             INTEGER PRIMARY KEY,
+        server_id      INTEGER NOT NULL REFERENCES servers(id),
+        start_at       TEXT NOT NULL,
+        end_at         TEXT NOT NULL,
+        planned_hours  INTEGER NOT NULL,
+        status         TEXT NOT NULL,          -- laeuft | erstattet | unterbrochen | abgebrochen
+        refund_coins   INTEGER NOT NULL DEFAULT 0,
+        created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (server_id, start_at)
+    );
+
+    CREATE TABLE backups (
+        id          INTEGER PRIMARY KEY,
+        server_id   INTEGER NOT NULL REFERENCES servers(id),
+        folder      TEXT NOT NULL,
+        kind        TEXT NOT NULL,            -- taeglich | vor-aenderung | vor-wiederherstellung
+        status      TEXT NOT NULL,            -- laeuft | fertig | fehler
+        size_bytes  INTEGER NOT NULL DEFAULT 0,
+        pinned      INTEGER NOT NULL DEFAULT 0,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX backups_server ON backups(server_id, id);
+
+    -- source: modrinth | upload (vom Admin)
+    CREATE TABLE server_extensions (
+        id              INTEGER PRIMARY KEY,
+        server_id       INTEGER NOT NULL REFERENCES servers(id),
+        source          TEXT NOT NULL,
+        kind            TEXT NOT NULL,        -- plugin | mod | datapack
+        project_id      TEXT,
+        slug            TEXT,
+        title           TEXT NOT NULL,
+        version_id      TEXT,
+        version_number  TEXT,
+        filename        TEXT NOT NULL,
+        url             TEXT,
+        sha1            TEXT,
+        sha512          TEXT,
+        size            INTEGER NOT NULL DEFAULT 0,
+        client_side     TEXT,
+        is_dependency   INTEGER NOT NULL DEFAULT 0,
+        enabled         INTEGER NOT NULL DEFAULT 1,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX server_extensions_server ON server_extensions(server_id);
+
+    CREATE TABLE waitlist (
+        id           INTEGER PRIMARY KEY,
+        user_id      INTEGER NOT NULL REFERENCES users(id),
+        model_id     INTEGER NOT NULL REFERENCES models(id),
+        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+        notified_at  TEXT,
+        UNIQUE (user_id, model_id)
+    );
+
+    CREATE TABLE crashes (
+        id          INTEGER PRIMARY KEY,
+        server_id   INTEGER NOT NULL REFERENCES servers(id),
+        log_excerpt TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE player_samples (
+        server_id  INTEGER NOT NULL REFERENCES servers(id),
+        at         TEXT NOT NULL,
+        running    INTEGER NOT NULL,
+        players    INTEGER NOT NULL
+    );
+    CREATE INDEX player_samples_server ON player_samples(server_id, at);
+
+    ALTER TABLE server_status ADD COLUMN restart_count INTEGER NOT NULL DEFAULT 0;
+    """,
 ]
 
 

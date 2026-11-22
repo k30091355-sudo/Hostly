@@ -6,9 +6,11 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import time
 
 from .. import config, console, db, minecraft, rcon, servers
 from ..timeutil import now_sql
+from . import files
 
 log = logging.getLogger("hostly.worker")
 
@@ -55,9 +57,52 @@ class Worker:
         _chown_tree_top(path)
 
     def recreate(self, conn, server) -> None:
+        server = self.load(conn, server["id"])
         self.prepare_data_dir(server["id"])
+        files.sync_extensions(conn, server)
+        try:
+            files.write_code_datapack(server, db.get_setting(conn, "public_url"))
+        except OSError:
+            log.warning("/code-Datapack für Server %s konnte nicht geschrieben werden", server["id"])
         self.ops.recreate(self.spec_for(conn, server))
-        conn.execute("UPDATE servers SET needs_restart = 0 WHERE id = ?", (server["id"],))
+        conn.execute("UPDATE servers SET needs_restart = 0, crash_locked = 0 WHERE id = ?", (server["id"],))
+
+    def awake(self, server) -> bool:
+        return (server["state"] == "active"
+                and self.ops.state(minecraft.container_name(server["id"]))["running"]
+                and not self.is_paused(server["id"]))
+
+    def backup(self, conn, server, kind: str) -> int:
+        """Backup anlegen (inkrementell, Schnecken-Tempo). Eingefrorene Server werden NICHT geweckt."""
+        src = minecraft.data_dir(server["id"])
+        if not src.exists():
+            return 0
+        prev = conn.execute(
+            "SELECT folder FROM backups WHERE server_id = ? AND status = 'fertig' ORDER BY id DESC LIMIT 1",
+            (server["id"],)).fetchone()
+        base = minecraft.backup_dir(server["id"])
+        cur = conn.execute("INSERT INTO backups (server_id, folder, kind, status) VALUES (?, '', ?, 'laeuft')",
+                           (server["id"], kind))
+        backup_id = cur.lastrowid
+        folder = time.strftime("%Y-%m-%d_%H%M%S") + f"_{backup_id}"   # eindeutig, auch bei 2 Backups pro Sekunde
+        conn.execute("UPDATE backups SET folder = ? WHERE id = ?", (folder, backup_id))
+        awake = self.awake(server)
+        try:
+            if awake:
+                self.server_rcon(conn, server, "save-off")
+                self.server_rcon(conn, server, "save-all flush")
+            size = files.make_backup(src, base / folder, base / prev["folder"] if prev else None, slow=True)
+            conn.execute("UPDATE backups SET status = 'fertig', size_bytes = ? WHERE id = ?", (size, backup_id))
+        except Exception:
+            conn.execute("UPDATE backups SET status = 'fehler' WHERE id = ?", (backup_id,))
+            raise
+        finally:
+            if awake:
+                try:
+                    self.server_rcon(conn, server, "save-on")
+                except rcon.RconError:
+                    log.warning("save-on fehlgeschlagen für Server %s", server["id"])
+        return backup_id
 
     def graceful_stop(self, conn, server) -> None:
         name = minecraft.container_name(server["id"])
@@ -122,6 +167,12 @@ class Worker:
         server = self.load(conn, job["server_id"])
         if server["state"] != "active":
             return "übersprungen"
+        if payload.get("warn") and self.awake(server):
+            try:
+                self.server_rcon(conn, server, "say Der Server startet in 1 Minute neu.")
+                time.sleep(60)
+            except rcon.RconError:
+                pass
         self.graceful_stop(conn, server)
         self.recreate(conn, server)
         return "neu gestartet"
@@ -185,6 +236,9 @@ class Worker:
             if path.exists():
                 shutil.rmtree(path, ignore_errors=True)
         minecraft.icon_file(server["id"]).unlink(missing_ok=True)
+        shutil.rmtree(minecraft.backup_dir(server["id"]), ignore_errors=True)
+        conn.execute("DELETE FROM backups WHERE server_id = ?", (server["id"],))
+        shutil.rmtree(config.UPLOADS_DIR / "admin-files" / str(server["id"]), ignore_errors=True)
         conn.execute("DELETE FROM server_status WHERE server_id = ?", (server["id"],))
         return "gelöscht"
 
@@ -221,6 +275,106 @@ class Worker:
                     log.warning("save-on fehlgeschlagen für Server %s", server["id"])
         os.chmod(dest, 0o644)
         return filename
+
+
+    # ---------- Stufe 6–8b ----------
+
+    def job_ext_sync(self, conn, job, payload):
+        """Plugin-/Mod-Dateien an die Liste anpassen. Gilt nach dem nächsten Neustart."""
+        server = self.load(conn, job["server_id"])
+        if server["state"] not in ("active", "creating"):
+            return "übersprungen"
+        return files.sync_extensions(conn, server)
+
+    def job_backup(self, conn, job, payload):
+        server = self.load(conn, job["server_id"])
+        if server["state"] != "active":
+            return "übersprungen"
+        return f"Backup {self.backup(conn, server, payload.get('kind', 'vor-aenderung'))}"
+
+    def job_restore(self, conn, job, payload):
+        """Backup wiederherstellen: stoppen → aktuellen Stand sichern → zurückkopieren → starten."""
+        server = self.load(conn, job["server_id"])
+        row = conn.execute("SELECT * FROM backups WHERE id = ? AND server_id = ? AND status = 'fertig'",
+                           (payload.get("backup_id"), server["id"])).fetchone()
+        if row is None or server["state"] != "active":
+            raise RuntimeError("Backup nicht gefunden.")
+        self.graceful_stop(conn, server)
+        self.backup(conn, server, "vor-wiederherstellung")
+        files.restore_backup(minecraft.backup_dir(server["id"]) / row["folder"], minecraft.data_dir(server["id"]))
+        self.recreate(conn, server)
+        return "wiederhergestellt"
+
+    def job_rebuild(self, conn, job, payload):
+        """Nach Versions-/Typwechsel: Backup → Dateien anpassen → neu starten."""
+        server = self.load(conn, job["server_id"])
+        if server["state"] != "active":
+            return "übersprungen"
+        self.graceful_stop(conn, server)
+        self.backup(conn, server, "vor-aenderung")
+        self.recreate(conn, server)
+        return "umgebaut"
+
+    def job_world_upload(self, conn, job, payload):
+        server = self.load(conn, job["server_id"])
+        zip_path = config.UPLOADS_DIR / "worlds" / payload["file"]
+        try:
+            files.extract_world(zip_path, minecraft.data_dir(server["id"]) / payload["name"])
+        finally:
+            zip_path.unlink(missing_ok=True)
+        return "Welt hochgeladen"
+
+    def job_world_delete(self, conn, job, payload):
+        server = self.load(conn, job["server_id"])
+        if payload["name"] == server["level_name"]:
+            raise RuntimeError("Die aktive Welt kann nicht gelöscht werden.")
+        target = safe_path(server["id"], payload["name"])
+        shutil.rmtree(target, ignore_errors=True)
+        return "Welt gelöscht"
+
+    def job_file_write(self, conn, job, payload):
+        target = safe_path(job["server_id"], payload["path"])
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(payload["content"], encoding="utf-8")
+        files.chown(target)
+        return "gespeichert"
+
+    def job_file_delete(self, conn, job, payload):
+        target = safe_path(job["server_id"], payload["path"])
+        if target.is_dir():
+            shutil.rmtree(target)
+        else:
+            target.unlink(missing_ok=True)
+        return "gelöscht"
+
+    def job_file_put(self, conn, job, payload):
+        """Admin-Upload: Datei aus uploads/ an die gewünschte Stelle im Server-Ordner legen."""
+        src = config.UPLOADS_DIR / "admin-files" / str(job["server_id"]) / "tmp" / payload["file"]
+        target = safe_path(job["server_id"], payload["path"])
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(src), target)
+        files.chown(target)
+        return "hochgeladen"
+
+
+def _backup_delete(w, conn, job, payload):
+    b = conn.execute("SELECT * FROM backups WHERE id = ?", (payload.get("backup_id"),)).fetchone()
+    if b:
+        shutil.rmtree(minecraft.backup_dir(b["server_id"]) / b["folder"], ignore_errors=True)
+        conn.execute("DELETE FROM backups WHERE id = ?", (b["id"],))
+    return "gelöscht"
+
+
+Worker.job_backup_delete = _backup_delete
+
+
+def safe_path(server_id: int, rel: str):
+    """Pfad innerhalb des Server-Ordners (Schutz gegen ../-Tricks)."""
+    from ..filemanager import resolve
+    target = resolve(server_id, rel)
+    if target is None:
+        raise RuntimeError("Ungültiger Pfad.")
+    return target
 
 
 def _chown_tree_top(path) -> None:
