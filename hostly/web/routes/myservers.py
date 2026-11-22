@@ -131,7 +131,7 @@ def read_log_tail(server_id: int, lines: int = 300) -> str:
 
 def recent_commands(ctx: Ctx, server_id: int):
     return ctx.conn.execute(
-        "SELECT * FROM jobs WHERE server_id = ? AND kind = 'command' ORDER BY id DESC LIMIT 10", (server_id,)
+        "SELECT * FROM jobs WHERE server_id = ? AND kind = 'command' ORDER BY id DESC LIMIT 5", (server_id,)
     ).fetchall()
 
 
@@ -145,8 +145,13 @@ def console_page(server_id: int, ctx: Ctx = Depends(get_ctx)):
 @router.get("/server/{server_id}/konsole/log", response_class=HTMLResponse)
 def console_log(server_id: int, ctx: Ctx = Depends(get_ctx)):
     server = load(ctx, server_id)
-    return ctx.render("servers/_console_log.html", server=server, log=read_log_tail(server_id),
-                      commands=recent_commands(ctx, server_id))
+    return ctx.render("servers/_console_log.html", server=server, log=read_log_tail(server_id))
+
+
+@router.get("/server/{server_id}/konsole/befehle", response_class=HTMLResponse)
+def console_commands(server_id: int, ctx: Ctx = Depends(get_ctx)):
+    server = load(ctx, server_id)
+    return ctx.render("servers/_console_cmds.html", server=server, commands=recent_commands(ctx, server_id))
 
 
 @router.post("/server/{server_id}/konsole")
@@ -164,7 +169,8 @@ def console_command(server_id: int, command: str = Form(""), csrf: str = Form(""
     if ctx.request.headers.get("hx-request"):
         if error:
             return HTMLResponse(f'<div class="alert error small">{ctx.t(error)}</div>')
-        return HTMLResponse(f'<div class="hint good">{ctx.t("Befehl gesendet.")}</div>')
+        return HTMLResponse(f'<div class="hint good small">{ctx.t("Befehl gesendet – die Antwort erscheint unten.")}</div>',
+                            headers={"HX-Trigger": "konsole-befehl"})
     if error:
         return page(ctx, "servers/console.html", server, 400, log=read_log_tail(server_id),
                     commands=recent_commands(ctx, server_id), error=ctx.t(error))

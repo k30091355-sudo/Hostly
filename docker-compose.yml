@@ -48,7 +48,7 @@ services:
     networks:
       hostly-mc:
         ipv4_address: 172.30.0.3
-    mem_limit: 128m
+    mem_limit: 512m
 
   playit-2:
     image: ghcr.io/playit-cloud/playit-agent:0.16
@@ -60,7 +60,7 @@ services:
     networks:
       hostly-mc:
         ipv4_address: 172.30.0.4
-    mem_limit: 128m
+    mem_limit: 512m
 
 networks:
   hostly-int:

@@ -39,6 +39,9 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
         "ONLINE_MODE": "TRUE",
         # optimierte Java-Einstellungen (schnellerer Start, weniger Ruckler)
         "USE_AIKAR_FLAGS": "TRUE",
+        # weniger Daten beim Betreten (playit-Tunnel + Heim-Upload) und weniger CPU
+        "VIEW_DISTANCE": "8",
+        "SIMULATION_DISTANCE": "6",
         "TZ": config.TIMEZONE,
         # Konsole
         "ENABLE_RCON": "TRUE",

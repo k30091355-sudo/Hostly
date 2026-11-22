@@ -150,7 +150,6 @@
   "Bauen mit WorldEdit, Bereiche schützen mit WorldGuard.": "Build with WorldEdit, protect areas with WorldGuard.",
   "Beenden": "End",
   "Beendete Gewinnspiele": "Finished giveaways",
-  "Befehl gesendet.": "Command sent.",
   "Befehl, z. B. say Hallo": "Command, e.g. say Hello",
   "Behalten": "Keep",
   "Beigetreten": "Joined",
@@ -336,7 +335,6 @@
   "LATEST": "latest",
   "Laufende Server": "Running servers",
   "Laufzeit (Tage)": "Duration (days)",
-  "Letzte Befehle und Antworten": "Recent commands and replies",
   "Letzte Nächte": "Recent nights",
   "Link kopieren": "Copy link",
   "Läuft ab": "Expires",
@@ -584,7 +582,6 @@
   "vorbei": "over",
   "vorgemerkt": "on the list",
   "wird archiviert …": "archiving …",
-  "wird ausgeführt …": "running …",
   "wird beim nächsten Start erzeugt": "will be created on next start",
   "wird erstellt …": "creating …",
   "wird gepackt …": "packing …",
@@ -633,5 +630,10 @@
   "Das Icon konnte nicht gespeichert werden (Ordner-Rechte). Bitte Hostly neu starten: docker compose restart": "The icon could not be saved (folder permissions). Please restart Hostly: docker compose restart",
   "{type} gibt es für Minecraft {version} noch nicht. Bitte eine ältere Version wählen.": "{type} isn't available for Minecraft {version} yet. Please choose an older version.",
   "Spieler-Verlauf": "Player history",
-  "Noch keine Spieler in den letzten 7 Tagen – sobald jemand spielt, erscheint hier eine Grafik.": "No players in the last 7 days – a chart appears here as soon as someone plays."
+  "Noch keine Spieler in den letzten 7 Tagen – sobald jemand spielt, erscheint hier eine Grafik.": "No players in the last 7 days – a chart appears here as soon as someone plays.",
+  "Befehl gesendet – die Antwort erscheint unten.": "Command sent – the reply appears below.",
+  "Deine letzten Befehle und die Antworten des Servers": "Your recent commands and the server's replies",
+  "wird ausgeführt … (ein eingefrorener Server wacht dafür kurz auf)": "running … (a frozen server wakes up briefly for this)",
+  "Tipp: Mit den Pfeiltasten ↑ ↓ holst du frühere Befehle zurück. Den Schrägstrich / brauchst du nicht.": "Tip: use the arrow keys ↑ ↓ to bring back earlier commands. You don't need the slash /.",
+  "Befehl": "Command"
 }

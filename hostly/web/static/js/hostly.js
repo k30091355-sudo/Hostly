@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCroppers();
   setupMotdEditor();
   scrollConsoles();
+  setupConsoleForms();
 });
 
 // Konsole automatisch nach unten scrollen (auch nach HTMX-Aktualisierung)
@@ -57,6 +58,15 @@ function scrollConsoles() {
   document.querySelectorAll("[data-autoscroll]").forEach((el) => { el.scrollTop = el.scrollHeight; });
 }
 document.addEventListener("htmx:beforeSwap", (e) => {
+  // Konsole nur neu zeichnen, wenn sich etwas geändert hat und gerade nichts markiert ist
+  const t = e.detail.target;
+  if (t && (t.id === "console-log" || t.id === "console-cmds") && e.detail.requestConfig && e.detail.requestConfig.verb === "get") {
+    const sel = window.getSelection && window.getSelection();
+    const selecting = sel && !sel.isCollapsed && t.contains(sel.anchorNode);
+    const openDetails = t.querySelector("details[open]");
+    if (e.detail.serverResponse === t.dataset.last || selecting || openDetails) { e.detail.shouldSwap = false; return; }
+    t.dataset.last = e.detail.serverResponse;
+  }
   const pre = e.detail.target.querySelector && e.detail.target.querySelector("[data-autoscroll]");
   if (pre) e.detail.target.dataset.atBottom = (pre.scrollHeight - pre.scrollTop - pre.clientHeight < 40) ? "1" : "0";
 });
@@ -154,3 +164,30 @@ window.addEventListener("beforeinstallprompt", (e) => {
     btn.addEventListener("click", () => { installPrompt.prompt(); btn.style.display = "none"; }, { once: true });
   }
 });
+
+// Konsolen-Eingabe: nach dem Senden leeren (Fokus bleibt), Pfeiltasten ↑ ↓ = frühere Befehle
+function setupConsoleForms() {
+  document.querySelectorAll("form[data-console-form]").forEach((form) => {
+    const input = form.querySelector('input[name="command"]');
+    const key = "hostly-cmds-" + form.dataset.consoleForm;
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) { history = []; }
+    let pos = history.length;
+    form.addEventListener("htmx:afterRequest", (e) => {
+      if (e.target !== form || !e.detail.successful) return;
+      const cmd = input.value.trim();
+      if (cmd && history[history.length - 1] !== cmd) history.push(cmd);
+      history = history.slice(-50);
+      try { localStorage.setItem(key, JSON.stringify(history)); } catch (_) { /* egal */ }
+      pos = history.length;
+      input.value = "";
+      input.focus();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" && pos > 0) { pos -= 1; input.value = history[pos]; e.preventDefault(); }
+      else if (e.key === "ArrowDown" && pos < history.length) {
+        pos += 1; input.value = pos < history.length ? history[pos] : ""; e.preventDefault();
+      }
+    });
+  });
+}

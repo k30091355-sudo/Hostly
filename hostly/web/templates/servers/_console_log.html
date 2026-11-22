@@ -1,15 +1,1 @@
 <pre class="console" data-autoscroll>{{ log or t('Noch keine Ausgabe. Starte den Server, um hier etwas zu sehen.') }}</pre>
-{% if commands %}
-<details class="small">
-  <summary>{{ t('Letzte Befehle und Antworten') }}</summary>
-  <ul class="events">
-  {% for c in commands %}
-    {% set cmd = (c.payload | fromjson).get('command', '') %}
-    <li><code class="mono">{{ cmd }}</code> →
-      {% if c.status == 'done' %}<span class="mono">{{ c.result }}</span>
-      {% elif c.status == 'error' %}<span class="minus">{{ c.error }}</span>
-      {% else %}<span class="muted">{{ t('wird ausgeführt …') }}</span>{% endif %}</li>
-  {% endfor %}
-  </ul>
-</details>
-{% endif %}

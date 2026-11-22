@@ -7,13 +7,17 @@
   <div id="console-log" hx-get="/server/{{ server.id }}/konsole/log" hx-trigger="every 3s" hx-swap="innerHTML">
     {% include "servers/_console_log.html" %}
   </div>
-  <form method="post" action="/server/{{ server.id }}/konsole" class="console-form"
-        hx-post="/server/{{ server.id }}/konsole" hx-target="#console-msg" hx-on::after-request="if(event.detail.successful) this.reset()">
+  <form method="post" action="/server/{{ server.id }}/konsole" class="console-form" data-console-form="{{ server.id }}"
+        hx-post="/server/{{ server.id }}/konsole" hx-target="#console-msg">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <input name="command" class="mono" placeholder="{{ t('Befehl, z. B. say Hallo') }}" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="256" required>
+    <input name="command" class="mono" placeholder="{{ t('Befehl, z. B. say Hallo') }}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="send" maxlength="256" required aria-label="{{ t('Befehl') }}">
     <button class="btn primary">{{ t('Senden') }}</button>
   </form>
   <div id="console-msg" aria-live="polite"></div>
+  <div id="console-cmds" hx-get="/server/{{ server.id }}/konsole/befehle" hx-trigger="every 3s, konsole-befehl from:body" hx-swap="innerHTML">
+    {% include "servers/_console_cmds.html" %}
+  </div>
+  <p class="small muted">{{ t('Tipp: Mit den Pfeiltasten ↑ ↓ holst du frühere Befehle zurück. Den Schrägstrich / brauchst du nicht.') }}</p>
   <p class="small muted">{{ t('stop, restart, end und reload sind hier gesperrt – dafür gibt es die Knöpfe in der Übersicht. Die Whitelist bitte im Reiter „Spieler“ pflegen.') }}</p>
 </section>
 {% endblock %}

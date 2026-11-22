@@ -106,6 +106,12 @@ def test_console(client):
     log.mkdir(parents=True)
     (log / "latest.log").write_text("[10:00:00] [Server thread/INFO]: Done!\n")
     assert "Done!" in client.get("/server/1/konsole/log").text
+    # Antworten stehen sichtbar unter der Eingabe (eigener Bereich, nicht im Protokoll-Polling)
+    r = client.post("/server/1/konsole", data={"command": "list", "csrf": token}, headers={"HX-Request": "true"})
+    assert r.headers.get("HX-Trigger") == "konsole-befehl"
+    run_jobs(w)
+    cmds = client.get("/server/1/konsole/befehle").text
+    assert "&gt; list" in cmds and "&gt; say hallo" in cmds
 
 
 def test_other_users_cannot_see_server(client):

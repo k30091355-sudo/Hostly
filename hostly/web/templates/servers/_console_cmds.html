@@ -1,0 +1,12 @@
+{% if commands %}
+<h3 class="small">{{ t('Deine letzten Befehle und die Antworten des Servers') }}</h3>
+<ul class="console-cmds">
+{% for c in commands %}
+  {% set cmd = (c.payload | fromjson).get('command', '') %}
+  <li><code class="mono">&gt; {{ cmd }}</code>
+    {% if c.status == 'done' %}<pre class="mono console-answer">{{ c.result }}</pre>
+    {% elif c.status == 'error' %}<div class="minus small">{{ c.error }}</div>
+    {% else %}<div class="muted small">{{ t('wird ausgeführt … (ein eingefrorener Server wacht dafür kurz auf)') }}</div>{% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}

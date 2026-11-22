@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -191,7 +192,8 @@ class Worker:
             raise RuntimeError("Dieser Befehl ist gesperrt – bitte die Knöpfe benutzen.")
         if not self.ops.state(minecraft.container_name(server["id"]))["running"]:
             raise RuntimeError("Der Server ist offline.")
-        return self.server_rcon(conn, server, cmd) or "(keine Ausgabe)"
+        out = re.sub(r"§[0-9a-fk-orx]", "", self.server_rcon(conn, server, cmd) or "", flags=re.I).strip()
+        return out[:4000] or "(keine Ausgabe – der Befehl wurde ausgeführt)"
 
     def job_rcon(self, conn, job, payload):
         """Von Hostly selbst erzeugte Befehle (Whitelist, OP). Nur wenn der Server läuft."""
