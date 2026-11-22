@@ -23,9 +23,31 @@ BACKUP_BWLIMIT = "5000"                           # KB/s ≈ 5 MB/s – Schnecke
 def chown(path: Path) -> None:
     if os.geteuid() == 0:
         try:
-            os.chown(path, 1000, 1000)
+            os.chown(path, 1000, 1000, follow_symlinks=False)
         except OSError:
             pass
+
+
+def fix_owner(path: Path) -> int:
+    """Alles unter `path` dem normalen Benutzer (1000) geben – so wie im Minecraft-Container und der Website.
+
+    Der worker läuft als root; Ordner, die er anlegt (z. B. world/, mods/, uploads/icons/), gehörten sonst
+    root, und Minecraft bzw. die Website dürften dort nicht schreiben (z. B. Fehler „world/session.lock“).
+    Ändert nur, was nicht schon 1000 gehört."""
+    if os.geteuid() != 0 or not path.exists():
+        return 0
+    fixed = 0
+    for root, dirs, names in os.walk(path):
+        for name in [None, *dirs, *names]:
+            p = root if name is None else os.path.join(root, name)
+            try:
+                st = os.lstat(p)
+                if st.st_uid != 1000 or st.st_gid != 1000:
+                    os.chown(p, 1000, 1000, follow_symlinks=False)
+                    fixed += 1
+            except OSError:
+                pass
+    return fixed
 
 
 def slow_cmd(cmd: list[str]) -> list[str]:
@@ -191,3 +213,14 @@ def extract_world(zip_path: Path, dest: Path) -> None:
     tmp.rename(dest)
     for p in [dest, *dest.rglob("*")]:
         chown(p)
+
+
+def paper_worlds_to_vanilla(data: Path, level: str) -> None:
+    """Paper speichert Nether/End in eigenen Ordnern (world_nether/DIM-1, world_the_end/DIM1).
+    Vanilla/Fabric erwarten sie in world/DIM-1 und world/DIM1 – beim Typwechsel verschieben,
+    sonst wären Nether und End scheinbar „weg“. (Andersherum wandelt Paper selbst um.)"""
+    for folder, dim in ((f"{level}_nether", "DIM-1"), (f"{level}_the_end", "DIM1")):
+        src, dst = data / folder / dim, data / level / dim
+        if src.is_dir() and not dst.exists():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            src.rename(dst)

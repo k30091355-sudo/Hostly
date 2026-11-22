@@ -6,20 +6,25 @@
 
 ---
 
-## ⚠️ Besondere Hinweise zum Update vom 22.11.2026
+## Besondere Hinweise – neuestes Update zuerst
 
-Bei **diesem einen** Update passiert einmalig Folgendes:
-- **Alle Accounts werden gelöscht** (auch dein Admin-Account, und alle Coins). Das passiert nur dieses eine Mal.
-- Tunnel, Codes und Aktionen bleiben erhalten. (Codes können wieder neu eingelöst werden.)
-- **Der erste Account, der danach erstellt wird, wird wieder Admin.**
+### Update 2 (22.11.2026, abends) – Fehlerbehebungen
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten. Deine Accounts und Server bleiben.
+- **Behoben:** Server startete mit Fehler `AccessDeniedException: ./world/session.lock` (falsche Ordner-Rechte). Wird beim Update automatisch repariert.
+- **Behoben:** „Internal Server Error“ beim Hochladen eines Server-Icons.
+- **Behoben:** `docker compose up` hing ca. 90 Sekunden bei „Recreate hostly-worker“ – jetzt wenige Sekunden.
+- **Schneller:** Minecraft-Server bekommen mehr CPU (Holz 2, Eisen 3, Diamant 4 Kerne; Windows hat weiter Vorrang) und optimierte Java-Einstellungen. Gilt nach dem nächsten Start/Neustart des Servers.
+- **Server-Menü:** Reiter „Backups“ entfernt (Backups laufen weiter, wiederherstellen kann der Admin unter Admin-Bereich → Backups & Archive). Reiter „Statistik“ zeigt jetzt die Statistik direkt. Alle Reiter sind auch am Handy sichtbar (Zeilenumbruch).
+- **Whitelist:** Server mit Whitelist erscheinen nicht in der öffentlichen Serverliste.
+- Fehlgeschlagene Aktionen werden in der Server-Übersicht angezeigt; ein Server bleibt nicht mehr ewig bei „wird erstellt …“ hängen.
+- Vorlagen und Versionswechsel prüfen, ob es Paper/Fabric für die Minecraft-Version schon gibt.
 
-👉 Deshalb: **Direkt nach dem Update** (Schritt 4 unten) sofort unter `http://localhost:8000` deinen Account neu erstellen – bevor jemand anderes es über die Internet-Adresse tun kann.
+👉 **Nach dem Update:** Server, die mit Fehler liefen, in Hostly einmal auf **„Starten“** (bzw. „Neustarten“) drücken.
 
-Außerdem neu in diesem Update:
-- **Passwort ändern** geht jetzt ohne das aktuelle Passwort (nur neues Passwort + wiederholen).
-- **Keine Login-Sperre** mehr nach vielen falschen Passwörtern.
-- **Kaufmenü:** Preis und Rabatt werden wieder sofort aktualisiert, wenn du Tage oder Modell änderst.
-- **Hinweis zur Nachtpause:** Der Nachtpausen-Rabatt wird nicht sofort abgezogen, sondern nachträglich erstattet.
+### Update 1 (22.11.2026, nachmittags) – Accounts gelöscht
+Nur wichtig, falls du dieses Update noch nicht gemacht hast:
+- **Alle Accounts wurden einmalig gelöscht.** Der erste danach erstellte Account wird Admin → direkt nach dem Update unter `http://localhost:8000` neu registrieren.
+- Passwort ändern ohne aktuelles Passwort, keine Login-Sperre, Live-Preis im Kaufmenü repariert, Hinweis zur Nachtpause.
 
 ---
 
@@ -51,7 +56,7 @@ docker compose ps
 ✅ `hostly-web`, `hostly-worker` (und `hostly-playit-1`, falls eingerichtet) stehen auf **Up**.
 
 Dann im Browser **`http://localhost:8000`** öffnen → Hostly erscheint.
-(Bei diesem Update jetzt sofort **„Account erstellen“** – siehe oben. ✅ Oben steht das gelbe **„Admin“**-Schild.)
+(Nur bei Update 1: jetzt sofort **„Account erstellen“** – siehe oben.)
 
 ## Schritt 5 – Wartungsmodus wieder ausschalten
 Falls du ihn in Schritt 2 eingeschaltet hast: **Admin-Bereich → Einstellungen → Wartungsmodus → Ausschalten**.

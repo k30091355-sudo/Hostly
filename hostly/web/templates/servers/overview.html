@@ -6,6 +6,10 @@
 <div class="alert success">{{ t('Gekauft! Dein Server wird gerade erstellt. Das erste Starten kann ein paar Minuten dauern.') }}</div>
 {% endif %}
 
+{% if last_error %}
+<div class="alert error">{{ t('Letzte Aktion fehlgeschlagen') }} ({{ last_error.created_at | localtime }}): <span class="mono small">{{ last_error.error }}</span><br>
+  <span class="small">{{ t('Du kannst es mit „Starten“ erneut versuchen. Klappt es wieder nicht, schreib dem Support.') }}</span></div>
+{% endif %}
 <div class="grid">
   <section class="card">
     <h2>Status</h2>

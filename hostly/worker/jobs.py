@@ -64,6 +64,7 @@ class Worker:
             files.write_code_datapack(server, db.get_setting(conn, "public_url"))
         except OSError:
             log.warning("/code-Datapack für Server %s konnte nicht geschrieben werden", server["id"])
+        files.fix_owner(minecraft.data_dir(server["id"]))   # Minecraft (Benutzer 1000) muss überall schreiben dürfen
         self.ops.recreate(self.spec_for(conn, server))
         conn.execute("UPDATE servers SET needs_restart = 0, crash_locked = 0 WHERE id = ?", (server["id"],))
 
@@ -147,8 +148,9 @@ class Worker:
         server = self.load(conn, job["server_id"])
         if server["state"] != "creating":
             return "übersprungen"
-        self.recreate(conn, server)
+        # zuerst aktiv setzen: schlägt der Start fehl, kann der User ihn mit „Starten“ erneut versuchen
         conn.execute("UPDATE servers SET state = 'active' WHERE id = ? AND state = 'creating'", (server["id"],))
+        self.recreate(conn, server)
         return "erstellt"
 
     def job_start(self, conn, job, payload):
@@ -225,8 +227,8 @@ class Worker:
         if src.exists() and not dst.exists():
             dst.parent.mkdir(parents=True, exist_ok=True)
             src.rename(dst)
-        self.recreate(conn, server)
         conn.execute("UPDATE servers SET state = 'active' WHERE id = ?", (server["id"],))
+        self.recreate(conn, server)
         return "reaktiviert"
 
     def job_delete(self, conn, job, payload):
@@ -284,7 +286,9 @@ class Worker:
         server = self.load(conn, job["server_id"])
         if server["state"] not in ("active", "creating"):
             return "übersprungen"
-        return files.sync_extensions(conn, server)
+        result = files.sync_extensions(conn, server)
+        files.fix_owner(minecraft.data_dir(server["id"]))
+        return result
 
     def job_backup(self, conn, job, payload):
         server = self.load(conn, job["server_id"])
@@ -312,6 +316,8 @@ class Worker:
             return "übersprungen"
         self.graceful_stop(conn, server)
         self.backup(conn, server, "vor-aenderung")
+        if payload.get("from_type") == "PAPER" and server["type"] != "PAPER":
+            files.paper_worlds_to_vanilla(minecraft.data_dir(server["id"]), server["level_name"] or "world")
         self.recreate(conn, server)
         return "umgebaut"
 
@@ -322,6 +328,7 @@ class Worker:
             files.extract_world(zip_path, minecraft.data_dir(server["id"]) / payload["name"])
         finally:
             zip_path.unlink(missing_ok=True)
+        files.fix_owner(minecraft.data_dir(server["id"]))
         return "Welt hochgeladen"
 
     def job_world_delete(self, conn, job, payload):
@@ -336,7 +343,7 @@ class Worker:
         target = safe_path(job["server_id"], payload["path"])
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(payload["content"], encoding="utf-8")
-        files.chown(target)
+        files.fix_owner(minecraft.data_dir(job["server_id"]))
         return "gespeichert"
 
     def job_file_delete(self, conn, job, payload):
@@ -353,7 +360,7 @@ class Worker:
         target = safe_path(job["server_id"], payload["path"])
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), target)
-        files.chown(target)
+        files.fix_owner(minecraft.data_dir(job["server_id"]))
         return "hochgeladen"
 
 

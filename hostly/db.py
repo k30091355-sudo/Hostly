@@ -380,6 +380,12 @@ MIGRATIONS: list[str] = [
     UPDATE giveaways SET created_by = NULL;
     DELETE FROM users;
     """,
+    # 6 – Mehr CPU für schnellere Starts (Wunsch des Besitzers). Windows-Programme behalten Vorrang (cpu_shares).
+    """
+    UPDATE models SET cpu_limit = 2.0 WHERE key = 'holz';
+    UPDATE models SET cpu_limit = 3.0 WHERE key = 'eisen';
+    UPDATE models SET cpu_limit = 4.0 WHERE key = 'diamant';
+    """,
 ]
 
 

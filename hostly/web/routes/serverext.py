@@ -197,6 +197,9 @@ def version_page(server_id: int, to_version: str = "", to_type: str = "", ctx: C
         to_type = to_type if to_type in config.SERVER_TYPES else server["type"]
         if to_version not in versions_list:
             error = ctx.t("Unbekannte Version.")
+        elif not modrinth.server_supports(to_type, to_version):
+            error = ctx.t("{type} gibt es für Minecraft {version} noch nicht. Bitte eine ältere Version wählen.",
+                          type=to_type.capitalize(), version=to_version)
         else:
             try:
                 plan = extensions.plan_change(ctx.conn, server, to_type, to_version)
@@ -212,13 +215,14 @@ def version_apply(server_id: int, to_version: str = Form(...), to_type: str = Fo
     server = load(ctx, server_id)
     require_active(server)
     ctx.check_csrf(csrf)
-    if to_type not in config.SERVER_TYPES or to_version not in modrinth.mojang_releases(30):
+    if (to_type not in config.SERVER_TYPES or to_version not in modrinth.mojang_releases(30)
+            or not modrinth.server_supports(to_type, to_version)):
         raise Redirect(f"/server/{server_id}/version")
     plan = extensions.plan_change(ctx.conn, server, to_type, to_version)
     with db.transaction(ctx.conn):
         extensions.apply_change(ctx.conn, server, plan)
         ctx.conn.execute("UPDATE servers SET mc_version = ?, type = ? WHERE id = ?", (to_version, to_type, server_id))
-        db.add_job(ctx.conn, "rebuild", server_id, ctx.user["id"])   # Backup → Dateien → Neustart
+        db.add_job(ctx.conn, "rebuild", server_id, ctx.user["id"], {"from_type": server["type"]})   # Backup → Dateien → Neustart
         db.audit(ctx.conn, ctx.user["id"], "server_version", f"#{server_id} {server['type']} {server['mc_version']} → {to_type} {to_version}")
     raise Redirect(f"/server/{server_id}")
 
@@ -425,39 +429,25 @@ async def files_action(server_id: int, ctx: Ctx = Depends(get_ctx)):
     raise HTTPException(400)
 
 
-# ---------- Backups ----------
-
-@router.get("/server/{server_id}/backups", response_class=HTMLResponse)
-def backups_page(server_id: int, ctx: Ctx = Depends(get_ctx)):
-    server = load(ctx, server_id)
-    require_active(server)
-    rows = ctx.conn.execute("SELECT * FROM backups WHERE server_id = ? ORDER BY id DESC", (server_id,)).fetchall()
-    return page(ctx, "servers/backups.html", server, rows=rows)
-
-
-@router.post("/server/{server_id}/backups/{backup_id}/wiederherstellen")
-def restore(server_id: int, backup_id: int, csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
-    server = load(ctx, server_id)
-    require_active(server)
-    ctx.check_csrf(csrf)
-    row = ctx.conn.execute("SELECT 1 FROM backups WHERE id = ? AND server_id = ? AND status = 'fertig'",
-                           (backup_id, server_id)).fetchone()
-    if row:
-        db.add_job(ctx.conn, "restore", server_id, ctx.user["id"], {"backup_id": backup_id})
-    raise Redirect(f"/server/{server_id}")
-
-
 # ---------- Statistik-Reiter (Kürzel, öffentlich listen) ----------
 
 @router.get("/server/{server_id}/statistik", response_class=HTMLResponse)
 def stats_tab(server_id: int, ctx: Ctx = Depends(get_ctx)):
+    """Statistik direkt im Server-Menü (gleiche Zahlen wie die öffentliche Seite /s/<kürzel>)."""
+    from ... import stats
+
     server = load(ctx, server_id)
-    return page(ctx, "servers/stats_tab.html", server)
+    data = stats.server_stats(ctx.conn, server_id)
+    return page(ctx, "servers/stats_tab.html", server, data=data,
+                chart24=stats.chart(data["samples"], 24, server["max_players"]),
+                chart7=stats.chart(data["samples"], 24 * 7, server["max_players"]))
 
 
 @router.post("/server/{server_id}/oeffentlich")
 def set_public(server_id: int, public: str = Form(""), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
-    load(ctx, server_id)
+    server = load(ctx, server_id)
     ctx.check_csrf(csrf)
-    ctx.conn.execute("UPDATE servers SET public_listed = ? WHERE id = ?", (1 if public else 0, server_id))
+    # Server mit Whitelist erscheinen nicht in der öffentlichen Liste (Fremde könnten eh nicht beitreten)
+    ctx.conn.execute("UPDATE servers SET public_listed = ? WHERE id = ?",
+                     (1 if public and not server["whitelist_enabled"] else 0, server_id))
     raise Redirect(f"/server/{server_id}/statistik")

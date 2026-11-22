@@ -2,21 +2,41 @@
 {% block title %}{{ t('Statistik') }} · {{ server.name }} · Hostly{% endblock %}
 {% block content %}
 {% include "servers/_tabs.html" %}
+<div class="stats">
+  <div class="card stat"><span class="stat-value">{% if st and st.running and not st.paused %}{{ st.players_online }}/{{ server.max_players }}{% elif st and st.running %}💤{% else %}–{% endif %}</span><span class="stat-label">{{ t('Spieler jetzt') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ data.peak }}</span><span class="stat-label">{{ t('Höchstwert (7 Tage)') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ data.total_hours }} h</span><span class="stat-label">{{ t('Gesamt-Spielzeit') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ '%d %%' % data.uptime if data.uptime is not none else '–' }}</span><span class="stat-label">{{ t('Verfügbarkeit (7 Tage)') }}</span></div>
+</div>
+{% if data.peak %}
+<section class="card"><h2>{{ t('Spieler – letzte 24 Stunden') }}</h2>{{ chart24 }}</section>
+<section class="card"><h2>{{ t('Spieler – letzte 7 Tage') }}</h2>{{ chart7 }}</section>
+{% else %}
+<section class="card"><h2>{{ t('Spieler-Verlauf') }}</h2><p class="muted small">{{ t('Noch keine Spieler in den letzten 7 Tagen – sobald jemand spielt, erscheint hier eine Grafik.') }}</p></section>
+{% endif %}
 <div class="grid">
+  <section class="card"><h2>{{ t('Häufigste Spieler') }}</h2>
+    {% if data.top %}<ul class="events">{% for p in data.top %}<li class="row-between"><span>{{ p.minecraft_name }}</span><span class="small muted">{{ (p.minutes / 60) | round(1) }} h · {{ p.joins }}×</span></li>{% endfor %}</ul>
+    {% else %}<p class="muted small">{{ t('Noch niemand war auf dem Server.') }}</p>{% endif %}
+  </section>
   <section class="card">
     <h2>{{ t('Server-Kürzel') }}</h2>
     <p class="big mono">{{ server.short_code }}</p>
     <p class="small muted">{{ t('Jeder mit dem Kürzel kann die Statistiken sehen (auch Spielernamen). Im Spiel zeigt /trigger code das Kürzel an.') }}</p>
-    <div class="copy-row"><a class="btn" href="/s/{{ server.short_code }}">{{ t('Statistiken ansehen') }}</a>
+    <div class="copy-row"><a class="btn" href="/s/{{ server.short_code }}">{{ t('Öffentliche Statistik-Seite') }}</a>
       <button type="button" class="btn" data-copy="{{ request.base_url }}s/{{ server.short_code }}">{{ t('Link kopieren') }}</button></div>
   </section>
   <section class="card">
     <h2>{{ t('Öffentliche Serverliste') }}</h2>
+    {% if server.whitelist_enabled %}
+      <p class="small muted">{{ t('Server mit eingeschalteter Whitelist können nicht in der öffentlichen Serverliste erscheinen. Schalte die Whitelist im Reiter „Spieler“ aus, um ihn zu zeigen.') }}</p>
+    {% else %}
     <form method="post" action="/server/{{ server.id }}/oeffentlich" class="form">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <label class="radio"><input type="checkbox" name="public" value="1" {% if server.public_listed %}checked{% endif %}> {{ t('Meinen Server in der öffentlichen Serverliste zeigen') }}</label>
       <button class="btn primary">{{ t('settings.save') }}</button>
     </form>
+    {% endif %}
     <a href="/serverliste" class="small">{{ t('Zur Serverliste') }}</a>
   </section>
 </div>

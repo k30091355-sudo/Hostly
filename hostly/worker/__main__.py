@@ -4,6 +4,7 @@ Start: python -m hostly.worker
 """
 import logging
 import os
+import signal
 from concurrent.futures import ThreadPoolExecutor
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -38,6 +39,11 @@ def main() -> None:
     for d in (config.SERVERS_DIR, config.ARCHIVES_DIR, config.DOWNLOADS_DIR, config.UPLOADS_DIR / "icons",
               config.DATA_DIR / "backups"):
         d.mkdir(parents=True, exist_ok=True)
+    # Ordner, in die Website oder Minecraft schreiben, gehören Benutzer 1000 (repariert auch alte Installationen)
+    from .files import fix_owner
+    fixed = fix_owner(config.UPLOADS_DIR) + fix_owner(config.SERVERS_DIR)
+    if fixed:
+        log.info("Besitzer von %s Dateien/Ordnern korrigiert", fixed)
 
     w = Worker(DockerOps())
     w.ops.ensure_network()
@@ -74,6 +80,15 @@ def main() -> None:
     sched.add_job(tasks.cleanup_backups, "cron", hour=6, minute=30, args=[w])
     sched.add_job(tasks.backup_database, "cron", hour=2, minute=3)
     sched.add_job(tasks.disk_usage, "cron", hour=5, minute=41, args=[w])
+    def stop(signum, frame):
+        """Beim Beenden (z. B. Update) sofort aufhören. Halbfertige Aufträge laufen beim nächsten Start erneut."""
+        log.info("hostly-worker wird beendet")
+        sched.shutdown(wait=False)
+        pool.shutdown(wait=False, cancel_futures=True)
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
     log.info("hostly-worker läuft")
     # beim Start sofort einmal prüfen (holt Verpasstes nach, z. B. nach Stromausfall)
     tasks.check_expiry(w)

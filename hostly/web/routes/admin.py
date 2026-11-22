@@ -351,7 +351,9 @@ def backup_action(backup_id: int, action: str = Form(...), csrf: str = Form(""),
     ctx.require_admin()
     ctx.check_csrf(csrf)
     b = ctx.conn.execute("SELECT * FROM backups WHERE id = ?", (backup_id,)).fetchone()
-    if b and action == "pin":
+    if b and action == "restore":
+        db.add_job(ctx.conn, "restore", b["server_id"], ctx.user["id"], {"backup_id": backup_id})
+    elif b and action == "pin":
         ctx.conn.execute("UPDATE backups SET pinned = 1 - pinned WHERE id = ?", (backup_id,))
     elif b and action == "delete":
         db.add_job(ctx.conn, "backup_delete", b["server_id"], ctx.user["id"], {"backup_id": backup_id})

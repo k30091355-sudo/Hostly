@@ -23,7 +23,6 @@
   <a href="{{ base }}/welten" class="{{ 'active' if p.endswith('/welten') }}">{{ t('Welten') }}</a>
   <a href="{{ base }}/version" class="{{ 'active' if p.endswith('/version') }}">{{ t('Version') }}</a>
   <a href="{{ base }}/dateien" class="{{ 'active' if '/dateien' in p }}">{{ t('Dateien') }}</a>
-  <a href="{{ base }}/backups" class="{{ 'active' if p.endswith('/backups') }}">{{ t('Backups') }}</a>
   {% endif %}
   <a href="{{ base }}/miete" class="{{ 'active' if p.endswith('/miete') }}">{{ t('Miete') }}</a>
   <a href="{{ base }}/statistik" class="{{ 'active' if p.endswith('/statistik') }}">{{ t('Statistik') }}</a>
@@ -32,6 +31,7 @@
 <div class="alert warn banner-row">
   <span>{{ t('Änderungen ausstehend – sie gelten nach einem Neustart.') }}</span>
   <form method="post" action="{{ base }}/aktion"><input type="hidden" name="csrf" value="{{ csrf }}">
-    <button name="action" value="restart" class="btn small" {% if busy %}disabled{% endif %}>{{ t('Jetzt neu starten') }}</button></form>
+    <button name="action" value="restart" class="btn small" {% if busy %}disabled{% endif %}>{{ t('Jetzt neu starten') }}</button>
+    <button name="action" value="restart_warn" class="btn small" {% if busy %}disabled{% endif %}>{{ t('Spieler warnen und in 1 Minute neu starten') }}</button></form>
 </div>
 {% endif %}

@@ -313,3 +313,7 @@ textarea { font: inherit; color: var(--text); background: var(--surface); width:
 @media (min-width: 640px) { .templates { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 900px) { .templates { grid-template-columns: repeat(3, 1fr); } }
 .install-hint { display: none; }
+
+/* Reiter umbrechen statt seitlich scrollen – alle Reiter (z. B. Statistik) sind auch am Handy sichtbar */
+.tabs { flex-wrap: wrap; overflow-x: visible; row-gap: 0; }
+.tabs a { padding: .5rem .65rem; }

@@ -29,10 +29,14 @@
   <div class="table-wrap"><table>
     <thead><tr><th>{{ t('Server') }}</th><th>{{ t('Datum') }}</th><th>{{ t('Art') }}</th><th class="num">{{ t('Neu kopiert') }}</th><th></th></tr></thead>
     <tbody>{% for b in backups %}
-      <tr><td><a href="/server/{{ b.server_id }}/backups">{{ b.server_name }}</a></td><td>{{ b.created_at | localtime }}</td>
+      <tr><td><a href="/server/{{ b.server_id }}">{{ b.server_name }}</a></td><td>{{ b.created_at | localtime }}</td>
         <td>{{ b.kind }}{% if b.status != 'fertig' %} <span class="pill busy">{{ b.status }}</span>{% endif %}</td>
         <td class="num">{{ '%.1f' % (b.size_bytes / 1048576) }} MB</td>
         <td class="actions-cell">
+          {% if b.status == 'fertig' %}
+          <form method="post" action="/admin/backups/{{ b.id }}" onsubmit="return confirm('{{ t('Aktueller Stand wird ersetzt (wird vorher gesichert). Der Server startet neu. Fortfahren?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}">
+            <button name="action" value="restore" class="btn small">{{ t('Wiederherstellen') }}</button></form>
+          {% endif %}
           <form method="post" action="/admin/backups/{{ b.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
             <button name="action" value="pin" class="btn small">{{ '📌 ' ~ t('Lösen') if b.pinned else t('Behalten') }}</button></form>
           <form method="post" action="/admin/backups/{{ b.id }}" onsubmit="return confirm('{{ t('Backup löschen?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}">

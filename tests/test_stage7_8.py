@@ -51,6 +51,7 @@ def fake_modrinth(monkeypatch):
     monkeypatch.setattr(modrinth, "versions", lambda ref, l, mc: [v for v in [best_version(ref, l, mc)] if v])
     monkeypatch.setattr(modrinth, "mojang_releases", lambda limit=30: ["1.21.5", "1.21.4"])
     monkeypatch.setattr(modrinth, "fabric_loader_version", lambda: "0.16.10")
+    monkeypatch.setattr(modrinth, "server_supports", lambda t, v: True)
     monkeypatch.setattr(modrinth, "search", lambda q, kind, t, mc, limit=20: [
         {"project_id": "P_LITH", "title": "Lithium", "description": "schnell", "downloads": 1000, "icon_url": None}])
 
@@ -171,8 +172,9 @@ def test_backup_nightly_restore_and_cleanup(client, monkeypatch):
     b = c.execute("SELECT * FROM backups").fetchone()
     assert b["kind"] == "taeglich" and b["status"] == "fertig"
     (level / "level.dat").write_text("v2-kaputt")
-    token = csrf_of(client, "/server/1/backups")
-    client.post(f"/server/1/backups/{b['id']}/wiederherstellen", data={"csrf": token})
+    assert client.get("/server/1/backups").status_code == 404   # Reiter für User entfernt
+    token = csrf_of(client, "/admin/backups")
+    client.post(f"/admin/backups/{b['id']}", data={"action": "restore", "csrf": token})
     run_jobs(w)
     assert (level / "level.dat").read_text() == "v1"
     kinds = [r[0] for r in c.execute("SELECT kind FROM backups ORDER BY id")]
@@ -258,8 +260,72 @@ def test_public_list_stats_and_code_datapack(client):
     assert "Öffentlich" in client.get("/serverliste").text
     code = c.execute("SELECT short_code FROM servers").fetchone()[0]
     r = client.get(f"/s/{code}")
-    assert r.status_code == 200 and "<svg" in r.text and "Spieler jetzt" in r.text
+    assert r.status_code == 200 and "Spieler jetzt" in r.text
+    assert "<svg" in r.text   # 1 Spieler online (FakeRcon) → Grafik
     assert client.get("/s/gibtsnicht").status_code == 404
     show = minecraft.data_dir(1) / "world" / "datapacks" / "hostly-code" / "data" / "hostly" / "function" / "show.mcfunction"
     assert code in show.read_text() and "hostly.test.ts.net/s/" in show.read_text()
 
+
+
+def test_worker_files_belong_to_user_1000(client):
+    """Bug: world/ gehörte root → Minecraft-Fehler „AccessDeniedException: world/session.lock“."""
+    import os
+    if os.geteuid() != 0:
+        pytest.skip("nur als root prüfbar")
+    setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    data = minecraft.data_dir(1)
+    for p in [data, *data.rglob("*")]:
+        assert p.stat().st_uid == 1000, p
+    up = minecraft.icon_file(1).parent
+    up.mkdir(parents=True, exist_ok=True)
+    os.chown(up, 0, 0)
+    files.fix_owner(up.parent)
+    assert up.stat().st_uid == 1000
+
+
+def test_failed_start_does_not_hang_in_creating(client):
+    c = setup_shop(client)
+    buy(client)
+    ops = FakeOps()
+    def broken(spec):
+        raise RuntimeError("Image konnte nicht geladen werden")
+    ops.recreate = broken
+    run_jobs(Worker(ops, FakeRcon()))
+    assert c.execute("SELECT state FROM servers").fetchone()[0] == "active"
+    page = client.get("/server/1").text
+    assert "Letzte Aktion fehlgeschlagen" in page and "Starten" in page
+
+
+def test_whitelist_server_not_public(client):
+    c = setup_shop(client)
+    token = csrf_of(client, "/kaufen")
+    client.post("/kaufen", data={"model_id": 2, "server_type": "PAPER", "days": 1, "name": "Pub",
+                                 "public": "1", "request_id": "p", "csrf": token})
+    run_jobs(Worker(FakeOps(), FakeRcon()))
+    assert "Pub" in client.get("/serverliste").text
+    client.post("/server/1/whitelist", data={"action": "on", "csrf": token})
+    assert c.execute("SELECT public_listed FROM servers").fetchone()[0] == 0
+    assert "Pub" not in client.get("/serverliste").text
+    client.post("/server/1/oeffentlich", data={"public": "1", "csrf": token})
+    assert c.execute("SELECT public_listed FROM servers").fetchone()[0] == 0
+    assert "Whitelist" in client.get("/server/1/statistik").text
+
+
+def test_paper_to_fabric_moves_nether_and_end(tmp_path):
+    data = tmp_path / "d"
+    (data / "world_nether" / "DIM-1").mkdir(parents=True)
+    (data / "world_the_end" / "DIM1").mkdir(parents=True)
+    (data / "world").mkdir()
+    files.paper_worlds_to_vanilla(data, "world")
+    assert (data / "world" / "DIM-1").is_dir() and (data / "world" / "DIM1").is_dir()
+
+
+def test_version_change_blocked_if_type_unsupported(client, fake_modrinth, monkeypatch):
+    c = setup_shop(client)
+    fabric_server(client, c)
+    monkeypatch.setattr(modrinth, "server_supports", lambda t, v: v != "1.21.5")
+    assert "noch nicht" in client.get("/server/1/version?to_version=1.21.5&to_type=FABRIC").text

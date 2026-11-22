@@ -157,6 +157,8 @@ def pick_template_version(template_key: str) -> tuple[str, list[dict]]:
     if not tpl["projects"]:
         return "LATEST", []
     for mc_version in modrinth.mojang_releases(8):
+        if not modrinth.server_supports(tpl["type"], mc_version):
+            continue   # z. B. Paper gibt es für die allerneueste Version noch nicht
         try:
             entries = []
             for slug, kind in tpl["projects"]:

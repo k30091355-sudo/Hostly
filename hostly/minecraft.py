@@ -37,6 +37,8 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
         "MAX_PLAYERS": str(model["max_players"]),
         "MOTD": server["motd"] or server["name"],
         "ONLINE_MODE": "TRUE",
+        # optimierte Java-Einstellungen (schnellerer Start, weniger Ruckler)
+        "USE_AIKAR_FLAGS": "TRUE",
         "TZ": config.TIMEZONE,
         # Konsole
         "ENABLE_RCON": "TRUE",

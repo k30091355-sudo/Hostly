@@ -6,7 +6,7 @@ from .helpers import FakeOps, FakeRcon, buy, run_jobs, setup_shop
 
 PAGES = ["/", "/kaufen", "/code", "/einstellungen", "/einstellungen/coins", "/gewinnspiele", "/serverliste",
          "/statistik", "/server", "/server/1", "/server/1/konsole", "/server/1/darstellung", "/server/1/spieler",
-         "/server/1/miete", "/server/1/erweiterungen", "/server/1/welten", "/server/1/dateien", "/server/1/backups",
+         "/server/1/miete", "/server/1/erweiterungen", "/server/1/welten", "/server/1/dateien",
          "/server/1/statistik", "/admin", "/admin/user", "/admin/user/1", "/admin/server", "/admin/codes",
          "/admin/tunnel", "/admin/einstellungen", "/admin/gewinnspiele", "/admin/aktionen", "/admin/backups"]
 

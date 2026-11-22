@@ -624,5 +624,14 @@
   "Welt löschen": "Delete world",
   "Archivieren": "Archiving",
   "Die Nachtpause ist im Preis noch nicht abgezogen: Du bekommst die Coins nachträglich zurück – nach jeder vollständig beendeten Nachtpause.": "The night pause is not deducted from this price yet: you get the coins back afterwards – after every complete night pause.",
-  "Wichtig: Der Nachtpausen-Rabatt wird nicht sofort abgezogen. Du bekommst ihn nachträglich als Erstattung – jeweils nach einer vollständig beendeten Nachtpause. Startest du den Server in der Pause selbst, gibt es für diese Nacht nichts zurück.": "Important: the night pause discount is not deducted right away. You get it afterwards as a refund – after each complete night pause. If you start the server yourself during the pause, you get nothing back for that night."
+  "Wichtig: Der Nachtpausen-Rabatt wird nicht sofort abgezogen. Du bekommst ihn nachträglich als Erstattung – jeweils nach einer vollständig beendeten Nachtpause. Startest du den Server in der Pause selbst, gibt es für diese Nacht nichts zurück.": "Important: the night pause discount is not deducted right away. You get it afterwards as a refund – after each complete night pause. If you start the server yourself during the pause, you get nothing back for that night.",
+  "Server mit Whitelist erscheinen nicht in der öffentlichen Serverliste.": "Servers with a whitelist don't appear in the public server list.",
+  "Server mit eingeschalteter Whitelist können nicht in der öffentlichen Serverliste erscheinen. Schalte die Whitelist im Reiter „Spieler“ aus, um ihn zu zeigen.": "Servers with the whitelist turned on can't appear in the public server list. Turn off the whitelist in the \"Players\" tab to show it.",
+  "Öffentliche Statistik-Seite": "Public statistics page",
+  "Letzte Aktion fehlgeschlagen": "Last action failed",
+  "Du kannst es mit „Starten“ erneut versuchen. Klappt es wieder nicht, schreib dem Support.": "You can try again with \"Start\". If it fails again, write to support.",
+  "Das Icon konnte nicht gespeichert werden (Ordner-Rechte). Bitte Hostly neu starten: docker compose restart": "The icon could not be saved (folder permissions). Please restart Hostly: docker compose restart",
+  "{type} gibt es für Minecraft {version} noch nicht. Bitte eine ältere Version wählen.": "{type} isn't available for Minecraft {version} yet. Please choose an older version.",
+  "Spieler-Verlauf": "Player history",
+  "Noch keine Spieler in den letzten 7 Tagen – sobald jemand spielt, erscheint hier eine Grafik.": "No players in the last 7 days – a chart appears here as soon as someone plays."
 }

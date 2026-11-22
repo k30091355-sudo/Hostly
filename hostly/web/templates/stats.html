@@ -11,8 +11,12 @@
   <div class="card stat"><span class="stat-value">{{ data.total_hours }} h</span><span class="stat-label">{{ t('Gesamt-Spielzeit') }}</span></div>
   <div class="card stat"><span class="stat-value">{{ '%d %%' % data.uptime if data.uptime is not none else '–' }}</span><span class="stat-label">{{ t('Verfügbarkeit (7 Tage)') }}</span></div>
 </div>
+{% if data.peak %}
 <section class="card"><h2>{{ t('Spieler – letzte 24 Stunden') }}</h2>{{ chart24 }}</section>
 <section class="card"><h2>{{ t('Spieler – letzte 7 Tage') }}</h2>{{ chart7 }}</section>
+{% else %}
+<section class="card"><h2>{{ t('Spieler-Verlauf') }}</h2><p class="muted small">{{ t('Noch keine Spieler in den letzten 7 Tagen – sobald jemand spielt, erscheint hier eine Grafik.') }}</p></section>
+{% endif %}
 <div class="grid">
   <section class="card"><h2>{{ t('Häufigste Spieler') }}</h2>
     {% if data.top %}<ul class="events">{% for p in data.top %}<li class="row-between"><span>{{ p.minecraft_name }}</span><span class="small muted">{{ (p.minutes / 60) | round(1) }} h · {{ p.joins }}×</span></li>{% endfor %}</ul>

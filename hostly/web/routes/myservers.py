@@ -83,8 +83,14 @@ def overview(server_id: int, ctx: Ctx = Depends(get_ctx)):
         "SELECT * FROM jobs WHERE server_id = ? AND kind = 'download' AND created_at > datetime('now', '-1 day') ORDER BY id DESC LIMIT 5",
         (server_id,),
     ).fetchall()
+    last_error = ctx.conn.execute(
+        """SELECT * FROM jobs WHERE server_id = ? AND status = 'error' AND kind NOT IN ('command', 'download')
+           AND created_at > datetime('now', '-1 day')
+           AND id > COALESCE((SELECT MAX(id) FROM jobs WHERE server_id = ? AND status = 'done'
+                              AND kind IN ('create', 'start', 'restart', 'reactivate', 'rebuild', 'restore')), 0)
+           ORDER BY id DESC LIMIT 1""", (server_id, server_id)).fetchone()
     return page(ctx, "servers/overview.html", server, new=ctx.request.query_params.get("neu") == "1",
-                downloads=downloads)
+                downloads=downloads, last_error=last_error)
 
 
 @router.get("/server/{server_id}/status", response_class=HTMLResponse)
@@ -212,8 +218,13 @@ async def upload_icon(server_id: int, icon: UploadFile = File(...), csrf: str = 
         return page(ctx, "servers/appearance.html", server, 400, error=ctx.t(str(exc)),
                     has_icon=minecraft.icon_file(server_id).exists())
     path = minecraft.icon_file(server_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(png)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(png)
+    except OSError:
+        return page(ctx, "servers/appearance.html", server, 500,
+                    error=ctx.t("Das Icon konnte nicht gespeichert werden (Ordner-Rechte). Bitte Hostly neu starten: docker compose restart"),
+                    has_icon=False)
     ctx.conn.execute("UPDATE servers SET icon_path = ?, needs_restart = 1 WHERE id = ?", (path.name, server_id))
     raise Redirect(f"/server/{server_id}/darstellung?ok=icon")
 
@@ -250,6 +261,8 @@ def whitelist(server_id: int, action: str = Form(...), name: str = Form(""), csr
     commands = []
     if action in ("on", "off"):
         ctx.conn.execute("UPDATE servers SET whitelist_enabled = ? WHERE id = ?", (int(action == "on"), server_id))
+        if action == "on":   # mit Whitelist nicht in der öffentlichen Serverliste
+            ctx.conn.execute("UPDATE servers SET public_listed = 0 WHERE id = ?", (server_id,))
         commands = ["whitelist on" if action == "on" else "whitelist off"]
     elif action in ("add", "remove"):
         if not console.valid_mc_name(name):

@@ -140,3 +140,33 @@ def fabric_loader_version() -> str:
     except (urllib.error.URLError, TimeoutError, OSError):
         pass
     return "0.16.10"
+
+
+def _get_json(url: str):
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.load(resp)
+
+
+def server_supports(server_type: str, mc_version: str) -> bool:
+    """Gibt es Paper bzw. Fabric schon für diese Minecraft-Version? (Paper/Fabric hinken neuen Versionen oft hinterher.)"""
+    key = f"support:{server_type}:{mc_version}"
+    with _lock:
+        hit = _cache.get(key)
+        if hit and time.time() - hit[0] < 3600:
+            return hit[1]
+    try:
+        if server_type == "PAPER":
+            _get_json(f"https://fill.papermc.io/v3/projects/paper/versions/{urllib.parse.quote(mc_version)}/builds/latest")
+            ok = True
+        elif server_type == "FABRIC":
+            ok = any(v.get("version") == mc_version for v in _get_json("https://meta.fabricmc.net/v2/versions/game"))
+        else:
+            ok = True
+    except urllib.error.HTTPError:
+        ok = False
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return True   # nicht erreichbar → nicht blockieren, itzg meldet sich notfalls selbst
+    with _lock:
+        _cache[key] = (time.time(), ok)
+    return ok

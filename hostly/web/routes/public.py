@@ -16,7 +16,7 @@ def server_list(ctx: Ctx = Depends(get_ctx)):
                   st.running, st.paused, st.players_online
            FROM servers s JOIN models m ON m.id = s.model_id LEFT JOIN tunnels t ON t.id = s.tunnel_id
            LEFT JOIN server_status st ON st.server_id = s.id
-           WHERE s.public_listed = 1 AND s.state = 'active' ORDER BY st.players_online DESC, s.id"""
+           WHERE s.public_listed = 1 AND s.whitelist_enabled = 0 AND s.state = 'active' ORDER BY st.players_online DESC, s.id"""
     ).fetchall()
     return ctx.render("serverlist.html", rows=rows)
 

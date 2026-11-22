@@ -6,6 +6,7 @@ services:
     build: .
     container_name: hostly-web
     restart: unless-stopped
+    init: true
     # nur auf dem Mini-PC selbst erreichbar; nach außen geht es über Tailscale Funnel
     ports:
       - "127.0.0.1:8000:8000"
@@ -22,6 +23,7 @@ services:
     build: .
     container_name: hostly-worker
     restart: unless-stopped
+    init: true
     command: ["python", "-m", "hostly.worker"]
     user: root
     volumes:
@@ -32,7 +34,7 @@ services:
         ipv4_address: 172.30.0.2
     mem_limit: 384m
     cpus: 1.0               # Backups/ZIPs laufen langsam und leise
-    stop_grace_period: 90s
+    stop_grace_period: 20s
 
   # playit.gg-Agenten (Minecraft von außen erreichbar). Starten nur, wenn in .env
   # COMPOSE_PROFILES=playit und die Schlüssel eingetragen sind (siehe docs/SETUP-MINI-PC.md).
