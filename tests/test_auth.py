@@ -71,14 +71,31 @@ def test_login_redirects_to_next(client):
     assert r.headers["location"] == "/"
 
 
-def test_login_lock_after_failed_attempts(client):
+def test_no_login_lock_after_failed_attempts(client):
+    """Keine Sperre bei vielen Fehlversuchen (Entscheidung des Besitzers)."""
     register(client)
     logout(client)
-    for _ in range(5):
-        assert "falsch" in login(client, password="falsch123").text
-    r = login(client)  # richtiges Passwort, aber gesperrt
-    assert r.status_code == 400
-    assert "Fehlversuche" in r.text
+    for _ in range(10):
+        assert login(client, password="falsch123").status_code == 400
+    assert login(client).status_code == 303
+
+
+def test_one_time_account_wipe_migration(client):
+    """Migration 5 löscht beim Update einmalig alle Accounts; Codes und Tunnel bleiben."""
+    from hostly import db
+    register(client, "alt")
+    c = conn()
+    c.execute("INSERT INTO codes (code, coins, max_uses, uses, created_by) VALUES ('aaaa-bbbb-cccc-dddd', 100, 5, 1, 1)")
+    c.execute("INSERT INTO tunnels (name, public_address, internal_ip) VALUES ('A', 'a', '172.30.0.11')")
+    c.execute("PRAGMA user_version = 4")
+    db.init_db()
+    assert c.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0
+    assert c.execute("SELECT uses, created_by FROM codes").fetchone()[:] == (0, None)
+    assert c.execute("SELECT COUNT(*) FROM tunnels").fetchone()[0] == 1
+    db.init_db()   # läuft nur einmal
+    logout(client)
+    register(client, "neu")
+    assert c.execute("SELECT is_admin FROM users WHERE username = 'neu'").fetchone()[0] == 1
 
 
 def test_csrf_required(client):

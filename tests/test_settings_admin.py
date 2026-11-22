@@ -3,14 +3,14 @@ from hostly import cli
 from .conftest import conn, csrf_of, login, logout, register
 
 
-def test_change_password(client):
+def test_change_password_without_old_password(client):
+    """Neues Passwort ohne das aktuelle (Entscheidung des Besitzers)."""
     register(client)
     token = csrf_of(client, "/einstellungen")
-    r = client.post("/einstellungen/passwort", data={"old_password": "falsch", "new_password": "neuespw1",
-                                                     "new_password2": "neuespw1", "csrf": token})
+    assert "Aktuelles Passwort" not in client.get("/einstellungen").text
+    r = client.post("/einstellungen/passwort", data={"new_password": "neuespw1", "new_password2": "anders12", "csrf": token})
     assert r.status_code == 400
-    r = client.post("/einstellungen/passwort", data={"old_password": "geheim123", "new_password": "neuespw1",
-                                                     "new_password2": "neuespw1", "csrf": token})
+    r = client.post("/einstellungen/passwort", data={"new_password": "neuespw1", "new_password2": "neuespw1", "csrf": token})
     assert "Passwort geändert" in r.text
     logout(client)
     assert login(client).status_code == 400

@@ -121,25 +121,7 @@ def cleanup_sessions(conn: sqlite3.Connection) -> None:
     conn.execute("DELETE FROM login_attempts WHERE created_at < datetime('now', '-1 day')")
 
 
-# ---------- Login-Sperre ----------
-
-def is_locked(conn: sqlite3.Connection, username: str, ip: str | None) -> bool:
-    window = f"-{config.LOGIN_LOCK_MINUTES} minutes"
-    fails_user = conn.execute(
-        "SELECT COUNT(*) FROM login_attempts WHERE username = ? AND success = 0 AND created_at > datetime('now', ?)",
-        (username, window),
-    ).fetchone()[0]
-    if fails_user >= config.LOGIN_MAX_FAILS_USER:
-        return True
-    if ip:
-        fails_ip = conn.execute(
-            "SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND success = 0 AND created_at > datetime('now', ?)",
-            (ip, window),
-        ).fetchone()[0]
-        if fails_ip >= config.LOGIN_MAX_FAILS_IP:
-            return True
-    return False
-
+# ---------- Login-Versuche (nur protokolliert, keine Sperre – Entscheidung des Besitzers) ----------
 
 def record_login(conn: sqlite3.Connection, username: str, ip: str | None, success: bool) -> None:
     conn.execute(

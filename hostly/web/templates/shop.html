@@ -25,8 +25,7 @@
   </table>
 </div>
 
-<form method="post" action="/kaufen" class="card form" id="buy-form"
-      hx-get="/kaufen/preis" hx-trigger="change, input delay:300ms" hx-target="#price" hx-params="model_id,days">
+<form method="post" action="/kaufen" class="card form" id="buy-form">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   <input type="hidden" name="request_id" value="{{ request_id }}">
 
@@ -72,6 +71,7 @@
   <fieldset class="np">
     <legend>{{ t('4. Nachtpause (optional)') }}</legend>
     <label class="radio"><input type="checkbox" name="np_on" value="1" {% if form.np_on %}checked{% endif %}> {{ t('Server nachts automatisch ausschalten – dafür Coins zurück (1 % pro Stunde)') }}</label>
+    <p class="hint">{{ t('Wichtig: Der Nachtpausen-Rabatt wird nicht sofort abgezogen. Du bekommst ihn nachträglich als Erstattung – jeweils nach einer vollständig beendeten Nachtpause. Startest du den Server in der Pause selbst, gibt es für diese Nacht nichts zurück.') }}</p>
     <div class="np-times">
       <label>{{ t('von') }} <select name="np_start">{% for h in range(24) %}<option value="{{ h }}" {% if h == form.np_start %}selected{% endif %}>{{ '%02d' % h }}:00</option>{% endfor %}</select></label>
       <label>{{ t('bis') }} <select name="np_end">{% for h in range(24) %}<option value="{{ h }}" {% if h == form.np_end %}selected{% endif %}>{{ '%02d' % h }}:00</option>{% endfor %}</select></label>
@@ -83,7 +83,10 @@
   </label>
   <label class="radio"><input type="checkbox" name="public" value="1" {% if form.public %}checked{% endif %}> {{ t('In der öffentlichen Serverliste zeigen') }}</label>
 
-  <div id="price" aria-live="polite">{% include "_price.html" %}</div>
+  {# Live-Preis: hängt am Preis-Feld (nicht am Formular), damit ein leerer Servername die Berechnung nicht blockiert #}
+  <div id="price" aria-live="polite" hx-get="/kaufen/preis" hx-include="#buy-form" hx-params="model_id,days"
+       hx-trigger="change from:#buy-form, input delay:300ms from:#buy-form">{% include "_price.html" %}</div>
+  <p class="small muted">{{ t('Die Nachtpause ist im Preis noch nicht abgezogen: Du bekommst die Coins nachträglich zurück – nach jeder vollständig beendeten Nachtpause.') }}</p>
 
   {% if user %}
     <button type="submit" class="btn primary block">{{ t('Jetzt kaufen') }}</button>

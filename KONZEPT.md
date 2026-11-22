@@ -789,7 +789,9 @@ Erst wenn der Besitzer „fang an“ sagt. Jede Stufe ist für sich lauffähig.
 4. **Nur Modrinth** für Plugins/Mods/Datapacks/Resourcepacks – **kein CurseForge** (ENTSCHIEDEN). Eigene Dateien nur über Support; der Admin kann beliebige Dateien hochladen.
 5. **Keine Leise-Grenze ermitteln** – Backups und ZIPs laufen immer gedrosselt (ENTSCHIEDEN).
 6. **Erster registrierter Account wird Admin** (ENTSCHIEDEN).
-7. **Alle *Vorschläge* in diesem Konzept sind bestätigt** (ENTSCHIEDEN).
+7. **Alle *Vorschläge* in diesem Konzept sind bestätigt** (ENTSCHIEDEN) – mit zwei Ausnahmen:
+8. **Passwort ändern** nur mit neuem Passwort (2×), **ohne** das aktuelle Passwort (ENTSCHIEDEN, ersetzt 7.3).
+9. **Keine Login-Sperre** bei vielen Fehlversuchen (ENTSCHIEDEN, ersetzt den Vorschlag in 7.2).
 
 **Noch zu bestätigen:**
 - Alle mit *Vorschlag* markierten Punkte.

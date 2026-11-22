@@ -16,11 +16,6 @@ SESSION_DAYS = 30
 SESSION_COOKIE = "hostly_session"
 CSRF_COOKIE = "hostly_csrf"
 
-# Login-Sperre bei Fehlversuchen (Vorschlag aus TECHNIK.md 20)
-LOGIN_MAX_FAILS_USER = 5
-LOGIN_MAX_FAILS_IP = 20
-LOGIN_LOCK_MINUTES = 15
-
 # Regeln für Benutzername und Passwort
 USERNAME_MIN = 3
 USERNAME_MAX = 20

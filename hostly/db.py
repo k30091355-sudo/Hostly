@@ -353,6 +353,33 @@ MIGRATIONS: list[str] = [
 
     ALTER TABLE server_status ADD COLUMN restart_count INTEGER NOT NULL DEFAULT 0;
     """,
+    # 5 – Einmalig: alle Accounts löschen (Wunsch des Besitzers, Nov. 2026 – Admin-Passwort vergessen).
+    #     Danach wird der erste neu registrierte Account wieder Admin. Tunnel, Codes, Aktionen bleiben.
+    """
+    DELETE FROM jobs;
+    DELETE FROM server_rentals;
+    DELETE FROM server_status;
+    DELETE FROM whitelist;
+    DELETE FROM player_sessions;
+    DELETE FROM server_log_state;
+    DELETE FROM night_pause_log;
+    DELETE FROM backups;
+    DELETE FROM server_extensions;
+    DELETE FROM crashes;
+    DELETE FROM player_samples;
+    DELETE FROM servers;
+    DELETE FROM giveaway_entries;
+    DELETE FROM waitlist;
+    DELETE FROM notifications;
+    DELETE FROM code_redemptions;
+    DELETE FROM coin_ledger;
+    DELETE FROM audit_log;
+    DELETE FROM sessions;
+    DELETE FROM login_attempts;
+    UPDATE codes SET created_by = NULL, uses = 0;
+    UPDATE giveaways SET created_by = NULL;
+    DELETE FROM users;
+    """,
 ]
 
 
@@ -369,18 +396,34 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
 
 def init_db(path: Path | None = None) -> None:
     """Legt die Datenbank an bzw. bringt sie auf den neuesten Stand."""
+    import fcntl
+    import os
+
     path = Path(path or config.DB_PATH)
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = connect(path)
+    # Website und worker starten gleichzeitig – die Sperrdatei sorgt dafür,
+    # dass Migrationen nie doppelt parallel laufen.
+    lock_path = path.parent / ".migrate.lock"
+    fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o666)
     try:
-        conn.execute("PRAGMA journal_mode = WAL")
-        version = conn.execute("PRAGMA user_version").fetchone()[0]
-        for number, sql in enumerate(MIGRATIONS, start=1):
-            if number <= version:
-                continue
-            conn.executescript("BEGIN;\n" + sql + f"\nPRAGMA user_version = {number};\nCOMMIT;")
+        try:
+            os.chmod(lock_path, 0o666)
+        except OSError:
+            pass
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        conn = connect(path)
+        try:
+            conn.execute("PRAGMA journal_mode = WAL")
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            for number, sql in enumerate(MIGRATIONS, start=1):
+                if number <= version:
+                    continue
+                conn.executescript("BEGIN;\n" + sql + f"\nPRAGMA user_version = {number};\nCOMMIT;")
+        finally:
+            conn.close()
     finally:
-        conn.close()
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
 
 
 @contextmanager

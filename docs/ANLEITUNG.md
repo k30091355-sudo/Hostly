@@ -407,6 +407,8 @@ Einstellungen → **Windows Update → Erweiterte Optionen → Nutzungszeit** �
 ## Teil I – Im Alltag
 
 ### Hostly aktualisieren (wenn es eine neue Version gibt)
+👉 Ausführliche Update-Anleitung: **[UPDATE.md](UPDATE.md)** (dort stehen auch besondere Hinweise zu einzelnen Updates).
+
 🐧 Ubuntu:
 ```
 cd /srv/hostly/app && git pull && docker compose up -d --build

@@ -55,7 +55,7 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 9. Feinschliff: Englisch, PWA, Installations-Anleitung
 
 **Aktueller Stand:** Stufe 1–9 fertig (Code in `hostly/`, Tests in `tests/`). Erster registrierter Account = Admin.
-Entscheidungen des Besitzers (Nov. 2026): **nur Modrinth** (kein CurseForge); eigene Plugins/Mods nur über Support, Admin lädt Dateien hoch; **keine Leise-Grenze** – Backups/ZIPs immer gedrosselt; alle *Vorschläge* im Konzept sind bestätigt.
+Entscheidungen des Besitzers (Nov. 2026): **nur Modrinth** (kein CurseForge); eigene Plugins/Mods nur über Support, Admin lädt Dateien hoch; **keine Leise-Grenze** – Backups/ZIPs immer gedrosselt; alle *Vorschläge* im Konzept sind bestätigt; Passwort ändern ohne aktuelles Passwort; keine Login-Sperre. Update-Anleitung für den Besitzer: `docs/UPDATE.md` (bei jedem Update mit besonderen Hinweisen pflegen).
 
 ## Code-Aufbau
 - `hostly/db.py`: SQLite + Migrationen (neue Tabellen = neuer Eintrag in `MIGRATIONS`, nie alte ändern).

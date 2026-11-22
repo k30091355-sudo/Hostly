@@ -622,5 +622,7 @@
   "Umbauen": "Rebuilding",
   "Backup": "Backup",
   "Welt löschen": "Delete world",
-  "Archivieren": "Archiving"
+  "Archivieren": "Archiving",
+  "Die Nachtpause ist im Preis noch nicht abgezogen: Du bekommst die Coins nachträglich zurück – nach jeder vollständig beendeten Nachtpause.": "The night pause is not deducted from this price yet: you get the coins back afterwards – after every complete night pause.",
+  "Wichtig: Der Nachtpausen-Rabatt wird nicht sofort abgezogen. Du bekommst ihn nachträglich als Erstattung – jeweils nach einer vollständig beendeten Nachtpause. Startest du den Server in der Pause selbst, gibt es für diese Nacht nichts zurück.": "Important: the night pause discount is not deducted right away. You get it afterwards as a refund – after each complete night pause. If you start the server yourself during the pause, you get nothing back for that night."
 }

@@ -15,4 +15,5 @@ Spieler lösen Codes ein, bekommen Coins und mieten damit Minecraft-Server.
 | [docs/TECHNIK.md](docs/TECHNIK.md) | Wie Hostly gebaut wird – Aufbau, Datenbank, Backups, Sicherheit |
 | [docs/SEITEN-UND-ABLAEUFE.md](docs/SEITEN-UND-ABLAEUFE.md) | Alle Seiten (Skizzen) und Abläufe Schritt für Schritt |
 | [docs/ANLEITUNG.md](docs/ANLEITUNG.md) | Ausführliche Einrichtungs-Anleitung für Anfänger |
+| [docs/UPDATE.md](docs/UPDATE.md) | Hostly aktualisieren (Schritt für Schritt) |
 | [docs/SETUP-MINI-PC.md](docs/SETUP-MINI-PC.md) | Einrichtung auf dem Mini-PC (Windows 11 + WSL2) |

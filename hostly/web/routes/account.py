@@ -31,16 +31,15 @@ def settings_page(ctx: Ctx = Depends(get_ctx)):
 
 @router.post("/einstellungen/passwort")
 def change_password(
-    old_password: str = Form(""), new_password: str = Form(""), new_password2: str = Form(""),
+    new_password: str = Form(""), new_password2: str = Form(""),
     csrf: str = Form(""), ctx: Ctx = Depends(get_ctx),
 ):
+    """Neues Passwort setzen – das aktuelle Passwort wird nicht abgefragt (Entscheidung des Besitzers)."""
     ctx.require_login()
     ctx.check_csrf(csrf)
-    if not security.verify_password(ctx.user["password_hash"], old_password):
-        return _page(ctx, 400, error_password=ctx.t("err.old_password_wrong"))
     error = security.check_password(new_password, new_password2)
-    if error is None and new_password == old_password:
-        error = "err.password_same"
+    if error is None and ctx.user["must_change_password"] and security.verify_password(ctx.user["password_hash"], new_password):
+        error = "err.password_same"   # das zufällige Admin-Passwort darf nicht einfach behalten werden
     if error:
         return _page(ctx, 400, error_password=ctx.t(error))
 

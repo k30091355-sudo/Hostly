@@ -48,9 +48,6 @@ def login(
     def fail(key: str):
         return ctx.render("login.html", status_code=400, error=ctx.t(key), next=target, username=username)
 
-    if security.is_locked(ctx.conn, username, ctx.ip):
-        return fail("err.locked")
-
     user = ctx.conn.execute(
         "SELECT id, password_hash FROM users WHERE username = ? AND deleted_at IS NULL", (username,)
     ).fetchone()
