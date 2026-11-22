@@ -1,39 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
 {% if welcome %}
-<div class="alert success">{{ t('home.welcome', name=user.username) }}</div>
+<div class="alert success">{{ t('home.welcome', name=user.username) }}{% if user.is_admin %} {{ t('Du bist der erste Account und damit Admin.') }}{% endif %}</div>
 {% endif %}
+
+{% for w in warnings %}
+<div class="alert warn banner-row">
+  <span>⚠️ {{ t('„{name}“ läuft in {left} ab.', name=w.name, left=w.rented_until | remaining) }}{% if w.auto_renew %} {{ t('Auto-Verlängern ist an.') }}{% endif %}</span>
+  <a class="btn small" href="/server/{{ w.id }}/miete">{{ t('Verlängern') }}</a>
+</div>
+{% endfor %}
+{% for n in notes %}
+<div class="alert {{ 'warn' if n.kind in ('auto_renew_failed', 'archived') else 'success' }} banner-row">
+  <span>{{ n.text }}</span>
+  <span class="banner-actions">
+    {% if n.server_id and n.kind in ('archived', 'auto_renew_failed') %}<a class="btn small" href="/server/{{ n.server_id }}/miete">{{ t('Reaktivieren') }}</a>{% endif %}
+    <form method="post" action="/meldung/{{ n.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="link-btn small" aria-label="{{ t('Schließen') }}">✕</button></form>
+  </span>
+</div>
+{% endfor %}
 
 <section class="hero">
   <h1>{{ t('home.title') }}</h1>
   <p class="lead">{{ t('home.lead') }}</p>
   <div class="actions">
+    <a class="btn primary" href="/code">🎟️ {{ t('Code einlösen') }}</a>
+    <a class="btn primary" href="/kaufen">🛒 {{ t('Server kaufen') }}</a>
     {% if user %}
-      <a class="btn primary" href="/einstellungen">{{ t('nav.settings') }}</a>
+      <a class="btn" href="/server">{{ t('Meine Server') }}</a>
     {% else %}
-      <a class="btn primary" href="/registrieren">{{ t('nav.register') }}</a>
       <a class="btn" href="/login">{{ t('nav.login') }}</a>
     {% endif %}
   </div>
 </section>
 
 <section class="steps">
-  <div class="card step">
-    <span class="step-num">1</span>
-    <h2>{{ t('home.step1_title') }}</h2>
-    <p>{{ t('home.step1_text') }}</p>
-  </div>
-  <div class="card step">
-    <span class="step-num">2</span>
-    <h2>{{ t('home.step2_title') }}</h2>
-    <p>{{ t('home.step2_text') }}</p>
-  </div>
-  <div class="card step">
-    <span class="step-num">3</span>
-    <h2>{{ t('home.step3_title') }}</h2>
-    <p>{{ t('home.step3_text') }}</p>
-  </div>
+  <div class="card step"><span class="step-num">1</span><h2>{{ t('home.step1_title') }}</h2><p>{{ t('home.step1_text') }}</p></div>
+  <div class="card step"><span class="step-num">2</span><h2>{{ t('home.step2_title') }}</h2><p>{{ t('home.step2_text') }}</p></div>
+  <div class="card step"><span class="step-num">3</span><h2>{{ t('home.step3_title') }}</h2><p>{{ t('home.step3_text') }}</p></div>
 </section>
-
-<p class="muted center">{{ t('home.soon') }}</p>
 {% endblock %}

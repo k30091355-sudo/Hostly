@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Server kaufen') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Server kaufen') }}</h1>
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+
+<div class="table-wrap card">
+  <table class="compare">
+    <thead><tr><th></th>{% for m in models %}<th>{{ t(m.name) }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      <tr><th>RAM</th>{% for m in models %}<td>{{ m.ram_gb | int }} GB</td>{% endfor %}</tr>
+      <tr><th>{{ t('Spieler') }}</th>{% for m in models %}<td>{{ m.max_players }}</td>{% endfor %}</tr>
+      <tr><th>{{ t('Preis/Tag') }}</th>{% for m in models %}<td>{{ m.price_per_day }} Coins</td>{% endfor %}</tr>
+      <tr><th>{{ t('Aktion') }}</th>{% for m in models %}<td>{{ '−%d %%' % promo[m.id] if promo[m.id] else '–' }}</td>{% endfor %}</tr>
+      <tr><th>{{ t('Platz frei') }}</th>{% for m in models %}<td>{{ '✓' if available[m.id] else '✗' }}</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+</div>
+
+<form method="post" action="/kaufen" class="card form" id="buy-form"
+      hx-get="/kaufen/preis" hx-trigger="change, input delay:300ms" hx-target="#price" hx-params="model_id,days">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="request_id" value="{{ request_id }}">
+
+  <fieldset class="choice">
+    <legend>{{ t('1. Modell') }}</legend>
+    {% for m in models %}
+      <label class="choice-card">
+        <input type="radio" name="model_id" value="{{ m.id }}" {% if form.model_id == m.id %}checked{% endif %}>
+        <span><strong>{{ t(m.name) }}</strong><br><span class="small muted">{{ m.ram_gb | int }} GB · {{ m.max_players }} {{ t('Spieler') }} · {{ m.price_per_day }}/{{ t('Tag') }}</span></span>
+      </label>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset class="choice">
+    <legend>{{ t('2. Server-Typ') }}</legend>
+    {% for ty in types %}
+      <label class="choice-card">
+        <input type="radio" name="server_type" value="{{ ty }}" {% if form.type == ty %}checked{% endif %}>
+        <span><strong>{{ ty | capitalize }}</strong><br><span class="small muted">{{ {'VANILLA': t('Original-Minecraft'), 'PAPER': t('Plugins, schnell'), 'FABRIC': t('Mods')}[ty] }}</span></span>
+      </label>
+    {% endfor %}
+  </fieldset>
+
+  <label>{{ t('3. Anzahl Tage') }}
+    <input type="number" name="days" min="1" max="3650" value="{{ form.days }}" required>
+    <span class="hint">{{ t('Ab 2 Tagen gibt es Rabatt: Tage = Prozent, bis 50 %.') }}</span>
+  </label>
+
+  <label>{{ t('4. Servername') }}
+    <input name="name" value="{{ form.name }}" maxlength="32" required placeholder="{{ t('z. B. Mein Survival') }}">
+  </label>
+
+  <div id="price" aria-live="polite">
+    {% include "_price.html" %}
+  </div>
+
+  {% if user %}
+    <button type="submit" class="btn primary block">{{ t('Jetzt kaufen') }}</button>
+    <p class="small muted center">{{ t('Dein Kontostand') }}: {{ ctx.balance | coins }} Coins</p>
+  {% else %}
+    <a class="btn primary block" href="/login?next=/kaufen">{{ t('Zum Kaufen einloggen') }}</a>
+  {% endif %}
+</form>
+{% endblock %}

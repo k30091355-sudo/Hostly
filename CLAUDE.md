@@ -54,7 +54,7 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 8b. Dateimanager, Absturz-Schutz, Vorlagen, Kürzel & Statistik, Serverliste
 9. Feinschliff: Englisch, PWA, Installations-Anleitung
 
-**Aktueller Stand:** Stufe 1 fertig (Code in `hostly/`, Tests in `tests/`). Nächster Schritt: **Stufe 2**.
+**Aktueller Stand:** Stufe 1–5 fertig (Code in `hostly/`, Tests in `tests/`). Nächster Schritt: **Stufe 6**. Erster registrierter Account = Admin.
 
 ## Code-Aufbau
 - `hostly/db.py`: SQLite + Migrationen (neue Tabellen = neuer Eintrag in `MIGRATIONS`, nie alte ändern).
@@ -62,6 +62,10 @@ Lies den jeweils relevanten Abschnitt, bevor du eine Funktion baust – nicht al
 - `hostly/web/deps.py`: `Ctx` pro Anfrage (`ctx.require_login()`, `ctx.require_admin()`, `ctx.check_csrf()`, `ctx.render()`).
 - `hostly/web/routes/`: Seiten. Texte nur über `hostly/locales/de.json` + `en.json`.
 - `hostly/cli.py`: Admin setzen / Passwort zurücksetzen per Kommandozeile.
+- `hostly/coins.py`, `codes.py`, `pricing.py`, `servers.py`: Regeln (Ledger, Codes, Preise, Kauf/Verlängern/Reaktivieren/Löschen). Laufen in `db.transaction()`.
+- `hostly/minecraft.py`: itzg-Container-Einstellungen. `hostly/worker/`: Aufträge (`jobs`), Docker, Status (nie bei `.paused`), Ablauf, Downloads.
+- Web → worker nur über `db.add_job()`. Web liest Server-Dateien nur (Konsole = `logs/latest.log`).
+- Neue Texte: `t('Deutscher Text')` – deutscher Text ist der Schlüssel, Englisch kommt in Stufe 9 nach `en.json`.
 - Tests: `pytest` (alle müssen grün sein).
 
 ## Werkzeuge in diesem Repo

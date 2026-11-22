@@ -1,4 +1,4 @@
-# Hostly – Website (hostly-web)
+# Hostly – ein Image für Website (hostly-web) und worker (hostly-worker)
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY hostly ./hostly
 
-# Nicht als root laufen (Benutzer 1000 = normaler Ubuntu-Benutzer in WSL)
+# Website läuft nicht als root (Benutzer 1000 = normaler Ubuntu-Benutzer in WSL).
+# Der worker läuft als root (siehe docker-compose.yml), weil er Docker steuert.
 RUN useradd --uid 1000 --create-home hostly
 USER hostly
 

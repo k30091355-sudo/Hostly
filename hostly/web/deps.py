@@ -30,6 +30,31 @@ def _localtime(value: str | None) -> str:
 templates.env.filters["localtime"] = _localtime
 
 
+def _remaining(until: str | None) -> str:
+    """Restlaufzeit als Text, z. B. "12 Tage" oder "5 Std."."""
+    if not until:
+        return ""
+    seconds = (datetime.strptime(until, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+               - datetime.now(timezone.utc)).total_seconds()
+    if seconds <= 0:
+        return "abgelaufen"
+    days = int(seconds // 86400)
+    if days >= 2:
+        return f"{days} Tage"
+    if days == 1:
+        return "1 Tag"
+    hours = int(seconds // 3600)
+    return f"{hours} Std." if hours >= 1 else f"{int(seconds // 60)} Min."
+
+
+templates.env.filters["remaining"] = _remaining
+templates.env.filters["coins"] = lambda n: f"{int(n):,}".replace(",", ".")
+from ..motd import to_html as _motd_html  # noqa: E402
+templates.env.filters["motd"] = _motd_html
+import json as _json  # noqa: E402
+templates.env.filters["fromjson"] = lambda v: _json.loads(v or "{}")
+
+
 class Redirect(Exception):
     """Wird geworfen, um sofort auf eine andere Seite umzuleiten."""
 
@@ -52,10 +77,21 @@ class Ctx:
     csrf: str
     new_csrf: bool = False
     cookies: dict = field(default_factory=dict)  # Cookies, die gesetzt werden sollen
+    cache: dict = field(default_factory=dict)
 
     # --- Hilfen ---
     def t(self, key: str, **values) -> str:
         return translate(self.lang, key, **values)
+
+    @property
+    def balance(self) -> int:
+        """Coin-Stand des angemeldeten Users (für die Kopfleiste)."""
+        if self.user is None:
+            return 0
+        if "balance" not in self.cache:
+            from ..coins import balance
+            self.cache["balance"] = balance(self.conn, self.user["id"])
+        return self.cache["balance"]
 
     @property
     def is_admin(self) -> bool:
@@ -82,6 +118,9 @@ class Ctx:
         header = self.request.headers.get("x-csrf-token")
         if not security.csrf_ok(self.request.cookies.get(config.CSRF_COOKIE), form_value or header):
             raise CsrfError()
+
+    def can_manage(self, server) -> bool:
+        return self.user is not None and (server["owner_id"] == self.user["id"] or self.is_admin)
 
     def render(self, template: str, status_code: int = 200, **values) -> HTMLResponse:
         values.update(ctx=self, t=self.t, user=self.user, csrf=self.csrf)

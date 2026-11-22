@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/static/css/hostly.css">
   <script src="/static/js/htmx.min.js" defer></script>
   <script src="/static/js/hostly.js" defer></script>
+  {% block head %}{% endblock %}
 </head>
 <body>
   <header class="topbar">
@@ -19,6 +20,7 @@
       </a>
       {% if ctx and ctx.is_admin %}<span class="badge">{{ t('nav.admin_badge') }}</span>{% endif %}
       <div class="topbar-actions">
+        {% if user %}<a href="/einstellungen/coins" class="coin-chip" title="Coins">🪙 {{ ctx.balance | coins }}</a>{% endif %}
         <form method="post" action="/design" class="theme-form">
           <input type="hidden" name="csrf" value="{{ csrf }}">
           <input type="hidden" name="back" value="{{ request.url.path }}">
@@ -31,11 +33,14 @@
         {% if ctx %}
         <details class="menu">
           <summary class="menu-btn">
-            {% if user %}<span class="menu-name">{{ user.username }}</span>{% else %}{{ t('nav.menu') }}{% endif %}
+            {% if user %}{% include "_avatar.html" %}<span class="menu-name">{{ user.username }}</span>{% else %}{{ t('nav.menu') }}{% endif %}
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
           </summary>
           <nav class="menu-list">
             {% if user %}
+              <a href="/server">{{ t('Meine Server') }}</a>
+              <a href="/kaufen">{{ t('Server kaufen') }}</a>
+              <a href="/code">{{ t('Code einlösen') }}</a>
               <a href="/einstellungen">{{ t('nav.settings') }}</a>
               {% if user.is_admin %}
                 {% if ctx.is_admin %}<a href="/admin">{{ t('nav.admin') }}</a>{% endif %}
@@ -53,6 +58,7 @@
             {% else %}
               <a href="/login">{{ t('nav.login') }}</a>
               <a href="/registrieren">{{ t('nav.register') }}</a>
+              <a href="/kaufen">{{ t('Server kaufen') }}</a>
               <a href="mailto:{{ SUPPORT_EMAIL }}">{{ t('nav.support') }}</a>
             {% endif %}
           </nav>

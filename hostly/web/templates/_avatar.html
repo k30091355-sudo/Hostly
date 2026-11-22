@@ -1,0 +1,7 @@
+{%- if user.avatar_mode == 'own' -%}
+<img class="avatar" src="/profilbild/{{ user.id }}.png?v={{ user.avatar_version }}" alt="" width="28" height="28">
+{%- elif user.avatar_mode == 'minecraft' and user.minecraft_name -%}
+<img class="avatar pixel" src="https://mc-heads.net/avatar/{{ user.minecraft_name }}/64" alt="" width="28" height="28" referrerpolicy="no-referrer">
+{%- else -%}
+<span class="avatar letter" aria-hidden="true">{{ user.username[0] | upper }}</span>
+{%- endif -%}

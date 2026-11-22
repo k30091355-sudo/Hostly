@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Miete') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if success %}<div class="alert success" role="status">{{ success }}</div>{% endif %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+
+<div class="grid">
+{% if server.state == 'archived' %}
+  <section class="card">
+    <h2>{{ t('Reaktivieren') }}</h2>
+    <p class="small muted">{{ t('Alles wird wieder wie vorher. Gleiche Preise und Rabatte wie beim Kauf.') }}</p>
+    {% if not available %}<div class="alert warn small">{{ t('Aktuell ist kein Platz frei. Du kannst es trotzdem versuchen.') }}</div>{% endif %}
+    <form method="post" action="/server/{{ server.id }}/reaktivieren" class="form" hx-get="/kaufen/preis" hx-trigger="input delay:300ms" hx-target="#react-price" hx-params="days,model_id">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="request_id" value="{{ request_id }}">
+      <input type="hidden" name="model_id" value="{{ server.model_id }}">
+      <label>{{ t('Tage') }}<input type="number" name="days" min="1" max="3650" value="7" required></label>
+      <div id="react-price" class="small muted">{% for d, p in examples %}{{ d }} {{ t('Tage') }}: {{ p.final }} Coins{{ ' · ' if not loop.last }}{% endfor %}</div>
+      <button class="btn primary">{{ t('Reaktivieren') }}</button>
+    </form>
+  </section>
+{% elif server.state in ('active', 'creating') %}
+  <section class="card">
+    <h2>{{ t('Verlängern') }}</h2>
+    <p class="small muted">{{ t('Die Tage werden an die Restlaufzeit angehängt.') }} {{ t('Restlaufzeit') }}: {{ server.rented_until | remaining }}</p>
+    <form method="post" action="/server/{{ server.id }}/verlaengern" class="form" hx-get="/kaufen/preis" hx-trigger="input delay:300ms" hx-target="#ext-price" hx-params="days,model_id,verlaengern">
+      <input type="hidden" name="verlaengern" value="1">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="request_id" value="{{ request_id }}">
+      <input type="hidden" name="model_id" value="{{ server.model_id }}">
+      <label>{{ t('Tage') }}<input type="number" name="days" min="1" max="3650" value="7" required></label>
+      <div id="ext-price" class="small muted">{% for d, p in examples %}{{ d }} {{ t('Tage') }}: {{ p.final }} Coins{{ ' · ' if not loop.last }}{% endfor %}</div>
+      <button class="btn primary">{{ t('Verlängern') }}</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Auto-Verlängern') }}</h2>
+    <p class="small muted">{{ t('Am Ablauftag automatisch um 7 Tage verlängern (mit Rabatt). Reichen die Coins nicht, wird der Server archiviert.') }}</p>
+    <form method="post" action="/server/{{ server.id }}/auto-verlaengern">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      {% if server.auto_renew %}
+        <span class="pill on">{{ t('an') }}</span> <button name="enabled" value="0" class="btn small">{{ t('Ausschalten') }}</button>
+      {% else %}
+        <span class="pill off">{{ t('aus') }}</span> <button name="enabled" value="1" class="btn small">{{ t('Einschalten') }}</button>
+      {% endif %}
+    </form>
+  </section>
+{% endif %}
+
+  <section class="card danger-zone">
+    <h2>{{ t('Server löschen') }}</h2>
+    <p class="small">{{ t('Alles wird endgültig gelöscht (auch das Archiv).') }}
+      {% if refund %}{{ t('Du bekommst {n} Coins zurück (volle Resttage).', n=refund) }}{% endif %}</p>
+    {% if error_delete %}<div class="alert error small">{{ error_delete }}</div>{% endif %}
+    <form method="post" action="/server/{{ server.id }}/loeschen" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Zur Bestätigung den Servernamen eintippen:') }} <strong>{{ server.name }}</strong>
+        <input name="confirm_name" autocomplete="off" required></label>
+      <button class="btn danger">{{ t('Endgültig löschen') }}</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

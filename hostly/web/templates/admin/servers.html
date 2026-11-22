@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Server') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Server') }}</h1>
+{% include "admin/_nav.html" %}
+<section class="card">
+  {% if rows %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Name</th><th>{{ t('Besitzer') }}</th><th>{{ t('Modell') }}</th><th>Status</th><th>{{ t('Restzeit') }}</th><th>{{ t('Löschen') }}</th></tr></thead>
+    <tbody>
+    {% for s in rows %}
+      {% set label, cls = display_status(s, s if s.running is not none else none) %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td><a href="/server/{{ s.id }}">{{ s.name }}</a><br><span class="muted small">{{ s.type }} {{ s.mc_version }}</span></td>
+        <td><a href="/admin/user/{{ s.owner_id }}">{{ s.username }}</a></td>
+        <td>{{ s.model_name }}</td>
+        <td><span class="pill {{ cls }}">{{ t(label) }}</span></td>
+        <td>{{ s.rented_until | remaining if s.state not in ('archived',) else '–' }}</td>
+        <td class="actions-cell">
+          <form method="post" action="/admin/server/{{ s.id }}/loeschen" onsubmit="return confirm('{{ t('Server wirklich löschen? Das kann nicht rückgängig gemacht werden.') }}')">
+            <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="refund" value="ja">
+            <button class="btn small">{{ t('mit Erstattung') }} ({{ refund_amount(s) }})</button>
+          </form>
+          <form method="post" action="/admin/server/{{ s.id }}/loeschen" onsubmit="return confirm('{{ t('Server wirklich OHNE Erstattung löschen?') }}')">
+            <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="refund" value="nein">
+            <button class="btn small danger">{{ t('ohne') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">{{ t('Noch keine Server.') }}</p>{% endif %}
+</section>
+{% endblock %}

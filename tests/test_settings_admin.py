@@ -63,10 +63,17 @@ def test_guest_theme_and_language_cookie(client):
     assert "Create account" in html
 
 
+def test_first_user_is_admin(client):
+    register(client, "erster")
+    logout(client)
+    register(client, "zweiter")
+    assert client.get("/admin", follow_redirects=False).status_code == 303  # kein Admin
+    admins = [r[0] for r in conn().execute("SELECT username FROM users WHERE is_admin = 1")]
+    assert admins == ["erster"]
+
+
 def test_admin_area_and_toggle(client):
     register(client)
-    assert client.get("/admin", follow_redirects=False).status_code == 303  # kein Admin
-    assert cli.main(["admin", "steve"]) == 0
     r = client.get("/admin")
     assert r.status_code == 200 and "Admin-Bereich" in r.text and "steve" in r.text
     # zur User-Ansicht

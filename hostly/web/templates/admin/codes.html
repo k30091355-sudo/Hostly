@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Codes') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Codes') }}</h1>
+{% include "admin/_nav.html" %}
+
+{% if new_codes %}
+<section class="card highlight">
+  <h2>{{ t('Neue Codes') }}</h2>
+  <ul class="code-list">
+    {% for c in new_codes %}
+      <li><code class="mono">{{ c.code }}</code> <button type="button" class="btn small" data-copy="{{ c.code }}">{{ t('Kopieren') }}</button></li>
+    {% endfor %}
+  </ul>
+  {% if new_codes|length > 1 %}
+  <button type="button" class="btn" data-copy="{{ new_codes | map(attribute='code') | join('\n') }}">{{ t('Alle kopieren') }}</button>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>{{ t('Code erstellen') }}</h2>
+  {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/codes" class="form row-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Coins<input type="number" name="coins" min="50" max="1000" value="100" required></label>
+    <label>{{ t('Wie oft gültig') }}<input type="number" name="max_uses" min="1" value="1" required></label>
+    <label>{{ t('Anzahl Codes') }}<input type="number" name="count" min="1" max="100" value="1" required></label>
+    <label>{{ t('Ablaufdatum (optional)') }}<input type="date" name="expires"></label>
+    <button type="submit" class="btn primary">{{ t('Erstellen') }}</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>{{ t('Alle Codes') }}</h2>
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Code</th><th>Status</th><th>{{ t('Einlösungen') }}</th><th>Coins</th><th>{{ t('Läuft ab') }}</th><th>{{ t('Erstellt') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for c in rows %}
+        {% set st = status(c) %}
+        <tr>
+          <td><code class="mono">{{ c.code }}</code> <button type="button" class="link-btn small" data-copy="{{ c.code }}">{{ t('Kopieren') }}</button></td>
+          <td><span class="pill {{ 'on' if st == 'aktiv' else 'off' }}">{{ t(st) }}</span></td>
+          <td>
+            <form method="post" action="/admin/codes/{{ c.id }}" class="inline-form">
+              <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="max_uses">
+              {{ c.uses }} / <input type="number" name="max_uses" value="{{ c.max_uses }}" min="1" class="tiny" aria-label="{{ t('Wie oft gültig') }}">
+              <button class="link-btn small">{{ t('Speichern') }}</button>
+            </form>
+          </td>
+          <td>{{ c.coins }}</td>
+          <td>{{ c.expires_at | localtime if c.expires_at else '–' }}</td>
+          <td>{{ c.created_at | localtime }}</td>
+          <td>
+            <form method="post" action="/admin/codes/{{ c.id }}">
+              <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="toggle">
+              <button class="btn small">{{ t('Deaktivieren') if c.active else t('Aktivieren') }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="muted">{{ t('Noch keine Codes.') }}</p>{% endif %}
+</section>
+{% endblock %}

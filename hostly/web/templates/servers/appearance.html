@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Darstellung') }} · {{ server.name }} · Hostly{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/cropper.min.css"><script src="/static/js/cropper.min.js" defer></script>{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+{% if saved %}<div class="alert success" role="status">{{ t('Gespeichert.') }}{% if saved in ('motd', 'icon') %} {{ t('Gilt nach dem nächsten Neustart.') }}{% endif %}</div>{% endif %}
+
+<div class="grid">
+  <section class="card">
+    <h2>Name</h2>
+    <form method="post" action="/server/{{ server.id }}/name" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Servername (nur in Hostly)') }}<input name="name" value="{{ server.name }}" maxlength="32" required></label>
+      <button class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Server-Icon') }}</h2>
+    <p class="small muted">{{ t('Beliebiges Bild wählen, Rahmen verschieben und zoomen. Hostly macht daraus das 64×64-Icon.') }}</p>
+    <form method="post" action="/server/{{ server.id }}/icon" enctype="multipart/form-data" class="form" data-cropper="1">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="file" name="icon" accept="image/*" required>
+      <div class="crop-area" hidden><img alt=""></div>
+      <button class="btn primary">{{ t('Icon speichern') }}</button>
+    </form>
+  </section>
+</div>
+
+<section class="card">
+  <h2>MOTD</h2>
+  <p class="small muted">{{ t('Der Text unter deinem Server in der Minecraft-Serverliste. Höchstens 2 Zeilen.') }}</p>
+  <form method="post" action="/server/{{ server.id }}/motd" class="form" id="motd-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="motd-buttons" role="toolbar" aria-label="{{ t('Farben und Formatierung') }}">
+      {% for code, color in [('0','#000000'),('1','#0000AA'),('2','#00AA00'),('3','#00AAAA'),('4','#AA0000'),('5','#AA00AA'),('6','#FFAA00'),('7','#AAAAAA'),('8','#555555'),('9','#5555FF'),('a','#55FF55'),('b','#55FFFF'),('c','#FF5555'),('d','#FF55FF'),('e','#FFFF55'),('f','#FFFFFF')] %}
+        <button type="button" class="swatch" style="background:{{ color }}" data-code="{{ code }}" title="§{{ code }}" aria-label="{{ t('Farbe') }} {{ code }}"></button>
+      {% endfor %}
+      <button type="button" class="fmt" data-code="l"><b>B</b></button>
+      <button type="button" class="fmt" data-code="o"><i>I</i></button>
+      <button type="button" class="fmt" data-code="n"><u>U</u></button>
+      <button type="button" class="fmt" data-code="m"><s>S</s></button>
+      <button type="button" class="fmt" data-code="r">{{ t('Zurücksetzen') }}</button>
+    </div>
+    <textarea name="text" rows="2" maxlength="400" id="motd-text">{{ motd_text if motd_text is defined else (server.motd or '') }}</textarea>
+    <div class="mc-preview">
+      <img src="/server/{{ server.id }}/icon.png" alt="" width="48" height="48">
+      <div>
+        <div class="mc-name">{{ server.name }}</div>
+        <div id="motd-preview" class="mc-motd">{{ (motd_text if motd_text is defined else server.motd) | motd }}</div>
+      </div>
+    </div>
+    <button class="btn primary">{{ t('MOTD speichern') }}</button>
+  </form>
+</section>
+{% endblock %}

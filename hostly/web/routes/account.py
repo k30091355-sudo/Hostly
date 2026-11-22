@@ -1,10 +1,10 @@
 """Einstellungen: Passwort, Benutzername, Sprache, Design."""
 import sqlite3
 
-from fastapi import APIRouter, Depends, Form
-from fastapi.responses import HTMLResponse, Response
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, Response
 
-from ... import config, db, security
+from ... import config, console, db, images, security
 from ..deps import Ctx, Redirect, get_ctx
 from .auth import _username_taken, safe_next
 
@@ -12,7 +12,8 @@ router = APIRouter()
 
 # Erfolgsmeldungen, die per ?msg=... angezeigt werden dürfen
 MESSAGES = {"password": "settings.saved_password", "username": "settings.saved_username",
-            "display": "settings.saved_display"}
+            "display": "settings.saved_display", "minecraft": "settings.saved_display",
+            "avatar": "settings.saved_display"}
 
 
 def _page(ctx: Ctx, status_code: int = 200, **values):
@@ -117,3 +118,60 @@ def set_language(language: str = Form(...), back: str = Form("/"), csrf: str = F
     if language in config.LANGUAGES:
         _save_choice(ctx, "language", "hostly_lang", language)
     raise Redirect(safe_next(back))
+
+
+# ---------- Minecraft-Name (→ automatisch OP) ----------
+
+@router.post("/einstellungen/minecraft")
+def set_minecraft_name(minecraft_name: str = Form(""), csrf: str = Form(""), ctx: Ctx = Depends(get_ctx)):
+    ctx.require_login()
+    ctx.check_csrf(csrf)
+    name = minecraft_name.strip()
+    if name and not console.valid_mc_name(name):
+        return _page(ctx, 400, error_minecraft=ctx.t("Ungültiger Minecraft-Name (3–16 Zeichen: Buchstaben, Zahlen, _)."))
+    with db.transaction(ctx.conn):
+        ctx.conn.execute("UPDATE users SET minecraft_name = ? WHERE id = ?", (name or None, ctx.user["id"]))
+        if name:
+            # auf allen eigenen laufenden Servern sofort OP geben
+            for row in ctx.conn.execute(
+                    "SELECT id FROM servers WHERE owner_id = ? AND state = 'active'", (ctx.user["id"],)).fetchall():
+                db.add_job(ctx.conn, "rcon", row["id"], ctx.user["id"], {"commands": [f"op {name}"]})
+    raise Redirect("/einstellungen?msg=minecraft")
+
+
+# ---------- Profilbild ----------
+
+def avatar_file(user_id: int):
+    return config.UPLOADS_DIR / "avatars" / f"{user_id}.png"
+
+
+@router.post("/einstellungen/profilbild")
+async def set_avatar(mode: str = Form("none"), image: UploadFile | None = File(None), csrf: str = Form(""),
+                     ctx: Ctx = Depends(get_ctx)):
+    ctx.require_login()
+    ctx.check_csrf(csrf)
+    if mode == "own":
+        data = await image.read(images.MAX_UPLOAD_BYTES + 1) if image else b""
+        try:
+            png = images.square_png(data, 128)
+        except images.ImageError as exc:
+            return _page(ctx, 400, error_avatar=ctx.t(str(exc)))
+        path = avatar_file(ctx.user["id"])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(png)
+    elif mode == "minecraft":
+        if not ctx.user["minecraft_name"]:
+            return _page(ctx, 400, error_avatar=ctx.t("Bitte zuerst deinen Minecraft-Namen eintragen."))
+    else:
+        mode = "none"
+    ctx.conn.execute("UPDATE users SET avatar_mode = ?, avatar_version = avatar_version + 1 WHERE id = ?",
+                     (mode, ctx.user["id"]))
+    raise Redirect("/einstellungen?msg=avatar")
+
+
+@router.get("/profilbild/{user_id}.png")
+def avatar(user_id: int):
+    path = avatar_file(user_id)
+    if not path.exists():
+        raise HTTPException(404)
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})

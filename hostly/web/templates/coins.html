@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Coin-Verlauf') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Coin-Verlauf') }}</h1>
+<div class="card">
+  <p>{{ t('Kontostand') }}: <strong class="big">{{ ctx.balance | coins }} Coins</strong></p>
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>{{ t('Datum') }}</th><th>{{ t('Grund') }}</th><th class="num">Coins</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.created_at | localtime }}</td>
+          <td>{{ t(reasons.get(r.reason, r.reason)) }}{% if r.note %} <span class="muted">· {{ r.note }}</span>{% endif %}</td>
+          <td class="num {{ 'plus' if r.amount > 0 else 'minus' }}">{{ '+' if r.amount > 0 }}{{ r.amount | coins }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">{{ t('Noch keine Buchungen. Löse einen Code ein, um Coins zu bekommen.') }}</p>
+  <a class="btn primary" href="/code">{{ t('Code einlösen') }}</a>
+  {% endif %}
+</div>
+{% endblock %}

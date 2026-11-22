@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Code einlösen') }} · Hostly{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ t('Code einlösen') }}</h1>
+  {% if success %}<div class="alert success" role="status">{{ success }}</div>{% endif %}
+  {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/code" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('Dein Code') }}
+      <input name="code" value="{{ code }}" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off" autocapitalize="none"
+             spellcheck="false" required autofocus class="mono">
+    </label>
+    <button type="submit" class="btn primary block">{{ t('Einlösen') }}</button>
+  </form>
+  <p class="small muted">{{ t('Kontostand') }}: <strong>{{ ctx.balance | coins }} Coins</strong> · <a href="/einstellungen/coins">{{ t('Coin-Verlauf') }}</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+<div class="price-box">
+  {% if price.discount %}
+    <span class="old-price">{{ price.original | coins }}</span>
+    <span class="new-price">{{ price.final | coins }} Coins</span>
+    <span class="pill on">−{{ price.discount }} %</span>
+  {% else %}
+    <span class="new-price">{{ price.final | coins }} Coins</span>
+  {% endif %}
+  <div class="small muted">{{ price.days }} {{ t('Tage') if price.days != 1 else t('Tag') }} × {{ model.price_per_day }} Coins{% if price.day_discount %} · {{ t('Tage-Rabatt') }} {{ price.day_discount }} %{% endif %}{% if price.promo_discount %} · {{ t('Aktion') }} {{ price.promo_discount }} %{% endif %}</div>
+  {% if not price_available %}<div class="alert warn small">{{ t('Kauf aktuell nicht möglich – gerade ist kein Platz frei.') }}</div>{% endif %}
+</div>

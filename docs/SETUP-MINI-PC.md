@@ -113,20 +113,35 @@ cd /srv/hostly
 git clone https://github.com/k30091355-sudo/hostly.git app
 ```
 
-### Hostly starten (ab Stufe 1)
+### Hostly starten
+Ordner anlegen (einmalig):
 ```
-mkdir -p /srv/hostly/db
+mkdir -p /srv/hostly/db /srv/hostly/uploads /srv/hostly/servers /srv/hostly/archives /srv/hostly/downloads
+```
+Starten:
+```
 cd /srv/hostly/app
 docker compose up -d --build
 ```
+- Es laufen zwei Teile: **hostly-web** (Website) und **hostly-worker** (startet/stoppt die Minecraft-Server).
 - Test im Windows-Browser: `http://localhost:8000`
-- Auf der Website **sofort deinen eigenen Account erstellen**, dann im Ubuntu-Fenster zum Admin machen:
+- **Sofort deinen eigenen Account erstellen** – der allererste Account wird automatisch Admin.
+- Im Admin-Bereich → **Tunnel**: deine playit-Tunnel eintragen (ohne Tunnel kann niemand kaufen).
+- Im Admin-Bereich → **Codes**: Codes erstellen und verteilen.
+- Der erste Server-Kauf lädt einmalig das Minecraft-Image herunter (ca. 1 GB, dauert ein paar Minuten).
+
+Falls nötig (Notfall-Befehle im Ubuntu-Fenster):
 ```
-docker compose exec web python -m hostly.cli admin DEIN_BENUTZERNAME
+docker compose exec web python -m hostly.cli admin BENUTZERNAME
 ```
-- Eigenes Passwort vergessen? Neues zufälliges Passwort erzeugen:
 ```
-docker compose exec web python -m hostly.cli passwort DEIN_BENUTZERNAME
+docker compose exec web python -m hostly.cli passwort BENUTZERNAME
+```
+(erster Befehl: jemanden zum Admin machen · zweiter: zufälliges neues Passwort, z. B. wenn du dein eigenes vergessen hast)
+
+Logs ansehen (bei Problemen):
+```
+docker compose logs --tail 50 web worker
 ```
 
 ### Hostly aktualisieren (nach jeder neuen Stufe)
@@ -135,7 +150,7 @@ cd /srv/hostly/app
 git pull
 docker compose up -d --build
 ```
-Die Datenbank (`/srv/hostly/db`) bleibt dabei erhalten.
+Die Datenbank und alle Server-Daten unter `/srv/hostly` bleiben dabei erhalten. Laufende Minecraft-Server laufen weiter.
 
 ---
 

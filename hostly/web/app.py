@@ -10,7 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .. import config, db, security
 from ..i18n import translate
 from .deps import CsrfError, Redirect, cookie_secure, templates
-from .routes import account, admin, auth, pages
+from .routes import account, admin, auth, coins, myservers, pages, shop
 
 
 @asynccontextmanager
@@ -31,6 +31,9 @@ app.include_router(pages.router)
 app.include_router(auth.router)
 app.include_router(account.router)
 app.include_router(admin.router)
+app.include_router(coins.router)
+app.include_router(shop.router)
+app.include_router(myservers.router)
 
 
 @app.middleware("http")

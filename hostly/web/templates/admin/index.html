@@ -2,30 +2,29 @@
 {% block title %}{{ t('nav.admin') }} · Hostly{% endblock %}
 {% block content %}
 <h1>{{ t('nav.admin') }}</h1>
+{% include "admin/_nav.html" %}
 
 <div class="stats">
-  <div class="card stat"><span class="stat-value">{{ stats.users }}</span><span class="stat-label">{{ t('admin.users') }}</span></div>
-  <div class="card stat"><span class="stat-value">{{ stats.new_users }}</span><span class="stat-label">{{ t('admin.new_users') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ '%.1f' % cap.used }} / {{ '%.1f' % (cap.total - cap.reserve) }} GB</span><span class="stat-label">{{ t('RAM belegt (Reserve {r} GB frei)', r=cap.reserve) }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ cap.tunnels_used }} / {{ cap.tunnels_total }}</span><span class="stat-label">{{ t('Tunnel belegt') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.active }}</span><span class="stat-label">{{ t('Server aktiv') }} · {{ stats.online }} {{ t('online') }} · {{ stats.sleeping }} {{ t('schlafen') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.archived }}</span><span class="stat-label">{{ t('Server archiviert') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.users }}</span><span class="stat-label">{{ t('User') }} · {{ stats.new_users }} {{ t('neu (7 Tage)') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.codes_active }}</span><span class="stat-label">{{ t('Aktive Codes') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.coins_total | coins }}</span><span class="stat-label">{{ t('Coins im Umlauf') }}</span></div>
+  <div class="card stat"><span class="stat-value">{{ stats.coins_redeemed | coins }} / {{ stats.coins_spent | coins }} / {{ stats.coins_refunded | coins }}</span><span class="stat-label">{{ t('eingelöst / ausgegeben / erstattet') }}</span></div>
 </div>
 
+{% if errors %}
 <section class="card">
-  <h2>{{ t('admin.users') }}</h2>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>#</th><th>{{ t('field.username') }}</th><th>{{ t('admin.role') }}</th><th>{{ t('admin.registered') }}</th></tr></thead>
-      <tbody>
-      {% for u in users %}
-        <tr>
-          <td>{{ u.id }}</td>
-          <td>{{ u.username }}</td>
-          <td>{{ t('admin.role_admin') if u.is_admin else t('admin.role_user') }}</td>
-          <td>{{ u.created_at | localtime }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <h2>{{ t('Fehler bei Aufträgen') }}</h2>
+  <ul class="events">
+    {% for e in errors %}
+      <li><span class="muted small">{{ e.created_at | localtime }}</span> · {{ e.kind }} · {{ e.server_name or '–' }} · <span class="minus">{{ e.error }}</span></li>
+    {% endfor %}
+  </ul>
 </section>
+{% endif %}
 
 <section class="card">
   <h2>{{ t('admin.events') }}</h2>

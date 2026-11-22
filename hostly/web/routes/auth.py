@@ -112,8 +112,10 @@ def register(
     password_hash = security.hash_password(password)
     try:
         with db.transaction(ctx.conn):
+            # Der allererste Account wird automatisch Admin.
             cur = ctx.conn.execute(
-                "INSERT INTO users (username, password_hash, language, theme) VALUES (?, ?, ?, ?)",
+                """INSERT INTO users (username, password_hash, language, theme, is_admin)
+                   VALUES (?, ?, ?, ?, (SELECT COUNT(*) = 0 FROM users))""",
                 (username, password_hash, ctx.lang, ctx.theme),
             )
             user_id = cur.lastrowid

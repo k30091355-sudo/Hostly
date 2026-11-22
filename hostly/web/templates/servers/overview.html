@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if new %}
+<div class="alert success">{{ t('Gekauft! Dein Server wird gerade erstellt. Das erste Starten kann ein paar Minuten dauern.') }}</div>
+{% endif %}
+
+<div class="grid">
+  <section class="card">
+    <h2>Status</h2>
+    {% include "servers/_status.html" %}
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Verbinden') }}</h2>
+    {% if server.public_address %}
+      <div class="copy-row"><code class="mono big">{{ server.public_address }}</code>
+        <button type="button" class="btn small" data-copy="{{ server.public_address }}">{{ t('Kopieren') }}</button></div>
+      <p class="small muted">{{ t('In Minecraft: Mehrspieler → Server hinzufügen → diese Adresse eintragen.') }}</p>
+    {% else %}
+      <p class="muted">{{ t('Archivierte Server haben keine Adresse. Nach dem Reaktivieren bekommst du (eventuell eine neue) Adresse.') }}</p>
+    {% endif %}
+    <dl class="facts">
+      {% if server.state != 'archived' %}<dt>{{ t('Restlaufzeit') }}</dt><dd>{{ server.rented_until | remaining }} ({{ t('bis') }} {{ server.rented_until | localtime }})</dd>{% endif %}
+      <dt>RAM</dt><dd>{{ server.ram_gb | int }} GB</dd>
+      <dt>{{ t('Max. Spieler') }}</dt><dd>{{ server.max_players }}</dd>
+      <dt>{{ t('Server-Kürzel') }}</dt><dd class="mono">{{ server.short_code }}</dd>
+    </dl>
+    {% if server.state == 'archived' %}<a class="btn primary" href="/server/{{ server.id }}/miete">{{ t('Reaktivieren') }}</a>{% endif %}
+  </section>
+</div>
+
+<section class="card" id="download">
+  <h2>Download</h2>
+  <p class="small muted">{{ t('Welt oder alle Server-Dateien als ZIP. Das Packen läuft im Hintergrund (leise) und kann bei großen Welten etwas dauern.') }}</p>
+  <form method="post" action="/server/{{ server.id }}/download" class="control-buttons">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button name="part" value="world" class="btn">{{ t('Welt herunterladen') }}</button>
+    <button name="part" value="all" class="btn">{{ t('Alle Dateien herunterladen') }}</button>
+  </form>
+  {% if downloads %}
+  <ul class="events" {% if downloads | selectattr('status', 'in', ['pending', 'running']) | list %}hx-get="/server/{{ server.id }}" hx-trigger="every 5s" hx-select="#download" hx-target="#download" hx-swap="outerHTML"{% endif %}>
+    {% for d in downloads %}
+      <li>{{ d.created_at | localtime }} ·
+        {% if d.status == 'done' %}<a href="/download/{{ d.id }}">{{ t('ZIP herunterladen') }}</a> <span class="muted small">({{ t('24 Stunden verfügbar') }})</span>
+        {% elif d.status == 'error' %}<span class="minus">{{ t('Fehler') }}: {{ d.error }}</span>
+        {% else %}<span class="muted">{{ t('wird gepackt …') }}</span>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endblock %}

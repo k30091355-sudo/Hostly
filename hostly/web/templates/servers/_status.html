@@ -1,0 +1,20 @@
+<div id="status" class="status-box" hx-get="/server/{{ server.id }}/status" hx-trigger="every {{ '4s' if busy or status_class == 'busy' else '30s' }}" hx-swap="outerHTML">
+  <div class="status-line">
+    <span class="pill big {{ status_class }}">{{ t(status_label) }}</span>
+    {% if busy %}<span class="muted small">{{ t('Aktion läuft:') }} {{ t({'create': 'Erstellen', 'start': 'Starten', 'stop': 'Stoppen', 'restart': 'Neustarten', 'reload': 'Reload', 'archive': 'Archivieren', 'reactivate': 'Reaktivieren', 'delete': 'Löschen'}.get(busy.kind, busy.kind)) }} …</span>{% endif %}
+  </div>
+  {% if st and st.players and status_class == 'on' %}<div class="small">{{ t('Online:') }} {{ st.players }}</div>{% endif %}
+  {% if server.state == 'active' %}
+  <form method="post" action="/server/{{ server.id }}/aktion" class="control-buttons">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    {% set running = st and st.running %}
+    {% if not running %}<button name="action" value="start" class="btn primary" {% if busy %}disabled{% endif %}>{{ t('Starten') }}</button>{% endif %}
+    {% if running %}
+      <button name="action" value="stop" class="btn" {% if busy %}disabled{% endif %}>{{ t('Stoppen') }}</button>
+      <button name="action" value="restart" class="btn" {% if busy %}disabled{% endif %}>{{ t('Neustarten') }}</button>
+      <button name="action" value="reload" class="btn" {% if busy %}disabled{% endif %}
+        {% if server.type == 'PAPER' %}onclick="return confirm('{{ t('Reload bei Paper kann Plugins durcheinanderbringen. Besser Neustarten. Trotzdem?') }}')"{% endif %}>{{ t('Reload') }}</button>
+    {% endif %}
+  </form>
+  {% endif %}
+</div>

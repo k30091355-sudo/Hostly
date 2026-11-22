@@ -1,0 +1,29 @@
+{% set p = request.url.path %}
+{% set base = '/server/' ~ server.id %}
+<div class="title-row">
+  <div class="title-with-icon">
+    <img class="server-icon" src="{{ base }}/icon.png" alt="" width="48" height="48">
+    <div>
+      <h1>{{ server.name }}</h1>
+      <div class="small muted">{{ t(server.model_name) }} · {{ server.type | capitalize }}{% if server.mc_version != 'LATEST' %} {{ server.mc_version }}{% endif %}{% if server.owner_id != user.id %} · {{ t('Admin-Ansicht') }}{% endif %}</div>
+    </div>
+  </div>
+</div>
+<nav class="tabs" aria-label="Server">
+  <a href="{{ base }}" class="{{ 'active' if p == base }}">{{ t('Übersicht') }}</a>
+  {% if server.state == 'active' %}
+  <a href="{{ base }}/konsole" class="{{ 'active' if p.endswith('/konsole') }}">{{ t('Konsole') }}</a>
+  {% endif %}
+  {% if server.state != 'archived' %}
+  <a href="{{ base }}/darstellung" class="{{ 'active' if p.endswith('/darstellung') }}">{{ t('Darstellung') }}</a>
+  <a href="{{ base }}/spieler" class="{{ 'active' if p.endswith('/spieler') }}">{{ t('Spieler') }}</a>
+  {% endif %}
+  <a href="{{ base }}/miete" class="{{ 'active' if p.endswith('/miete') }}">{{ t('Miete') }}</a>
+</nav>
+{% if server.needs_restart and server.state == 'active' %}
+<div class="alert warn banner-row">
+  <span>{{ t('Änderungen ausstehend – sie gelten nach einem Neustart.') }}</span>
+  <form method="post" action="{{ base }}/aktion"><input type="hidden" name="csrf" value="{{ csrf }}">
+    <button name="action" value="restart" class="btn small" {% if busy %}disabled{% endif %}>{{ t('Jetzt neu starten') }}</button></form>
+</div>
+{% endif %}

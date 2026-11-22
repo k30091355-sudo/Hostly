@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav.settings') }} · Hostly{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/cropper.min.css"><script src="/static/js/cropper.min.js" defer></script>{% endblock %}
 {% block content %}
-<h1>{{ t('nav.settings') }}</h1>
+<div class="title-row">
+  <h1>{{ t('nav.settings') }}</h1>
+  <a class="btn" href="/einstellungen/coins">🪙 {{ t('Coin-Verlauf') }}</a>
+</div>
 {% if user.must_change_password %}
 <div class="alert warn" role="alert">{{ t('settings.must_change') }}</div>
 {% endif %}
@@ -42,6 +46,34 @@
       <label>{{ t('field.password_confirm') }}
         <input type="password" name="password" autocomplete="current-password" required>
       </label>
+      <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+
+  <section class="card" id="minecraft">
+    <h2>{{ t('Minecraft-Name') }}</h2>
+    <p class="small muted">{{ t('Damit bekommst du auf deinen eigenen Servern automatisch OP.') }}</p>
+    {% if error_minecraft %}<div class="alert error" role="alert">{{ error_minecraft }}</div>{% endif %}
+    <form method="post" action="/einstellungen/minecraft" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Minecraft-Name') }}
+        <input name="minecraft_name" value="{{ user.minecraft_name or '' }}" maxlength="16" pattern="[A-Za-z0-9_]{3,16}" autocapitalize="none">
+      </label>
+      <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+    </form>
+  </section>
+
+  <section class="card" id="profilbild">
+    <h2>{{ t('Profilbild') }}</h2>
+    {% if error_avatar %}<div class="alert error" role="alert">{{ error_avatar }}</div>{% endif %}
+    <div class="avatar-preview">{% include "_avatar.html" %}</div>
+    <form method="post" action="/einstellungen/profilbild" enctype="multipart/form-data" class="form" data-cropper="1">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="radio"><input type="radio" name="mode" value="none" {% if user.avatar_mode == 'none' %}checked{% endif %}> {{ t('Kein Bild') }}</label>
+      <label class="radio"><input type="radio" name="mode" value="minecraft" {% if user.avatar_mode == 'minecraft' %}checked{% endif %}> {{ t('Minecraft-Kopf') }}</label>
+      <label class="radio"><input type="radio" name="mode" value="own" {% if user.avatar_mode == 'own' %}checked{% endif %}> {{ t('Eigenes Bild') }}</label>
+      <input type="file" name="image" accept="image/*">
+      <div class="crop-area" hidden><img alt=""></div>
       <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
     </form>
   </section>

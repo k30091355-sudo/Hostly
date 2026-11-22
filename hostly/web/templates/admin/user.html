@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ u.username }}{% if u.is_admin %} <span class="badge">Admin</span>{% endif %}</h1>
+{% include "admin/_nav.html" %}
+{% if success %}<div class="alert success" role="status">{{ success }}</div>{% endif %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+
+<div class="grid">
+  <section class="card">
+    <h2>{{ t('Passwort zurücksetzen') }}</h2>
+    {% if new_password %}
+      <div class="alert warn">
+        {{ t('Neues Passwort (wird nur jetzt angezeigt):') }}<br>
+        <code class="mono big">{{ new_password }}</code>
+        <button type="button" class="btn small" data-copy="{{ new_password }}">{{ t('Kopieren') }}</button>
+      </div>
+      <p class="small muted">{{ t('Schick es dem User per E-Mail. Beim nächsten Login muss er ein eigenes Passwort wählen.') }}</p>
+    {% else %}
+      <p class="small muted">{{ t('Erzeugt ein zufälliges Passwort. Der User wird überall abgemeldet.') }}</p>
+      <form method="post" action="/admin/user/{{ u.id }}/passwort" onsubmit="return confirm('{{ t('Passwort wirklich zurücksetzen?') }}')">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn primary">{{ t('Passwort zurücksetzen') }}</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Coins: {{ balance | coins }}</h2>
+    <form method="post" action="/admin/user/{{ u.id }}/coins" class="form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>{{ t('Betrag (minus zum Abziehen)') }}<input type="number" name="amount" required></label>
+      <label>{{ t('Grund (sieht der User)') }}<input name="note" maxlength="100"></label>
+      <button class="btn primary">{{ t('Buchen') }}</button>
+    </form>
+  </section>
+</div>
+
+<section class="card">
+  <h2>{{ t('Server') }}</h2>
+  {% if user_servers %}
+  <ul class="events">
+    {% for s in user_servers %}<li><a href="/server/{{ s.id }}">{{ s.name }}</a> · {{ s.model_name }} · {{ t(s.state) }} · {{ t('bis') }} {{ s.rented_until | localtime }}</li>{% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ t('Keine Server.') }}</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t('Coin-Verlauf') }}</h2>
+  <div class="table-wrap"><table>
+    <tbody>
+    {% for r in ledger %}
+      <tr><td>{{ r.created_at | localtime }}</td><td>{{ t(reasons.get(r.reason, r.reason)) }}{% if r.note %} <span class="muted">· {{ r.note }}</span>{% endif %}</td>
+      <td class="num {{ 'plus' if r.amount > 0 else 'minus' }}">{{ '+' if r.amount > 0 }}{{ r.amount | coins }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

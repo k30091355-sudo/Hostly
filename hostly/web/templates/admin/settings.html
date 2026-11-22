@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Einstellungen') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Einstellungen') }}</h1>
+{% include "admin/_nav.html" %}
+{% if saved %}<div class="alert success" role="status">{{ t('settings.saved_display') }}</div>{% endif %}
+<section class="card narrow-left">
+  <h2>{{ t('RAM-Prüfung') }}</h2>
+  <p class="small muted">{{ t('Container-Grenze = Modell-RAM + 0,5 GB. Nach jedem Kauf muss die Reserve frei bleiben.') }}</p>
+  <form method="post" action="/admin/einstellungen" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>{{ t('RAM für WSL gesamt (GB)') }}<input type="number" step="0.5" name="ram_total_gb" value="{{ total }}" required></label>
+    <label>{{ t('Reserve, die frei bleiben muss (GB)') }}<input type="number" step="0.5" name="ram_reserve_gb" value="{{ reserve }}" required></label>
+    <button class="btn primary">{{ t('settings.save') }}</button>
+  </form>
+</section>
+{% endblock %}

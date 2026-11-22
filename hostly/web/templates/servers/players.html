@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Spieler') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+<div class="grid">
+  <section class="card">
+    <h2>Whitelist</h2>
+    <p class="small muted">{{ t('Wenn an, dürfen nur Spieler auf der Liste beitreten.') }}</p>
+    <form method="post" action="/server/{{ server.id }}/whitelist">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      {% if server.whitelist_enabled %}
+        <span class="pill on">{{ t('an') }}</span> <button name="action" value="off" class="btn small">{{ t('Ausschalten') }}</button>
+      {% else %}
+        <span class="pill off">{{ t('aus') }}</span> <button name="action" value="on" class="btn small">{{ t('Einschalten') }}</button>
+      {% endif %}
+    </form>
+    <form method="post" action="/server/{{ server.id }}/whitelist" class="inline-form add-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="add">
+      <input name="name" placeholder="{{ t('Minecraft-Name') }}" maxlength="16" required pattern="[A-Za-z0-9_]{3,16}" aria-label="{{ t('Minecraft-Name') }}">
+      <button class="btn primary">{{ t('Hinzufügen') }}</button>
+    </form>
+    {% if whitelist %}
+    <ul class="events">
+      {% for w in whitelist %}
+        <li class="row-between"><span>{{ w.minecraft_name }}</span>
+          <form method="post" action="/server/{{ server.id }}/whitelist"><input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="action" value="remove"><input type="hidden" name="name" value="{{ w.minecraft_name }}">
+            <button class="link-btn small">{{ t('Entfernen') }}</button></form></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted small">{{ t('Noch niemand auf der Liste.') }}</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>{{ t('Join-Verlauf') }}</h2>
+    {% if sessions %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>{{ t('Spieler') }}</th><th>{{ t('Beigetreten') }}</th><th>{{ t('Verlassen') }}</th></tr></thead>
+      <tbody>
+      {% for p in sessions %}
+        <tr><td>{{ p.minecraft_name }}</td><td>{{ p.joined_at | localtime }}</td><td>{{ p.left_at | localtime if p.left_at else t('online') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="muted small">{{ t('Noch niemand war auf dem Server.') }}</p>{% endif %}
+  </section>
+</div>
+<p class="small muted">{{ t('Tipp: Trag in den Einstellungen deinen Minecraft-Namen ein – dann bekommst du auf deinen Servern automatisch OP.') }}</p>
+{% endblock %}

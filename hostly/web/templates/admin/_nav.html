@@ -1,0 +1,9 @@
+{% set p = request.url.path %}
+<nav class="tabs" aria-label="Admin">
+  <a href="/admin" class="{{ 'active' if p == '/admin' }}">{{ t('Übersicht') }}</a>
+  <a href="/admin/user" class="{{ 'active' if p.startswith('/admin/user') }}">{{ t('User') }}</a>
+  <a href="/admin/server" class="{{ 'active' if p.startswith('/admin/server') }}">{{ t('Server') }}</a>
+  <a href="/admin/codes" class="{{ 'active' if p.startswith('/admin/codes') }}">{{ t('Codes') }}</a>
+  <a href="/admin/tunnel" class="{{ 'active' if p.startswith('/admin/tunnel') }}">{{ t('Tunnel') }}</a>
+  <a href="/admin/einstellungen" class="{{ 'active' if p.startswith('/admin/einstellungen') }}">{{ t('Einstellungen') }}</a>
+</nav>

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Konsole') }} · {{ server.name }} · Hostly{% endblock %}
+{% block content %}
+{% include "servers/_tabs.html" %}
+<section class="card">
+  {% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+  <div id="console-log" hx-get="/server/{{ server.id }}/konsole/log" hx-trigger="every 3s" hx-swap="innerHTML">
+    {% include "servers/_console_log.html" %}
+  </div>
+  <form method="post" action="/server/{{ server.id }}/konsole" class="console-form"
+        hx-post="/server/{{ server.id }}/konsole" hx-target="#console-msg" hx-on::after-request="if(event.detail.successful) this.reset()">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input name="command" class="mono" placeholder="{{ t('Befehl, z. B. say Hallo') }}" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="256" required>
+    <button class="btn primary">{{ t('Senden') }}</button>
+  </form>
+  <div id="console-msg" aria-live="polite"></div>
+  <p class="small muted">{{ t('stop, restart, end und reload sind hier gesperrt – dafür gibt es die Knöpfe in der Übersicht. Die Whitelist bitte im Reiter „Spieler“ pflegen.') }}</p>
+</section>
+{% endblock %}

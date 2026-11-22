@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Tunnel') }} · Hostly{% endblock %}
+{% block content %}
+<h1>{{ t('Tunnel') }}</h1>
+{% include "admin/_nav.html" %}
+{% if error %}<div class="alert error" role="alert">{{ error }}</div>{% endif %}
+
+<section class="card">
+  <h2>{{ t('Tunnel eintragen') }}</h2>
+  <p class="small muted">{{ t('Im playit-Dashboard einen „Minecraft Java“-Tunnel anlegen. Lokale Adresse = der interne Platz unten, Port 25565.') }}</p>
+  <form method="post" action="/admin/tunnel" class="form row-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Name<input name="name" placeholder="Tunnel A" required maxlength="40"></label>
+    <label>{{ t('playit-Account') }}<select name="playit_account"><option value="1">1</option><option value="2">2</option></select></label>
+    <label>{{ t('Öffentliche Adresse') }}<input name="public_address" placeholder="blue-cat.joinmc.link" required maxlength="120"></label>
+    <label>{{ t('Interner Platz') }}<input name="internal_ip" value="{{ suggested_ip }}" required></label>
+    <button class="btn primary">{{ t('Eintragen') }}</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>{{ t('Alle Tunnel') }}</h2>
+  {% if rows %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Name</th><th>{{ t('Öffentliche Adresse') }}</th><th>{{ t('Interner Platz') }}</th><th>Acc.</th><th>{{ t('Belegt durch') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for tn in rows %}
+      <tr>
+        <td colspan="2">
+          <form method="post" action="/admin/tunnel/{{ tn.id }}" class="inline-form">
+            <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="save">
+            <input name="name" value="{{ tn.name }}" class="short" aria-label="Name">
+            <input name="public_address" value="{{ tn.public_address }}" aria-label="{{ t('Öffentliche Adresse') }}">
+            <button class="link-btn small">{{ t('Speichern') }}</button>
+          </form>
+        </td>
+        <td class="mono">{{ tn.internal_ip }}:25565</td>
+        <td>{{ tn.playit_account }}</td>
+        <td>{% if tn.server_id %}<a href="/server/{{ tn.server_id }}">{{ tn.server_name }}</a>{% else %}<span class="muted">{{ t('frei') }}</span>{% endif %}</td>
+        <td class="actions-cell">
+          <form method="post" action="/admin/tunnel/{{ tn.id }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="toggle">
+            <button class="btn small">{{ t('Deaktivieren') if tn.active else t('Aktivieren') }}</button></form>
+          {% if not tn.server_id %}
+          <form method="post" action="/admin/tunnel/{{ tn.id }}" onsubmit="return confirm('{{ t('Tunnel entfernen?') }}')"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="delete">
+            <button class="btn small danger">{{ t('Entfernen') }}</button></form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">{{ t('Noch keine Tunnel. Ohne Tunnel kann niemand einen Server kaufen.') }}</p>{% endif %}
+</section>
+{% endblock %}

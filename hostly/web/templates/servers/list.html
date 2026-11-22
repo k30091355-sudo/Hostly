@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Meine Server') }} · Hostly{% endblock %}
+{% block content %}
+<div class="title-row">
+  <h1>{{ t('Meine Server') }}</h1>
+  <a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>
+</div>
+{% if items %}
+<div class="server-list">
+  {% for s, label, cls in items %}
+  <a class="card server-card" href="/server/{{ s.id }}">
+    <img class="server-icon" src="/server/{{ s.id }}/icon.png" alt="" width="48" height="48">
+    <div class="server-info">
+      <div class="server-name">{{ s.name }}</div>
+      <div class="small muted">{{ t(s.model_name) }} · {{ s.type | capitalize }}{% if s.mc_version != 'LATEST' %} {{ s.mc_version }}{% endif %}</div>
+      {% if s.state != 'archived' %}
+      <div class="small">{{ t('noch') }} {{ s.rented_until | remaining }}{% if s.public_address %} · <span class="mono">{{ s.public_address }}</span>{% endif %}</div>
+      {% endif %}
+    </div>
+    <span class="pill {{ cls }}">{{ t(label) }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card center">
+  <p>{{ t('Du hast noch keinen Server.') }}</p>
+  <a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>
+</div>
+{% endif %}
+{% endblock %}

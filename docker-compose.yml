@@ -1,6 +1,7 @@
 # Hostly starten:   docker compose up -d --build
-# Logs ansehen:     docker compose logs -f web
+# Logs ansehen:     docker compose logs -f web worker
 services:
+  # Website – hat KEINEN Docker-Zugriff
   web:
     build: .
     container_name: hostly-web
@@ -9,11 +10,35 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - /srv/hostly/db:/srv/hostly/db
+      - /srv/hostly:/srv/hostly:ro              # Server-Dateien nur lesen (Konsole, Downloads)
+      - /srv/hostly/db:/srv/hostly/db           # Datenbank
+      - /srv/hostly/uploads:/srv/hostly/uploads # Server-Icons, Profilbilder
     networks:
       - hostly-int
     mem_limit: 512m
 
+  # worker – Zeitsteuerung, Docker, Archiv, Downloads
+  worker:
+    build: .
+    container_name: hostly-worker
+    restart: unless-stopped
+    command: ["python", "-m", "hostly.worker"]
+    user: root
+    volumes:
+      - /srv/hostly:/srv/hostly
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      hostly-mc:
+        ipv4_address: 172.30.0.2
+    mem_limit: 384m
+    stop_grace_period: 90s
+
 networks:
   hostly-int:
     name: hostly-int
+  # Minecraft-Netz mit festen Tunnel-Plätzen (172.30.0.11, .12, …)
+  hostly-mc:
+    name: hostly-mc
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
