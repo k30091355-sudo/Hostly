@@ -45,9 +45,9 @@ services:
     profiles: ["playit"]
     environment:
       - SECRET_KEY=${PLAYIT_SECRET_1:-}
-    networks:
-      hostly-mc:
-        ipv4_address: 172.30.0.3
+    # direkt im Netz von WSL (kein doppeltes Docker-NAT → keine hängenden großen Pakete);
+    # die Minecraft-Plätze 172.30.0.11 … sind von dort trotzdem erreichbar
+    network_mode: host
     mem_limit: 512m
 
   playit-2:
@@ -57,9 +57,9 @@ services:
     profiles: ["playit2"]
     environment:
       - SECRET_KEY=${PLAYIT_SECRET_2:-}
-    networks:
-      hostly-mc:
-        ipv4_address: 172.30.0.4
+    # direkt im Netz von WSL (kein doppeltes Docker-NAT → keine hängenden großen Pakete);
+    # die Minecraft-Plätze 172.30.0.11 … sind von dort trotzdem erreichbar
+    network_mode: host
     mem_limit: 512m
 
 networks:
