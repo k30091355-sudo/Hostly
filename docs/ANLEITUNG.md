@@ -107,11 +107,24 @@ sparseVhd=true
 sudo nano /etc/wsl.conf
 ```
 - Passwort eingeben (dein Ubuntu-Passwort aus B3).
-- Es öffnet sich ein Text-Editor (**nano**). Falls dort schon Text steht: alles löschen (mit `Strg + K` Zeile für Zeile).
-- Diesen Text hineinkopieren (Rechtsklick):
+- Es öffnet sich ein Text-Editor (**nano**). Meist steht dort schon etwas, z. B. `[boot]` / `systemd=true` und `[user]` / `default=DEINNAME`.
+  ⚠️ **Nichts davon löschen!** (`[user]` sorgt dafür, dass Ubuntu als dein Benutzer startet.)
+- Mit `Strg + Ende` ans Ende springen, 2× `Enter` drücken und diesen Text darunter einfügen (Rechtsklick):
+```ini
+[automount]
+enabled=false
+
+[interop]
+appendWindowsPath=false
+```
+- Falls `[boot]` / `systemd=true` noch **nicht** in der Datei steht, das auch noch dazuschreiben.
+- So sieht die Datei am Ende aus (mit deinem Benutzernamen):
 ```ini
 [boot]
 systemd=true
+
+[user]
+default=DEINNAME
 
 [automount]
 enabled=false
