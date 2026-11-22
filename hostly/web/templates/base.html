@@ -9,6 +9,7 @@
   <link rel="manifest" href="/static/manifest.json">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <meta name="theme-color" content="#2563eb">
+  <meta name="hostly-version" content="{{ VERSION }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="/static/css/hostly.css?v={{ VERSION }}">
   <script src="/static/js/htmx.min.js" defer></script>
@@ -78,6 +79,10 @@
     </div>
   </header>
 
+  <div class="update-bar" id="update-bar" role="status" hidden>
+    <span>✨ {{ t('Es gibt eine neue Hostly-Version.') }}</span>
+    <button type="button" class="btn small primary" id="update-reload">{{ t('Seite aktualisieren') }}</button>
+  </div>
   {% if ctx and ctx.maintenance_planned %}<div class="maintenance-bar planned">🛠️ {{ t('Geplante Wartung in') }} <strong class="countdown" data-countdown="{{ ctx.maintenance_planned }}">…</strong> ({{ ctx.maintenance_planned | localtime }}). {{ t('Minecraft-Server laufen weiter.') }}</div>{% endif %}
   {% if ctx and ctx.maintenance %}<div class="maintenance-bar">🛠️ {{ t('Wartungsmodus: Hostly wird gerade gewartet. Kaufen und Ändern ist kurz nicht möglich.') }}</div>{% endif %}
   <main class="container">

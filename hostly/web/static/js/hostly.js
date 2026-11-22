@@ -54,7 +54,35 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCodeCards();
   setupTopbar();
   setupCountdowns();
+  setupUpdateCheck();
 });
+
+// Neue Hostly-Version auf dem Server? → Hinweis „Seite aktualisieren“ (prüft jede Minute + beim Zurückkehren)
+function setupUpdateCheck() {
+  const meta = document.querySelector('meta[name="hostly-version"]');
+  const bar = document.getElementById("update-bar");
+  if (!meta || !bar) return;
+  const mine = meta.content;
+  const check = async () => {
+    if (document.hidden || !bar.hidden) return;
+    try {
+      const res = await fetch("/version", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.version && data.version !== mine) bar.hidden = false;
+    } catch (_) { /* offline – später erneut */ }
+  };
+  document.getElementById("update-reload").addEventListener("click", async () => {
+    try {   // alten Zwischenspeicher der App leeren, damit sicher die neue Version geladen wird
+      if (window.caches) for (const k of await caches.keys()) await caches.delete(k);
+      const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : [];
+      for (const r of regs) await r.update();
+    } catch (_) { /* egal */ }
+    location.reload();
+  });
+  setInterval(check, 60000);
+  document.addEventListener("visibilitychange", check);
+}
 
 // Countdown (Aktionen, geplante Wartung): data-countdown = Zeitpunkt in UTC "YYYY-MM-DD HH:MM:SS"
 function setupCountdowns() {

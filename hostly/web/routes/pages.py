@@ -53,6 +53,14 @@ def service_worker():
                         headers={"Cache-Control": "no-cache"})
 
 
+@router.get("/version")
+def version():
+    """Aktuelle Hostly-Version (für den Hinweis „Neue Version – Seite aktualisieren“). Nie zwischenspeichern."""
+    from fastapi.responses import JSONResponse
+    from ... import config
+    return JSONResponse({"version": config.VERSION}, headers={"Cache-Control": "no-store"})
+
+
 @router.get("/offline", response_class=HTMLResponse)
 def offline(ctx: Ctx = Depends(get_ctx)):
     return ctx.render("offline.html")

@@ -243,3 +243,12 @@ def test_host_samples_chart_and_warnings(client, monkeypatch):
     kinds = [r[0] for r in c.execute("SELECT kind FROM notifications WHERE user_id = 1")]
     assert kinds.count("warn_disk") == 1 and kinds.count("warn_playit_1") == 1
     assert "Festplatte ist zu 95 % voll" in client.get("/admin").text
+
+
+def test_new_version_hint(client):
+    from hostly import config
+    r = client.get("/version")
+    assert r.json() == {"version": config.VERSION} and r.headers["cache-control"] == "no-store"
+    page = client.get("/").text
+    assert f'name="hostly-version" content="{config.VERSION}"' in page
+    assert 'id="update-bar"' in page and "Seite aktualisieren" in page

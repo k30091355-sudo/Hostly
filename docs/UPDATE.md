@@ -14,6 +14,12 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.3.1 (22.11.2026) – Hinweis „Neue Version“
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
+- Wer Hostly gerade offen hat (Browser oder Handy-App), sieht nach einem Update innerhalb von 1 Minute oben
+  **„✨ Es gibt eine neue Hostly-Version. [Seite aktualisieren]“** – ein Klick lädt die neue Version.
+- Funktioniert ab dieser Version: Seiten, die noch mit einer älteren Version geöffnet sind, einmal selbst neu laden.
+
 ### Version 1.3.0 (22.11.2026) – Großes Funktions-Update
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten. Die Datenbank wird beim Start automatisch erweitert.
 

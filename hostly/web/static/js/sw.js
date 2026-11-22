@@ -1,5 +1,5 @@
 // Hostly Service-Worker: Design-Dateien zwischenspeichern, ohne Internet eine Hinweis-Seite zeigen.
-const CACHE = "hostly-v2";
+const CACHE = "hostly-v3";
 const ASSETS = ["/static/css/hostly.css", "/static/js/hostly.js", "/static/js/htmx.min.js",
                 "/static/favicon.svg", "/static/icon-192.png", "/offline"];
 
