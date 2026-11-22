@@ -404,6 +404,35 @@ Einstellungen → **Windows Update → Erweiterte Optionen → Nutzungszeit** �
 
 ---
 
+### H4. Mini-PC ohne Monitor (z. B. im Schrank)
+Hostly braucht keinen Monitor. Wichtig ist nur, dass du ohne Bildschirm noch an den PC kommst.
+
+**Vorher (noch mit Monitor):**
+1. **Fernzugriff auf Windows einrichten:** Chrome Remote Desktop (kostenlos, auch für Windows Home):
+   Im Browser `remotedesktop.google.com/access` öffnen → **„Remotezugriff einrichten“** → installieren → Name und PIN festlegen.
+   Danach kommst du vom Laptop/Handy (gleiche Seite bzw. App „Chrome Remote Desktop“) auf den Mini-PC.
+2. **Fernzugriff auf Ubuntu (für Updates):** 🐧 Ubuntu:
+   ```
+   sudo tailscale up --ssh --hostname=hostly
+   ```
+   Auf dem Laptop **Tailscale** installieren (tailscale.com/download) und mit demselben Account anmelden.
+   Dann im Laptop-Terminal (Windows: PowerShell): `ssh DEINNAME@hostly` → du bist in Ubuntu und kannst wie gewohnt updaten.
+3. **Nach Stromausfall automatisch anschalten (optional):** Beim Einschalten `Entf` oder `F2` drücken (BIOS) →
+   Einstellung wie **„Restore on AC Power Loss“ / „After Power Failure“** → **„Power On“** → speichern (F10).
+   Je nach Hersteller heißt sie etwas anders – findest du sie nicht, einfach den Einschaltknopf drücken.
+4. **Test:** Monitor abziehen → PC neu starten (Start → Ein/Aus → Neu starten) → 3 Minuten warten →
+   am Handy Hostly öffnen ✅ und mit Chrome Remote Desktop verbinden ✅. Erst dann in den Schrank stellen.
+
+**Umziehen:** Windows normal herunterfahren → Strom ab → im Schrank anschließen → Einschaltknopf (bzw. startet von selbst, siehe 3).
+Hostly startet automatisch (Teil H1).
+
+**Schrank – bitte beachten:**
+- **Luft!** Hinten/oben Abstand lassen, Tür nicht luftdicht schließen (Lüftungslöcher, Spalt oder Tür offen hinten). Ohne Luft wird der PC heiß – dann drehen die Lüfter **lauter**, nicht leiser.
+- **Internet:** am besten **LAN-Kabel**. WLAN geht auch, im Schrank aber oft schwächer → mehr Verbindungsabbrüche bei Minecraft.
+- Falls Chrome Remote Desktop ohne Monitor nur ein winziges oder schwarzes Bild zeigt: ein **HDMI-Dummy-Stecker** (ca. 5–10 €) „spielt“ einen Monitor vor. Meist nicht nötig.
+
+---
+
 ## Teil I – Im Alltag
 
 ### Hostly aktualisieren (wenn es eine neue Version gibt)
