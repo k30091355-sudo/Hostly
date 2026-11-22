@@ -93,7 +93,9 @@ def codes_page(ctx: Ctx = Depends(get_ctx)):
     rows = ctx.conn.execute("SELECT * FROM codes ORDER BY id DESC LIMIT 500").fetchall()
     new_ids = [int(x) for x in ctx.request.query_params.get("neu", "").split(",") if x.isdigit()]
     new_codes = [r for r in rows if r["id"] in new_ids]
-    return ctx.render("admin/codes.html", rows=rows, status=codes.status, new_codes=new_codes)
+    # Adresse für die Code-Bilder: die öffentliche Tailscale-Adresse, sonst die aktuelle
+    site = (db.get_setting(ctx.conn, "public_url") or "").split("://")[-1] or ctx.request.headers.get("host", "")
+    return ctx.render("admin/codes.html", rows=rows, status=codes.status, new_codes=new_codes, site=site)
 
 
 @router.post("/admin/codes")

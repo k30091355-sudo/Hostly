@@ -320,3 +320,9 @@ textarea { font: inherit; color: var(--text); background: var(--surface); width:
 /* Reiter umbrechen statt seitlich scrollen – alle Reiter (z. B. Statistik) sind auch am Handy sichtbar */
 .tabs { flex-wrap: wrap; overflow-x: visible; row-gap: 0; }
 .tabs a { padding: .5rem .65rem; }
+
+/* Code-Bilder (Admin → Codes) */
+.code-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.code-card { margin: 0; }
+.code-card canvas { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); display: block; }
+.code-card figcaption { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .5rem; }

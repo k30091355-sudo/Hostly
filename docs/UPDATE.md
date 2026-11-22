@@ -8,6 +8,10 @@
 
 ## Besondere Hinweise – neuestes Update zuerst
 
+### Update 6 (22.11.2026, nachts) – Codes als Bild
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
+- **Admin → Codes:** Neu erstellte Codes gibt es jetzt auch als schlichtes Bild (Logo, „Free Java Server Hosting“, Code, Coins, wie oft einlösbar, Website) – mit den Knöpfen **„Bild kopieren“** und **„Herunterladen“**.
+
 ### Update 5 (22.11.2026, nachts) – Fabric API automatisch
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
 - **Behoben:** Fabric-Server startete nicht mit „requires fabric-api, which is missing“ (z. B. bei TabTPS). Hostly installiert die Fabric API jetzt bei jeder Mod automatisch mit.

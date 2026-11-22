@@ -15,6 +15,23 @@
   {% if new_codes|length > 1 %}
   <button type="button" class="btn" data-copy="{{ new_codes | map(attribute='code') | join('\n') }}">{{ t('Alle kopieren') }}</button>
   {% endif %}
+  <h3>{{ t('Als Bild zum Teilen') }}</h3>
+  <div class="code-cards">
+    {% for c in new_codes %}
+    <figure class="code-card">
+      <canvas width="1200" height="600" data-code-card
+              data-code="{{ c.code }}" data-coins="{{ c.coins }} Coins"
+              data-uses="{{ t('1× einlösbar') if c.max_uses == 1 else t('{n}× einlösbar').replace('{n}', c.max_uses|string) }}"
+              data-expires="{{ (t('gültig bis') ~ ' ' ~ (c.expires_at | localtime)[:10]) if c.expires_at else '' }}"
+              data-site="{{ site }}" role="img" aria-label="{{ c.code }}"></canvas>
+      <figcaption>
+        <button type="button" class="btn small" data-card-copy>{{ t('Bild kopieren') }}</button>
+        <button type="button" class="btn small" data-card-download>{{ t('Herunterladen') }}</button>
+        <span class="small muted" data-card-msg aria-live="polite"></span>
+      </figcaption>
+    </figure>
+    {% endfor %}
+  </div>
 </section>
 {% endif %}
 

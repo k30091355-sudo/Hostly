@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupMotdEditor();
   scrollConsoles();
   setupConsoleForms();
+  setupCodeCards();
 });
 
 // Konsole automatisch nach unten scrollen (auch nach HTMX-Aktualisierung)
@@ -190,4 +191,76 @@ function setupConsoleForms() {
       }
     });
   });
+}
+
+// Code als schlichtes Bild (Admin → Codes): Logo + Name, "Free Java Server Hosting", Code, Coins/Einlösungen, Website
+function setupCodeCards() {
+  const canvases = document.querySelectorAll("canvas[data-code-card]");
+  if (!canvases.length) return;
+  const logo = new Image();
+  logo.onload = () => canvases.forEach((c) => drawCodeCard(c, logo));
+  logo.onerror = () => canvases.forEach((c) => drawCodeCard(c, null));
+  logo.src = "/static/favicon.svg";
+
+  document.addEventListener("click", async (event) => {
+    const fig = event.target.closest(".code-card");
+    if (!fig) return;
+    const canvas = fig.querySelector("canvas");
+    const msg = fig.querySelector("[data-card-msg]");
+    const name = "hostly-code-" + canvas.dataset.code + ".png";
+    const download = () => {
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = name;
+      a.click();
+    };
+    if (event.target.closest("[data-card-download]")) download();
+    if (event.target.closest("[data-card-copy]")) {
+      try {
+        const blob = await new Promise((ok) => canvas.toBlob(ok, "image/png"));
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        if (msg) msg.textContent = "✓";
+      } catch (_) {
+        download();   // Browser kann keine Bilder kopieren → herunterladen
+      }
+    }
+  });
+}
+
+function drawCodeCard(canvas, logo) {
+  const g = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height, d = canvas.dataset;
+  const font = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+  const mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  const round = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
+  // Hintergrund
+  g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#2f7d4f"; g.fillRect(0, 0, W, 14);
+  g.textAlign = "center"; g.textBaseline = "alphabetic";
+  // Logo + Name
+  g.font = `700 76px ${font}`;
+  const nameW = g.measureText("Hostly").width, logoS = 84, gap = 22;
+  const startX = (W - (logoS + gap + nameW)) / 2;
+  if (logo) g.drawImage(logo, startX, 70, logoS, logoS);
+  g.fillStyle = "#14281d"; g.textAlign = "left";
+  g.fillText("Hostly", startX + logoS + gap, 140);
+  g.textAlign = "center";
+  // Untertitel
+  g.fillStyle = "#5b6b62"; g.font = `500 30px ${font}`;
+  g.fillText("Free Java Server Hosting", W / 2, 200);
+  // Code
+  g.font = `700 64px ${mono}`;
+  const codeW = Math.min(W - 80, g.measureText(d.code).width + 80);
+  round((W - codeW) / 2, 250, codeW, 120, 22);
+  g.fillStyle = "#eaf6ee"; g.fill();
+  g.lineWidth = 3; g.strokeStyle = "#6cc08d"; g.stroke();
+  g.fillStyle = "#14281d"; g.fillText(d.code, W / 2, 332, W - 120);
+  // Coins + Einlösungen (+ Ablauf)
+  g.fillStyle = "#2f7d4f"; g.font = `700 44px ${font}`;
+  g.fillText(d.coins, W / 2, 445);
+  g.fillStyle = "#3d4b43"; g.font = `500 32px ${font}`;
+  g.fillText([d.uses, d.expires].filter(Boolean).join(" · "), W / 2, 495);
+  // Website
+  g.fillStyle = "#8a978f"; g.font = `400 26px ${font}`;
+  g.fillText(d.site, W / 2, H - 42);
 }

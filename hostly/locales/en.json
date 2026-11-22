@@ -637,5 +637,11 @@
   "Tipp: Mit den Pfeiltasten ↑ ↓ holst du frühere Befehle zurück. Den Schrägstrich / brauchst du nicht.": "Tip: use the arrow keys ↑ ↓ to bring back earlier commands. You don't need the slash /.",
   "Befehl": "Command",
   "Auf diesem Server fehlt die Fabric API. Fast alle Mods brauchen sie – ohne sie startet der Server nicht („requires fabric-api, which is missing“).": "Fabric API is missing on this server. Almost all mods need it – without it the server won't start (“requires fabric-api, which is missing”).",
-  "Fabric API jetzt hinzufügen": "Add Fabric API now"
+  "Fabric API jetzt hinzufügen": "Add Fabric API now",
+  "Als Bild zum Teilen": "As an image to share",
+  "1× einlösbar": "redeemable 1×",
+  "{n}× einlösbar": "redeemable {n}×",
+  "gültig bis": "valid until",
+  "Bild kopieren": "Copy image",
+  "Herunterladen": "Download"
 }
