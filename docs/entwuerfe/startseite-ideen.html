@@ -1,0 +1,155 @@
+<!doctype html><html lang="de" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Startseite Ideen</title>
+<style>
+:root{--bg:#f4f7fc;--surface:#fff;--surface-2:#eef3fb;--text:#0f172a;--muted:#5b6780;--border:#e2e8f3;
+--primary:#2563eb;--primary-soft:#e8f0ff;--good:#15803d;--good-bg:#e7f7ed;--bad:#dc2626;--bad-bg:#fdecec;--warn:#a15c00;--warn-bg:#fff4dc;
+--sleep:#2563eb;--sleep-bg:#e8f0ff;--off:#94a3b8;--gold-bg:linear-gradient(180deg,#fff8e1,#ffeeb8);--gold-text:#7a4d00;--gold-border:#f3d27a;
+--shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(37,99,235,.08);--radius:14px}
+[data-theme=dark]{--bg:#0a1324;--surface:#111d35;--surface-2:#16264a;--text:#e6edfa;--muted:#93a3c4;--border:#1e3156;
+--primary:#3b82f6;--primary-soft:#15284d;--good:#4ade80;--good-bg:#0f2a22;--bad:#f87171;--bad-bg:#3a1520;--warn:#fbbf24;--warn-bg:#33270b;
+--sleep:#60a5fa;--sleep-bg:#15284d;--off:#64748b;--gold-bg:linear-gradient(180deg,#3a2e0e,#2a210a);--gold-text:#ffd766;--gold-border:#5c4713;
+--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35)}
+*{box-sizing:border-box}body{margin:0;background:#d9e0ec;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.variant{background:var(--bg);color:var(--text);margin:0 auto 40px;max-width:1100px}
+.label{background:#0f172a;color:#fff;padding:10px 16px;font-weight:700;font-size:18px}.label span{font-weight:400;opacity:.75;font-size:14px;margin-left:8px}
+header{background:var(--surface);border-bottom:1px solid var(--border)}
+.bar{display:flex;align-items:center;gap:18px;padding:12px 20px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:19px}.brand svg{width:30px;height:30px}
+nav{display:flex;gap:4px}nav a{color:var(--muted);padding:6px 11px;border-radius:9px;font-weight:500;text-decoration:none}nav a.on{background:var(--primary-soft);color:var(--primary)}
+.sp{flex:1}.coin{display:flex;align-items:center;gap:6px;background:var(--gold-bg);color:var(--gold-text);border:1px solid var(--gold-border);padding:4px 12px 4px 5px;border-radius:999px;font-weight:700}
+.av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#2563eb)}
+main{padding:22px 20px 30px}h1{margin:0;font-size:25px}h2{margin:0 0 10px;font-size:16px}.muted{color:var(--muted)}.small{font-size:13px}
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;border:1px solid rgba(15,23,42,.04)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:600;font-size:14px;cursor:pointer}
+.btn.p{background:var(--primary);color:#fff;border-color:var(--primary)}.btn.s{padding:5px 10px;font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px}
+.pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.on-{background:var(--good-bg);color:var(--good)}.sl-{background:var(--sleep-bg);color:var(--sleep)}.off-{background:var(--surface-2);color:var(--off)}
+.meter{height:7px;border-radius:9px;background:var(--surface-2);overflow:hidden}.meter b{display:block;height:100%;border-radius:9px;background:var(--primary)}
+.meter b.g{background:#22c55e}.meter b.w{background:#f59e0b}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.new{font-size:10px;font-weight:800;letter-spacing:.04em;background:#f59e0b;color:#fff;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.head{width:26px;height:26px;border-radius:6px;display:inline-block;image-rendering:pixelated}
+.heads{display:flex;gap:-4px}.heads .head{margin-right:-6px;border:2px solid var(--surface)}
+.addr{font-family:ui-monospace,monospace;background:var(--surface-2);padding:6px 10px;border-radius:8px;font-size:13px}
+ul.feed{list-style:none;margin:0;padding:0}ul.feed li{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px}ul.feed li:last-child{border:0}
+.big{font-size:30px;font-weight:800;line-height:1.1}
+.g2{display:grid;gap:16px}
+/* A */
+.A .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}
+.A .wide{grid-column:span 2}
+.tile{background:var(--surface-2);border-radius:12px;padding:12px}
+/* B */
+.B .hero{background:linear-gradient(135deg,#1d4ed8,#3b82f6 60%,#60a5fa);color:#fff;border-radius:18px;padding:22px;display:grid;grid-template-columns:1.4fr 1fr;gap:20px;box-shadow:0 14px 40px rgba(37,99,235,.35)}
+.B .hero .addr{background:rgba(255,255,255,.18);color:#fff}.B .hero .btn{background:#fff;color:#1d4ed8;border:0}.B .hero .btn.g{background:rgba(255,255,255,.18);color:#fff}
+.B .side{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}
+.B .switch{display:flex;gap:8px;margin:14px 0 0}.B .switch span{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px;font-size:13px}.B .switch span.on{background:#fff;color:#1d4ed8;font-weight:700}
+/* C */
+.C .bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(120px,auto);gap:14px;margin-top:18px}
+.C .s2{grid-column:span 2}.C .r2{grid-row:span 2}
+.C input{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font:inherit;margin:6px 0 8px;letter-spacing:.06em}
+.C .ring{width:110px;height:110px;margin:6px auto}
+/* D */
+.D .coin,.D .av{display:none}.D .landing{text-align:center;padding:40px 20px 10px}
+.D .landing h1{font-size:38px;letter-spacing:-.02em}.D .landing h1 em{font-style:normal;background:linear-gradient(90deg,#2563eb,#06b6d4);-webkit-background-clip:text;color:transparent}
+.D .stats{display:flex;justify-content:center;gap:14px;margin:26px 0}.D .stats .card{min-width:150px;text-align:center}
+.D .models{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.D .model{text-align:center}
+.D .model .ic{font-size:34px}.D .model.hot{outline:2px solid var(--primary)}
+.D .live{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:700px){.A .grid,.C .bento,.D .models,.D .live,.B .hero,.B .side{grid-template-columns:1fr}.A .wide,.C .s2{grid-column:auto}.C .r2{grid-row:auto}nav{display:none}.D .stats{flex-wrap:wrap}}
+</style></head><body>
+<template id="hdr"><header><div class="bar"><div class="brand"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2563eb"/><g fill="#fff"><rect x="14" y="14" width="36" height="10" rx="3"/><rect x="14" y="27" width="36" height="10" rx="3"/><rect x="14" y="40" width="36" height="10" rx="3"/></g><g fill="#22c55e"><rect x="18" y="17.5" width="3" height="3" rx="1"/><rect x="18" y="30.5" width="3" height="3" rx="1"/><rect x="18" y="43.5" width="3" height="3" rx="1"/></g></svg>Hostly</div>
+<nav><a class="on">Start</a><a>Meine Server</a><a>Kaufen</a><a>Serverliste</a></nav><div class="sp"></div>
+<div class="coin"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="#f5b81c" stroke="#b07800"/><text x="12" y="16.2" text-anchor="middle" font-size="11" font-weight="800" fill="#8a5a00">H</text></svg>340</div><div class="av"></div></div></header></template>
+
+<!-- ============ A ============ -->
+<section class="variant A" id="a"><div class="label">Idee A – „Mein Cockpit“<span>alles auf einen Blick, Widget-Raster</span></div><div class="hdr"></div><main>
+<div class="row"><div><h1>Guten Abend, Jasper 👋</h1><div class="muted">2 Server laufen · 3 Spieler online · Coins reichen für ca. 3 Wochen</div></div>
+<div style="display:flex;gap:8px"><span class="btn">🎟️ Code einlösen</span><span class="btn p">🛒 Server kaufen</span></div></div>
+<div class="grid">
+ <div class="card wide"><div class="row"><h2>Meine Server</h2><span class="small muted">alle ansehen →</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+   <div class="tile"><div class="row"><strong>Kreativ-Welt</strong><span class="pill on-"><i></i>läuft</span></div><div class="small muted">Fabric 26.3 · Eisen</div>
+    <div class="small" style="margin:8px 0 4px">Spieler 2/7</div><div class="meter"><b style="width:29%"></b></div>
+    <div class="small" style="margin:8px 0 4px">noch 5 Tage</div><div class="meter"><b class="g" style="width:70%"></b></div>
+    <div class="row" style="margin-top:10px"><span class="addr">blue-cat.joinmc.link</span><span class="btn s">📋</span></div></div>
+   <div class="tile"><div class="row"><strong>Survival mit Max</strong><span class="pill sl-"><i></i>schläft</span></div><div class="small muted">Paper 26.3 · Holz</div>
+    <div class="small" style="margin:8px 0 4px">Spieler 0/3</div><div class="meter"><b style="width:0"></b></div>
+    <div class="small" style="margin:8px 0 4px">noch 1 Tag</div><div class="meter"><b class="w" style="width:14%"></b></div>
+    <div class="row" style="margin-top:10px"><span class="addr">red-fox.joinmc.link</span><span class="btn s">▶ Starten</span></div></div>
+  </div></div>
+ <div class="card"><h2>Coins</h2><div class="row"><div class="big">340</div><svg width="110" height="40" viewBox="0 0 110 40"><polyline fill="none" stroke="#f5b81c" stroke-width="2.5" points="0,30 18,26 36,32 54,18 72,22 90,10 110,14"/></svg></div>
+  <div class="small muted" style="margin:6px 0 10px">Nächste Abbuchung: 70 Coins in 5 Tagen</div>
+  <div class="meter"><b style="width:62%;background:#f5b81c"></b></div><div class="small muted" style="margin-top:4px">reicht für ~3 Wochen</div></div>
+ <div class="card"><h2>🔥 Aktion <span class="new">NEU</span></h2><strong>Winter-Rabatt −20 %</strong><div class="small muted">auf alle Modelle</div>
+  <div style="display:flex;gap:8px;margin:12px 0"><div class="tile" style="text-align:center;flex:1"><div class="big" style="font-size:22px">02</div><div class="small muted">Tage</div></div><div class="tile" style="text-align:center;flex:1"><div class="big" style="font-size:22px">03</div><div class="small muted">Std</div></div><div class="tile" style="text-align:center;flex:1"><div class="big" style="font-size:22px">41</div><div class="small muted">Min</div></div></div>
+  <span class="btn p s">Jetzt kaufen</span></div>
+ <div class="card"><h2>Gerade online <span class="new">NEU</span></h2>
+  <ul class="feed"><li><span class="head" style="background:#8b5a2b"></span>Jasper<span class="sp"></span><span class="small muted">Kreativ-Welt</span></li>
+  <li><span class="head" style="background:#3a7d44"></span>Bob_123<span class="sp"></span><span class="small muted">Kreativ-Welt</span></li>
+  <li><span class="head" style="background:#555"></span><span class="muted">Max war vor 2 Std da</span></li></ul></div>
+ <div class="card"><h2>Platz im Hostly <span class="new">NEU</span></h2><div class="small muted" style="margin-bottom:6px">RAM belegt: 7,5 von 10,5 GB</div><div class="meter"><b style="width:71%"></b></div>
+  <div class="small" style="margin-top:10px">✅ Holz frei<br>✅ Eisen frei<br>❌ Diamant gerade voll</div></div>
+</div></main></section>
+
+<!-- ============ B ============ -->
+<section class="variant B" id="b"><div class="label">Idee B – „Mein Server im Mittelpunkt“<span>großer Hauptserver oben, Rest darunter</span></div><div class="hdr"></div><main>
+<div class="hero"><div>
+ <div style="opacity:.85;font-size:13px">DEIN SERVER</div><div style="font-size:28px;font-weight:800">Kreativ-Welt</div>
+ <div style="display:flex;gap:10px;align-items:center;margin:8px 0 14px"><span class="pill" style="background:rgba(255,255,255,.2);color:#fff"><i style="background:#4ade80"></i>läuft · 19,6 TPS</span><span style="opacity:.85">Fabric 26.3 · Eisen</span></div>
+ <div style="display:flex;gap:8px;align-items:center"><span class="addr">blue-cat.joinmc.link</span><span class="btn s">📋 Kopieren</span></div>
+ <div style="display:flex;gap:8px;margin-top:16px"><span class="btn">⌨️ Konsole</span><span class="btn g">⏹ Stoppen</span><span class="btn g">⏳ Verlängern</span></div>
+ <div class="switch"><span class="on">Kreativ-Welt</span><span>Survival mit Max</span><span>+ neuer Server</span></div></div>
+ <div style="display:grid;gap:10px;align-content:start">
+  <div style="background:rgba(255,255,255,.14);border-radius:12px;padding:12px"><div class="row"><span>Spieler</span><strong>2 / 7</strong></div><div class="heads" style="margin-top:8px"><span class="head" style="background:#8b5a2b"></span><span class="head" style="background:#3a7d44"></span></div></div>
+  <div style="background:rgba(255,255,255,.14);border-radius:12px;padding:12px"><div class="row"><span>Läuft noch</span><strong>5 Tage</strong></div><div class="meter" style="background:rgba(255,255,255,.2);margin-top:8px"><b style="width:70%;background:#fff"></b></div></div>
+  <div style="background:rgba(255,255,255,.14);border-radius:12px;padding:12px"><div class="row"><span>RAM</span><strong>1,8 / 3 GB</strong></div><div class="meter" style="background:rgba(255,255,255,.2);margin-top:8px"><b style="width:60%;background:#fff"></b></div></div>
+ </div></div>
+<div class="side">
+ <div class="card"><h2>Was ist passiert? <span class="new">NEU</span></h2><ul class="feed">
+  <li>🟢<span>Bob_123 ist <strong>Kreativ-Welt</strong> beigetreten</span><span class="sp"></span><span class="small muted">vor 4 Min</span></li>
+  <li>💾<span>Backup von <strong>Kreativ-Welt</strong> fertig</span><span class="sp"></span><span class="small muted">03:12</span></li>
+  <li>🔒<span>Whitelist-Anfrage von <strong>Lena</strong></span><span class="sp"></span><span class="btn s">Ansehen</span></li>
+  <li>🎟️<span>Code eingelöst: +200 Coins</span><span class="sp"></span><span class="small muted">gestern</span></li></ul></div>
+ <div class="g2"><div class="card"><h2>Coins</h2><div class="big">340</div><div class="small muted">reicht für ~3 Wochen</div><span class="btn s" style="margin-top:8px">🎟️ Code einlösen</span></div>
+ <div class="card" style="background:var(--warn-bg)"><h2>⚠️ Läuft bald ab</h2><div class="small">„Survival mit Max“ in 1 Tag</div><span class="btn s" style="margin-top:8px">Verlängern</span></div></div>
+</div></main></section>
+
+<!-- ============ C ============ -->
+<section class="variant C" id="c"><div class="label">Idee C – „Bento-Kacheln“<span>verschieden große Kacheln, verspielt</span></div><div class="hdr"></div><main>
+<h1>Hey Jasper!</h1><div class="muted">Was möchtest du heute machen?</div>
+<div class="bento">
+ <div class="card s2 r2"><div class="row"><h2>Kreativ-Welt</h2><span class="pill on-"><i></i>läuft</span></div>
+  <svg viewBox="0 0 300 90" width="100%" height="120" preserveAspectRatio="none"><defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity=".35"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>
+  <path d="M0,70 L30,60 60,65 90,40 120,45 150,25 180,35 210,20 240,30 270,15 300,22 L300,90 L0,90Z" fill="url(#f)"/><polyline fill="none" stroke="#3b82f6" stroke-width="2.5" points="0,70 30,60 60,65 90,40 120,45 150,25 180,35 210,20 240,30 270,15 300,22"/></svg>
+  <div class="small muted">Spieler in den letzten 24 Std · Spitze: 5</div>
+  <div class="row" style="margin-top:12px"><span class="addr">blue-cat.joinmc.link</span><span style="display:flex;gap:6px"><span class="btn s">📋</span><span class="btn s">⌨️ Konsole</span></span></div></div>
+ <div class="card" style="background:var(--gold-bg);color:var(--gold-text);border-color:var(--gold-border)"><div class="small" style="font-weight:700">COINS</div><div class="big">340</div><div class="small">≈ 3 Wochen</div></div>
+ <div class="card"><div class="small muted" style="font-weight:700">ONLINE</div><div class="big">3</div><div class="heads" style="margin-top:6px"><span class="head" style="background:#8b5a2b"></span><span class="head" style="background:#3a7d44"></span><span class="head" style="background:#a33"></span></div></div>
+ <div class="card s2"><h2>🎟️ Code einlösen <span class="new">direkt hier</span></h2><input value="ab12-cd34-" readonly><span class="btn p s">Einlösen</span></div>
+ <div class="card"><h2>Survival mit Max</h2><span class="pill sl-"><i></i>schläft</span><div class="small muted" style="margin:8px 0">noch 1 Tag</div><span class="btn s">▶ Starten</span></div>
+ <div class="card" style="text-align:center"><h2>Platz frei</h2><svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--surface-2)" stroke-width="4"/><circle cx="18" cy="18" r="15" fill="none" stroke="#22c55e" stroke-width="4" stroke-dasharray="27 94" transform="rotate(-90 18 18)" stroke-linecap="round"/><text x="18" y="21" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor">3 GB</text></svg></div>
+ <div class="card s2"><h2>🏆 Beliebt in der Serverliste <span class="new">NEU</span></h2><ul class="feed">
+  <li>1. <strong>SkyBlock Deluxe</strong><span class="sp"></span><span class="pill on-"><i></i>6 online</span></li>
+  <li>2. <strong>Kreativ-Welt</strong><span class="sp"></span><span class="pill on-"><i></i>2 online</span></li></ul></div>
+ <div class="card s2" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff"><h2>🎁 Gewinnspiel läuft</h2><div class="small">500 Coins · endet in 1 Tag 4 Std · 23 Teilnehmer</div><span class="btn s" style="margin-top:10px;background:#fff;color:#4c1d95;border:0">Mitmachen</span></div>
+</div></main></section>
+
+<!-- ============ D ============ -->
+<section class="variant D" id="d"><div class="label">Idee D – Startseite für Besucher (nicht eingeloggt)<span>erklärt Hostly, zeigt Live-Zahlen</span></div><div class="hdr"></div><main>
+<div class="landing"><div class="pill on-" style="margin-bottom:12px"><i></i>Hostly ist online · 3 Server laufen gerade</div>
+<h1>Dein eigener Minecraft-Server.<br><em>Komplett kostenlos.</em></h1>
+<p class="muted" style="max-width:560px;margin:10px auto 20px">Code einlösen, Coins bekommen, Server mieten – in 2 Minuten spielst du mit deinen Freunden. Java Edition, Vanilla, Paper oder Fabric.</p>
+<div style="display:flex;gap:10px;justify-content:center"><span class="btn p">Kostenlos registrieren · 100 Coins geschenkt</span><span class="btn">Anmelden</span></div></div>
+<div class="stats"><div class="card"><div class="big">12</div><div class="small muted">Spieler heute</div></div><div class="card"><div class="big">5</div><div class="small muted">Server aktiv</div></div><div class="card"><div class="big">0 €</div><div class="small muted">kostet es dich</div></div></div>
+<div class="models">
+ <div class="card model"><div class="ic">🪵</div><h2>Holz</h2><div class="small muted">2 GB · 3 Spieler</div><div class="big" style="font-size:22px;margin-top:6px">10 <span class="small">Coins/Tag</span></div></div>
+ <div class="card model hot"><div class="ic">⚙️</div><h2>Eisen <span class="new">BELIEBT</span></h2><div class="small muted">3 GB · 7 Spieler</div><div class="big" style="font-size:22px;margin-top:6px">30 <span class="small">Coins/Tag</span></div></div>
+ <div class="card model"><div class="ic">💎</div><h2>Diamant</h2><div class="small muted">4 GB · 15 Spieler</div><div class="big" style="font-size:22px;margin-top:6px">50 <span class="small">Coins/Tag</span></div></div></div>
+<div class="live"><div class="card"><h2>Öffentliche Server zum Mitspielen</h2><ul class="feed"><li><strong>SkyBlock Deluxe</strong><span class="sp"></span><span class="pill on-"><i></i>6 online</span></li><li><strong>Kreativ-Welt</strong> 🔒<span class="sp"></span><span class="pill on-"><i></i>2 online</span></li><li><strong>Bedwars Übung</strong><span class="sp"></span><span class="pill sl-"><i></i>schläft</span></li></ul></div>
+<div class="card"><h2>So geht's</h2><ul class="feed"><li><b>1</b>Registrieren (100 Coins gratis)</li><li><b>2</b>Code einlösen für mehr Coins</li><li><b>3</b>Server mieten und Adresse teilen</li></ul></div></div>
+</main></section>
+<script>
+const h=document.getElementById('hdr').innerHTML;document.querySelectorAll('.hdr').forEach(e=>e.outerHTML=h);
+const t=new URLSearchParams(location.search).get('theme');if(t)document.documentElement.dataset.theme=t;
+</script></body></html>
