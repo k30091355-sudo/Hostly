@@ -808,5 +808,7 @@
   "// selbst gebaut, läuft auf einem Mini-PC": "// handmade, running on a mini PC",
   "Modpack": "Modpack",
   "Alle Mods des Servers – in der Modrinth App oder im Prism Launcher öffnen": "All mods of the server – open in the Modrinth App or Prism Launcher",
-  "Damit hast du alle Mods des Servers mit einem Klick: Datei in der Modrinth App oder im Prism Launcher öffnen (Importieren), dann das neue Profil starten und dem Server beitreten.": "Get all mods of the server in one click: open the file in the Modrinth App or Prism Launcher (import), start the new profile and join the server."
+  "Damit hast du alle Mods des Servers mit einem Klick: Datei in der Modrinth App oder im Prism Launcher öffnen (Importieren), dann das neue Profil starten und dem Server beitreten.": "Get all mods of the server in one click: open the file in the Modrinth App or Prism Launcher (import), start the new profile and join the server.",
+  "Du bist der einzige Admin. Mach zuerst einen anderen Account zum Admin.": "You are the only admin. Make another account admin first.",
+  "Dieser Name ist für Server-Ordner reserviert. Bitte einen anderen wählen.": "This name is reserved for server folders. Please choose another one."
 }

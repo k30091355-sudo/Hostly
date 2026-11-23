@@ -11,10 +11,12 @@ def is_blocked(command: str) -> bool:
     text = command.strip().lower().lstrip("/").strip()
     if not text:
         return True
-    first = text.split()[0]
-    if ":" in first:
-        first = first.rsplit(":", 1)[1]
-    return first in BLOCKED
+    words = [w.rsplit(":", 1)[-1] for w in text.split()]
+    if words[0] in BLOCKED:
+        return True
+    # auch versteckt hinter „execute … run stop“ (sonst ließe sich die Sperre umgehen)
+    return words[0] == "execute" and any(w == "run" and i + 1 < len(words) and words[i + 1].lstrip("/") in BLOCKED
+               for i, w in enumerate(words))
 
 
 def clean(command: str) -> str:

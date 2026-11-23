@@ -323,6 +323,8 @@ def dir_size(path: Path) -> int:
 
 # ---------- Welten ----------
 
+MAX_WORLD_UNPACKED = 8 * 1024 ** 3
+
 def extract_world(zip_path: Path, dest: Path) -> None:
     """Welt-ZIP entpacken (Schutz gegen ../-Tricks). Ordner mit level.dat wird zur Welt."""
     with zipfile.ZipFile(zip_path) as zf:
@@ -331,6 +333,9 @@ def extract_world(zip_path: Path, dest: Path) -> None:
         if not level:
             raise RuntimeError("In der ZIP-Datei ist keine Welt (level.dat fehlt).")
         prefix = min(level, key=len)[: -len("level.dat")]
+        # Schutz gegen „ZIP-Bomben“: entpackt höchstens 8 GB (sonst läuft die Festplatte voll)
+        if sum(i.file_size for i in zf.infolist() if i.filename.startswith(prefix)) > MAX_WORLD_UNPACKED:
+            raise RuntimeError("Die Welt ist entpackt größer als 8 GB.")
         tmp = dest.with_name(dest.name + ".part")
         shutil.rmtree(tmp, ignore_errors=True)
         tmp.mkdir(parents=True)

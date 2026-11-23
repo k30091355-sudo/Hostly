@@ -128,13 +128,15 @@ def set_minecraft_name(minecraft_name: str = Form(""), csrf: str = Form(""), ctx
     name = minecraft_name.strip()
     if name and not console.valid_mc_name(name):
         return _page(ctx, 400, error_minecraft=ctx.t("Ungültiger Minecraft-Name (3–16 Zeichen: Buchstaben, Zahlen, _)."))
+    old = ctx.user["minecraft_name"]
     with db.transaction(ctx.conn):
         ctx.conn.execute("UPDATE users SET minecraft_name = ? WHERE id = ?", (name or None, ctx.user["id"]))
-        if name:
-            # auf allen eigenen laufenden Servern sofort OP geben
+        # auf allen eigenen laufenden Servern sofort OP geben – und dem alten Namen die OP-Rechte wegnehmen
+        commands = ([f"deop {old}"] if old and old.lower() != name.lower() else []) + ([f"op {name}"] if name else [])
+        if commands:
             for row in ctx.conn.execute(
                     "SELECT id FROM servers WHERE owner_id = ? AND state = 'active'", (ctx.user["id"],)).fetchall():
-                db.add_job(ctx.conn, "rcon", row["id"], ctx.user["id"], {"commands": [f"op {name}"]})
+                db.add_job(ctx.conn, "rcon", row["id"], ctx.user["id"], {"commands": commands})
     raise Redirect("/einstellungen?msg=minecraft")
 
 
@@ -206,6 +208,11 @@ def delete_account(password: str = Form(""), confirm: str = Form(""), csrf: str 
     if not security.verify_password(ctx.user["password_hash"], password) or confirm != "1":
         return _page(ctx, 400, error_delete=ctx.t("Bitte Passwort eingeben und bestätigen."))
     uid = ctx.user["id"]
+    other_admins = ctx.conn.execute("SELECT COUNT(*) FROM users WHERE is_admin = 1 AND deleted_at IS NULL AND id != ?",
+                                    (uid,)).fetchone()[0]
+    if ctx.user["is_admin"] and not other_admins:
+        # sonst gäbe es keinen Admin mehr – und niemand könnte Hostly mehr verwalten
+        return _page(ctx, 400, error_delete=ctx.t("Du bist der einzige Admin. Mach zuerst einen anderen Account zum Admin."))
     with db.transaction(ctx.conn):
         for server in ctx.conn.execute("SELECT * FROM servers WHERE owner_id = ? AND state != 'deleted'", (uid,)).fetchall():
             servers.delete(ctx.conn, server, uid, with_refund=False)

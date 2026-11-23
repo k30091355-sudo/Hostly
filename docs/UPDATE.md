@@ -14,6 +14,19 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.4 (23.11.2026) – Fehlersuche
+Einfach Schritt 1–5 unten.
+- **Konsole:** Die Sperre für `stop`/`restart`/`reload` ließ sich mit `execute … run stop` umgehen – jetzt gesperrt.
+- **Statistik:** Nach einem Absturz blieben Spieler im Verlauf „online“, ihre Spielzeit lief endlos weiter.
+  Jetzt werden offene Sitzungen beim nächsten Serverstart geschlossen.
+- **Minecraft-Name ändern:** Der alte Name behielt auf deinen Servern die OP-Rechte – jetzt werden sie entfernt.
+- **Account löschen:** Der einzige Admin kann seinen Account nicht mehr löschen (sonst gäbe es keinen Admin mehr).
+- **Gewinnspiele:** Gelöschte Accounts können nicht mehr gewinnen (die Coins wären verloren gewesen).
+- **Welten:** Namen wie „plugins“, „config“ oder „logs“ sind als Weltname gesperrt – vorher wurde der Ordner
+  beim Hochladen durch die Welt ersetzt. Welt-ZIPs dürfen entpackt höchstens 8 GB groß sein (Festplatte).
+- **Nachtpause:** Wird sie während einer laufenden Pause ausgeschaltet oder geändert, startet der Server wieder
+  (vorher blieb er aus, bis man ihn selbst startete).
+
 ### Version 1.5.3 (23.11.2026) – Modpack enthält alle Mods
 Einfach Schritt 1–5 unten. Spieler sollten das Modpack danach **neu herunterladen**.
 - Nachträglich hinzugefügte Mods (auch bei Vorlagen wie Performance-Vanilla) waren zwar in der Modpack-Datei,

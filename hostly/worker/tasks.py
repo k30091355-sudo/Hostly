@@ -173,8 +173,15 @@ def read_log(conn, server_id: int) -> None:
     with db.transaction(conn):
         server = conn.execute("SELECT mc_version FROM servers WHERE id = ?", (server_id,)).fetchone()
         for line in lines:
+            v = VERSION_RE.search(line)
+            if v:
+                # Server startet neu → wer noch als „online“ gilt (Absturz, hartes Beenden), ist es nicht mehr.
+                # Sonst würde die Spielzeit in der Statistik endlos weiterlaufen.
+                t = re.match(r"^\[(\d\d:\d\d:\d\d)", line)
+                conn.execute("UPDATE player_sessions SET left_at = COALESCE(?, datetime('now')) "
+                             "WHERE server_id = ? AND left_at IS NULL",
+                             (_log_time(t.group(1)) if t else None, server_id))
             if server and server["mc_version"] == "LATEST":
-                v = VERSION_RE.search(line)
                 if v:
                     # Version festhalten, damit der Server nicht ungewollt auf neue Versionen springt
                     conn.execute("UPDATE servers SET mc_version = ? WHERE id = ?", (v.group(1), server_id))
@@ -357,8 +364,10 @@ def draw_giveaways(w) -> None:
     try:
         for g in conn.execute("SELECT * FROM giveaways WHERE drawn_at IS NULL AND ends_at <= ?", (now_sql(),)).fetchall():
             with db.transaction(conn):
+                # gelöschte Accounts können nicht gewinnen
                 entries = [r["user_id"] for r in conn.execute(
-                    "SELECT user_id FROM giveaway_entries WHERE giveaway_id = ?", (g["id"],))]
+                    """SELECT e.user_id FROM giveaway_entries e JOIN users u ON u.id = e.user_id
+                       WHERE e.giveaway_id = ? AND u.deleted_at IS NULL""", (g["id"],))]
                 # weniger Teilnehmer als Gewinner → alle gewinnen
                 winners = random.SystemRandom().sample(entries, min(len(entries), g["winner_count"]))
                 for uid in winners:

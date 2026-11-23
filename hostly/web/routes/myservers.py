@@ -458,6 +458,13 @@ def set_night_pause(server_id: int, enabled: str = Form(""), start: int = Form(1
                          (start, end, server_id))
     else:
         ctx.conn.execute("UPDATE servers SET night_pause_start = NULL, night_pause_end = NULL WHERE id = ?", (server_id,))
+    # Läuft gerade eine Pause und die Zeiten werden geändert/ausgeschaltet: Pause beenden (ohne Erstattung)
+    # und den Server wieder starten – sonst bliebe er aus, bis jemand von Hand startet.
+    running = servers.night_pause_running(ctx.conn, server_id)
+    if running and (not enabled or (start, end) != (server["night_pause_start"], server["night_pause_end"])):
+        ctx.conn.execute("UPDATE night_pause_log SET status = 'unterbrochen' WHERE id = ?", (running["id"],))
+        if is_active(server):
+            db.add_job(ctx.conn, "start", server_id, ctx.user["id"])
     raise Redirect(f"/server/{server_id}/miete?ok=np")
 
 

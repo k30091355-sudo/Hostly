@@ -18,6 +18,9 @@ MAX_WORLD_UPLOAD = 1024 * 1024 * 1024        # 1 GB
 MAX_PACK_UPLOAD = 100 * 1024 * 1024          # 100 MB (Funnel-Bandbreite)
 MAX_ADMIN_UPLOAD = 200 * 1024 * 1024
 WORLD_NAME_RE = re.compile(r"^[A-Za-z0-9_\-]{1,32}$")
+# Ordner im Server-Verzeichnis, die keine Welt sind
+RESERVED_NAMES = {"plugins", "mods", "config", "logs", "libraries", "versions", "cache", "crash-reports",
+                  "hostly-disabled", "datapacks", "resourcepacks", "defaultconfigs", "kubejs", "scripts", "data"}
 
 
 def require_active(server):
@@ -288,6 +291,9 @@ async def worlds_action(server_id: int, ctx: Ctx = Depends(get_ctx)):
     action, name = form.get("action"), (form.get("name") or "").strip()
     if action in ("activate", "new", "delete", "upload") and not WORLD_NAME_RE.match(name):
         return _worlds_page(ctx, server, 400, error=ctx.t("Weltname: 1–32 Zeichen, nur Buchstaben, Zahlen, - und _."))
+    if action in ("new", "upload", "delete") and name.lower() in RESERVED_NAMES:
+        # sonst würde z. B. der Ordner „plugins“ durch die Welt ersetzt bzw. gelöscht
+        return _worlds_page(ctx, server, 400, error=ctx.t("Dieser Name ist für Server-Ordner reserviert. Bitte einen anderen wählen."))
     if action == "activate" and name in list_worlds(server_id):
         ctx.conn.execute("UPDATE servers SET level_name = ?, world_seed = NULL, world_type = NULL, needs_restart = 1 WHERE id = ?",
                          (name, server_id))

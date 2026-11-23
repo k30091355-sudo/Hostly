@@ -201,3 +201,28 @@ def test_public_modpack_button(client):
     idx = json.loads(zipfile.ZipFile(io.BytesIO(client.get(f"/modpack/{code}.mrpack").content)).read("modrinth.index.json"))
     assert [f["path"] for f in idx["files"]] == ["mods/s.jar", "mods/a.jar"] and idx["versionId"] != first
     assert all(f["env"]["client"] == "required" for f in idx["files"])
+
+
+def test_open_sessions_closed_on_restart_and_console_execute_block(client):
+    from hostly import console
+    assert console.is_blocked("execute as @a run minecraft:stop") and not console.is_blocked("say run stop")
+    c = setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    log = minecraft.data_dir(1) / "logs"
+    log.mkdir(parents=True)
+    (log / "latest.log").write_text("[09:01:00 INFO]: Steve joined the game\n")   # danach Absturz, kein „left“
+    tasks.status_all(w)
+    with open(log / "latest.log", "a") as f:
+        f.write("[09:30:00] [Server thread/INFO]: Starting minecraft server version 26.3\n")
+    tasks.status_all(w)
+    assert c.execute("SELECT left_at FROM player_sessions").fetchone()[0] is not None
+
+
+def test_last_admin_cannot_delete_account(client):
+    c = setup_shop(client)
+    token = csrf_of(client, "/einstellungen")
+    r = client.post("/einstellungen/account-loeschen", data={"password": "geheim123", "confirm": "1",
+                                                             "csrf": token})
+    assert r.status_code == 400 and c.execute("SELECT deleted_at FROM users WHERE id = 1").fetchone()[0] is None
