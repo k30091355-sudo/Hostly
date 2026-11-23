@@ -14,6 +14,12 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.6 (23.11.2026) – Downloads blockieren nichts mehr
+Einfach Schritt 1–5 unten.
+- **ZIP-Download** (Welt / alle Dateien) lief bisher als „einziger Auftrag“ des Servers – bei großen Welten
+  hingen Starten, Stoppen und Neustart so lange (teils über 30 Minuten), obwohl die Knöpfe klickbar waren.
+  Jetzt läuft das Packen nebenher. Es wird höchstens ein ZIP gleichzeitig gepackt (bleibt leise).
+
 ### Version 1.5.5 (23.11.2026) – Weitere Fehlersuche
 Einfach Schritt 1–5 unten.
 - **Wartung:** Wurde eine geplante Wartung früher von Hand beendet, hat Hostly eine spätere, von Hand

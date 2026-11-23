@@ -476,17 +476,26 @@ def claim_jobs(conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
     """Wartende Aufträge holen – pro Server immer nur einer gleichzeitig."""
     claimed = []
     with db.transaction(conn):
+        # ZIP-Downloads (können lange dauern) laufen nebenher – sonst würden Start/Stopp/Neustart
+        # bis zum Ende des Packens warten. Sie blockieren nichts und werden von nichts blockiert.
         rows = conn.execute(
             """SELECT * FROM jobs j WHERE status = 'pending'
-               AND (server_id IS NULL OR NOT EXISTS (
-                    SELECT 1 FROM jobs r WHERE r.status = 'running' AND r.server_id = j.server_id))
+               AND (server_id IS NULL OR kind = 'download' OR NOT EXISTS (
+                    SELECT 1 FROM jobs r WHERE r.status = 'running' AND r.server_id = j.server_id
+                    AND r.kind != 'download'))
                ORDER BY id LIMIT 20"""
         ).fetchall()
         seen = set()
+        # höchstens ein ZIP gleichzeitig (leise, und die anderen Aufträge behalten freie Plätze)
+        zip_busy = conn.execute("SELECT 1 FROM jobs WHERE status = 'running' AND kind = 'download'").fetchone() is not None
         for row in rows:
             if len(claimed) >= limit:
                 break
-            if row["server_id"] is not None:
+            if row["kind"] == "download":
+                if zip_busy:
+                    continue
+                zip_busy = True
+            if row["server_id"] is not None and row["kind"] != "download":
                 if row["server_id"] in seen:
                     continue
                 seen.add(row["server_id"])

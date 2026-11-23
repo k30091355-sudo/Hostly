@@ -226,3 +226,16 @@ def test_last_admin_cannot_delete_account(client):
     r = client.post("/einstellungen/account-loeschen", data={"password": "geheim123", "confirm": "1",
                                                              "csrf": token})
     assert r.status_code == 400 and c.execute("SELECT deleted_at FROM users WHERE id = 1").fetchone()[0] is None
+
+
+def test_download_does_not_block_restart():
+    import sqlite3
+    from hostly.worker.jobs import claim_jobs
+    c = sqlite3.connect(":memory:", isolation_level=None)
+    c.row_factory = sqlite3.Row
+    c.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, kind TEXT, server_id INTEGER, status TEXT, started_at TEXT)")
+    c.executemany("INSERT INTO jobs (kind, server_id, status) VALUES (?, ?, ?)",
+                  [("download", 1, "running"), ("restart", 1, "pending"), ("download", 2, "pending"),
+                   ("start", 2, "pending")])
+    got = [r["kind"] for r in claim_jobs(c, 5)]
+    assert "restart" in got and "start" in got and "download" not in got   # ZIP läuft schon → kein zweites
