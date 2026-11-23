@@ -252,3 +252,20 @@ def test_new_version_hint(client):
     page = client.get("/").text
     assert f'name="hostly-version" content="{config.VERSION}"' in page
     assert 'id="update-bar"' in page and "Seite aktualisieren" in page
+
+
+# ---------- Version 1.4.0: neue Startseite + anonym ----------
+
+def test_home_guest_landing(client):
+    page = client.get("/").text
+    assert "Komplett kostenlos." in page and "Spieler heute" in page and "Coins/Tag" in page
+    assert "Öffentliche Server zum Mitspielen" in page and "So geht" in page
+
+
+def test_home_logged_in_cards_and_feed(client):
+    c, w = active_server(client)
+    c.execute("INSERT INTO player_sessions (server_id, minecraft_name, joined_at) VALUES (1, 'Steve', datetime('now'))")
+    page = client.get("/").text
+    assert "Willkommen zurück," in page and "Deine Server" in page and "Neuer Server" in page
+    assert "deine Server" in page and "Spieler online" not in page and "Tage übrig" not in page
+    assert "Steve ist „" in page

@@ -31,7 +31,11 @@ def test_giveaway_fewer_participants_all_win(client):
     tasks.draw_giveaways(make_worker())
     assert coins.balance(c, 1) == 500
     assert "gewonnen" in client.get("/").text
-    assert "admin" in client.get("/gewinnspiele").text
+    page = client.get("/gewinnspiele").text
+    assert "Du hast gewonnen!" in page
+    client.cookies.clear()                            # Besucher sehen keine Namen
+    page = client.get("/gewinnspiele").text
+    assert "1 Gewinner" in page and "admin" not in page
 
 
 def test_promotion_discount_and_ram(client):

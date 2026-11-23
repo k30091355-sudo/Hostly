@@ -8,7 +8,7 @@
   <h2>{{ t('Whitelist-Anfragen') }} ({{ requests | length }})</h2>
   <ul class="events">
   {% for r in requests %}
-    <li class="row-between"><span><strong>{{ r.minecraft_name }}</strong> <span class="small muted">({{ r.username }} · {{ r.created_at | localtime }})</span>
+    <li class="row-between"><span><strong>{{ r.minecraft_name }}</strong> <span class="small muted">({{ r.created_at | localtime }})</span>
       {% if r.message %}<br><span class="small">„{{ r.message }}“</span>{% endif %}</span>
       <form method="post" action="/server/{{ server.id }}/anfrage/{{ r.id }}" class="inline-form"><input type="hidden" name="csrf" value="{{ csrf }}">
         <button name="action" value="accept" class="btn primary small">{{ t('Annehmen') }}</button>

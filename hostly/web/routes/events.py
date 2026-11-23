@@ -38,9 +38,9 @@ def promo_label(conn, p) -> str:
 def giveaways_page(ctx: Ctx = Depends(get_ctx)):
     uid = ctx.user["id"] if ctx.user else None
     past = ctx.conn.execute("SELECT * FROM giveaways WHERE drawn_at IS NOT NULL ORDER BY drawn_at DESC LIMIT 10").fetchall()
+    # Anonym (1.4.0): keine Namen, nur wie viele gewonnen haben – und ob man selbst dabei war
     winners = {g["id"]: [r[0] for r in ctx.conn.execute(
-        """SELECT u.username FROM giveaway_entries e JOIN users u ON u.id = e.user_id
-           WHERE e.giveaway_id = ? AND e.is_winner = 1""", (g["id"],))] for g in past}
+        "SELECT user_id FROM giveaway_entries WHERE giveaway_id = ? AND is_winner = 1", (g["id"],))] for g in past}
     return ctx.render("giveaways.html", active=active_giveaways(ctx.conn, uid), past=past, winners=winners)
 
 

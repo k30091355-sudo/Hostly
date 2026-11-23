@@ -13,15 +13,3 @@
   Reiter-Unterstrich gleitet. Alles aus, wenn „Bewegung reduzieren“ im System eingeschaltet ist.
 - Aufwand: klein (nur CSS + Schriftdatei) → wäre **Version 1.3.1**.
 
-## 2. Neue Startseite im Stil von Idee D (gewählt, wartet auf „bauen“)
-**Vorschau:** [`entwuerfe/startseite-ideen.html`](entwuerfe/startseite-ideen.html) ·
-Besucher [`PC`](entwuerfe/startseite-d.png) [`Handy`](entwuerfe/startseite-d-handy.png) ·
-Eingeloggt [`hell`](entwuerfe/startseite-d-eingeloggt.png) [`dunkel`](entwuerfe/startseite-d-eingeloggt-dunkel.png) [`Handy`](entwuerfe/startseite-d-eingeloggt-handy.png)
-(Ideen A–C liegen auch noch dort, wurden aber nicht gewählt.)
-- **Besucher:** große Überschrift „Dein eigener Minecraft-Server. Komplett kostenlos.“, Live-Zahlen
-  (Spieler heute, Server aktiv, 0 €), Registrieren-Knopf mit Startbonus, die 3 Modelle, öffentliche Server, „So geht's“.
-- **Eingeloggt:** gleicher Stil: „Willkommen zurück, Name!“, Knöpfe Kaufen/Code/Meine Server, Warnungen als Streifen,
-  Zahlen (Coins ≈ Wochen, deine Server, Spieler online, Tage übrig), „Deine Server“ als Karten + Karte „Neuer Server“
-  (zeigt, welche Modelle gerade Platz haben), Aktion als Streifen mit Countdown, öffentliche Server, „Was ist passiert?“
-  (Beitritte, Whitelist-Anfragen, Gewinnspiele, Meldungen).
-- Aufwand: mittel → **Version 1.4.0**.

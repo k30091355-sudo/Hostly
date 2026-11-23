@@ -4,6 +4,27 @@
 <div class="alert success">{{ t('home.welcome', name=user.username) }}{% if user.is_admin %} {{ t('Du bist der erste Account und damit Admin.') }}{% endif %}</div>
 {% endif %}
 
+<section class="landing">
+  <span class="pill dot {{ 'on' if live_running else 'sleep' }}">{% if live_running == 1 %}{{ t('Hostly ist online · 1 Server läuft gerade') }}{% elif live_running %}{{ t('Hostly ist online · {n} Server laufen gerade', n=live_running) }}{% else %}{{ t('Hostly ist online') }}{% endif %}</span>
+  {% if user %}
+  {% set online = my_servers | selectattr('cls', 'equalto', 'on') | map(attribute='server') | map(attribute='players_online') | map('default', 0, true) | sum %}
+  <h1>{{ t('Willkommen zurück,') }} <em>{{ user.username }}</em>!</h1>
+  <p class="lead">{% if online == 1 %}{{ t('Auf deinen Servern ist gerade 1 Spieler.') }}{% elif online %}{{ t('Auf deinen Servern sind gerade {n} Spieler.', n=online) }}{% elif my_servers %}{{ t('Deine Welt wartet auf dich.') }}{% else %}{{ t('Miete deinen ersten Server – in einer Minute startklar.') }}{% endif %}</p>
+  <div class="actions">
+    <a class="btn primary" href="/kaufen">🛒 {{ t('Server kaufen') }}</a>
+    <a class="btn" href="/code">🎟️ {{ t('Code einlösen') }}</a>
+    <a class="btn" href="/server">{{ t('Meine Server') }}</a>
+  </div>
+  {% else %}
+  <h1>{{ t('Dein eigener Minecraft-Server.') }}<br><em>{{ t('Komplett kostenlos.') }}</em></h1>
+  <p class="lead">{{ t('Code einlösen, Coins bekommen, Server mieten – in 2 Minuten spielst du mit deinen Freunden. Java Edition, Vanilla, Paper oder Fabric.') }}</p>
+  <div class="actions">
+    <a class="btn primary" href="/registrieren">{% if signup_bonus %}{{ t('Kostenlos registrieren · {n} Coins geschenkt', n=signup_bonus) }}{% else %}{{ t('Kostenlos registrieren') }}{% endif %}</a>
+    <a class="btn" href="/login">{{ t('nav.login') }}</a>
+  </div>
+  {% endif %}
+</section>
+
 {% for w in warnings %}
 <div class="alert warn banner-row">
   <span>⚠️ {{ t('„{name}“ läuft in {left} ab.', name=w.name, left=w.rented_until | remaining) }}{% if w.auto_renew %} {{ t('Auto-Verlängern ist an.') }}{% endif %}</span>
@@ -25,15 +46,58 @@
 </div>
 {% endfor %}
 
-{% for p, label in promos %}
-<section class="card feature promo">
-  <div class="feature-text">
-    <div class="feature-kicker">🔥 {{ t('Aktion') }}</div>
-    <h2>{{ p.title }}: {{ label }}</h2>
-    <p class="small">{{ t('Endet in') }} <strong class="countdown" data-countdown="{{ p.ends_at }}">…</strong> <span class="muted">({{ p.ends_at | localtime }})</span></p>
+
+<div class="stat-row">
+{% if user %}
+  <div class="card stat"><div class="stat-num gold">{{ forecast.balance | coins }}</div><div class="small muted">Coins{% if forecast.weeks == 1 %} · ≈ {{ t('1 Woche') }}{% elif forecast.weeks %} · ≈ {{ t('{n} Wochen', n=forecast.weeks) }}{% endif %}</div></div>
+  <div class="card stat"><div class="stat-num">{{ my_servers | rejectattr('server.state', 'equalto', 'archived') | list | length }}</div><div class="small muted">{{ t('deine Server') }}</div></div>
+{% else %}
+  <div class="card stat"><div class="stat-num">{{ players_today }}</div><div class="small muted">{{ t('Spieler heute') }}</div></div>
+  <div class="card stat"><div class="stat-num">{{ servers_active }}</div><div class="small muted">{{ t('Server aktiv') }}</div></div>
+  <div class="card stat"><div class="stat-num">0 €</div><div class="small muted">{{ t('kostet es dich') }}</div></div>
+{% endif %}
+</div>
+
+{% if user %}
+<h2 class="section-title">{{ t('Deine Server') }}</h2>
+<div class="big-cards">
+  {% for it in my_servers[:5] %}{% set s = it.server %}
+  <div class="card big-card lift{{ ' hot' if it.cls == 'on' }}">
+    <div class="big-icon">{{ it.icon }}</div>
+    <a class="big-name stretch" href="/server/{{ s.id }}">{{ s.name }}</a>
+    <span class="pill dot {{ it.cls }}"><span class="cap">{{ t('Online') ~ ' · ' ~ (s.players_online or 0) ~ '/' ~ s.max_players if it.cls == 'on' else t(it.label) }}</span></span>
+    <div class="small muted">{{ s.type | capitalize }}{% if s.mc_version != 'LATEST' %} {{ s.mc_version }}{% endif %}{% if s.state == 'active' %} · {{ t('noch') }} {{ s.rented_until | remaining }}{% endif %}</div>
+    {% if s.state == 'archived' %}<a class="btn small above" href="/server/{{ s.id }}/miete">{{ t('Reaktivieren') }}</a>
+    {% elif s.public_address %}<button type="button" class="addr-btn above" data-copy="{{ s.public_address }}"><code>{{ s.public_address }}</code> 📋</button>{% endif %}
   </div>
-  {% if p.kind == 'start' and not user %}<a class="btn primary" href="/registrieren">{{ t('nav.register') }}</a>
-  {% else %}<a class="btn primary" href="/kaufen">{{ t('Server kaufen') }}</a>{% endif %}
+  {% endfor %}
+  <a class="card big-card new-card" href="/kaufen">
+    <div class="big-icon">➕</div>
+    <span class="big-name">{{ t('Neuer Server') }}</span>
+    <div class="small muted">{% if free_models %}{{ t('Platz frei für: {models}', models=free_models | join(', ')) }}{% else %}{{ t('Gerade ist alles belegt') }}{% endif %}</div>
+    <span class="btn primary small">{{ t('Jetzt mieten') }}</span>
+  </a>
+</div>
+{% if my_servers | length > 5 %}<p class="center small"><a href="/server">{{ t('Alle Server ansehen') }} →</a></p>{% endif %}
+{% else %}
+<div class="big-cards">
+  {% for x in models %}{% set m = x.m %}
+  <a class="card big-card lift{{ ' hot' if x.popular }}" href="/kaufen">
+    <div class="big-icon">{{ x.icon }}</div>
+    <span class="big-name">{{ t(m.name) }}{% if x.popular %} <span class="tag-new">{{ t('BELIEBT') }}</span>{% endif %}</span>
+    <div class="small muted">{{ m.ram_gb | int }} GB · {{ m.max_players }} {{ t('Spieler') }}</div>
+    <div class="big-price">{{ m.price_per_day }} <span class="small">{{ t('Coins/Tag') }}</span></div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% for p, label in promos %}
+<section class="card promo-band">
+  <div><strong>🔥 {{ p.title }}:</strong> {{ label }}</div>
+  <div class="small">{{ t('Endet in') }} <strong class="countdown" data-countdown="{{ p.ends_at }}">…</strong></div>
+  {% if p.kind == 'start' and not user %}<a class="btn primary small" href="/registrieren">{{ t('nav.register') }}</a>
+  {% else %}<a class="btn primary small" href="/kaufen">{{ t('Ansehen') }}</a>{% endif %}
 </section>
 {% endfor %}
 {% if forecast and forecast['items'] %}
@@ -52,24 +116,43 @@
 {% endif %}
 {% for g in giveaways %}{% include "_giveaway.html" %}{% endfor %}
 
-<section class="hero">
-  <h1>{{ t('home.title') }}</h1>
-  <p class="lead">{{ t('home.lead') }}</p>
-  <div class="actions">
-    <a class="btn primary" href="/code">🎟️ {{ t('Code einlösen') }}</a>
-    <a class="btn primary" href="/kaufen">🛒 {{ t('Server kaufen') }}</a>
-    {% if user %}
-      <a class="btn" href="/server">{{ t('Meine Server') }}</a>
-    {% else %}
-      <a class="btn" href="/login">{{ t('nav.login') }}</a>
-    {% endif %}
-  </div>
-</section>
-
-<section class="steps" id="so-gehts">
-  <div class="card step"><span class="step-num">1</span><h2>{{ t('home.step1_title') }}</h2><p>{{ t('home.step1_text') }}</p></div>
-  <div class="card step"><span class="step-num">2</span><h2>{{ t('home.step2_title') }}</h2><p>{{ t('home.step2_text') }}</p></div>
-  <div class="card step"><span class="step-num">3</span><h2>{{ t('home.step3_title') }}</h2><p>{{ t('home.step3_text') }}</p></div>
-</section>
-{% if capacity_text %}<p class="center small muted">{{ capacity_text }}</p>{% endif %}
+<div class="home-split">
+  <section class="card">
+    <h2>{{ t('Öffentliche Server zum Mitspielen') }}</h2>
+    {% if public_servers %}
+    <ul class="events">
+      {% for r in public_servers %}
+      <li class="row-between"><span><a href="/s/{{ r.short_code }}"><strong>{{ r.name }}</strong></a>{% if r.whitelist_enabled %} 🔒{% endif %}</span>
+        {% if r.running and not r.paused %}<span class="pill dot on">{{ t('{n} online', n=r.players_online or 0) }}</span>
+        {% elif r.running %}<span class="pill dot sleep">{{ t('schläft') }}</span>
+        {% else %}<span class="pill dot off">{{ t('aus') }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    <a class="small" href="/serverliste">{{ t('Ganze Serverliste') }} →</a>
+    {% else %}<p class="small muted">{{ t('Noch kein Server ist öffentlich. Du kannst deinen Server in den Einstellungen öffentlich machen.') }}</p>{% endif %}
+  </section>
+  {% if user %}
+  <section class="card">
+    <h2>{{ t('Was ist passiert?') }}</h2>
+    {% if feed %}
+    <ul class="events">
+      {% for f in feed %}
+      <li class="row-between"><span>{{ f.icon }} {{ f.text }}</span>
+        {% if f.button %}<a class="btn small" href="{{ f.link }}">{{ f.button }}</a>{% else %}<span class="small muted">{{ f.at | localtime }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="small muted">{{ t('In den letzten 24 Stunden ist auf deinen Servern nichts passiert.') }}</p>{% endif %}
+  </section>
+  {% else %}
+  <section class="card" id="so-gehts">
+    <h2>{{ t('So geht\'s') }}</h2>
+    <ol class="steps-list">
+      <li><strong>{{ t('home.step1_title') }}</strong> – {{ t('home.step1_text') }}</li>
+      <li><strong>{{ t('home.step2_title') }}</strong> – {{ t('home.step2_text') }}</li>
+      <li><strong>{{ t('home.step3_title') }}</strong> – {{ t('home.step3_text') }}</li>
+    </ol>
+  </section>
+  {% endif %}
+</div>
+{% if capacity_text and not user %}<p class="center small muted" style="margin-top:1rem">{{ capacity_text }}</p>{% endif %}
 {% endblock %}

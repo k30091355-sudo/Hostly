@@ -14,6 +14,19 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.4.0 (23.11.2026) – Neue Startseite + anonym
+Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
+- **Neue Startseite für Besucher:** große Überschrift „Dein eigener Minecraft-Server. Komplett kostenlos.“, Live-Zahlen
+  (Spieler heute, Server aktiv, 0 €), Registrieren-Knopf mit Startbonus, die 3 Modelle (das meistgemietete ist „beliebt“),
+  öffentliche Server zum Mitspielen und „So geht's“.
+- **Neue Startseite für eingeloggte Spieler:** „Willkommen zurück, Name!“, Coins (mit „reicht ca. … Wochen“) und Anzahl
+  deiner Server, „Deine Server“ als große Karten (Adresse mit einem Klick kopieren) + Karte „Neuer Server“
+  (zeigt, welche Modelle gerade Platz haben), Aktionen als Streifen mit Countdown, öffentliche Server und
+  **„Was ist passiert?“** (wer in den letzten 24 Std. beigetreten ist, offene Whitelist-Anfragen).
+- **Anonym:** Bei beendeten Gewinnspielen stehen keine Namen mehr – nur „1 Gewinner“ / „3 Gewinner“.
+  Wer selbst gewonnen hat, sieht „🎉 Du hast gewonnen!“. Bei Whitelist-Anfragen sieht der Server-Besitzer nur noch
+  den Minecraft-Namen, nicht mehr den Hostly-Benutzernamen. (Der Admin sieht im Admin-Bereich weiterhin alles.)
+
 ### Version 1.3.1 (22.11.2026) – Hinweis „Neue Version“
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
 - Wer Hostly gerade offen hat (Browser oder Handy-App), sieht nach einem Update innerhalb von 1 Minute oben

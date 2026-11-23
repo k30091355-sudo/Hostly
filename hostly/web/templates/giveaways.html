@@ -15,7 +15,9 @@
   <ul class="events">
     {% for g in past %}
       <li><strong>{{ g.title }}</strong> · {{ g.coins_per_winner }} Coins · {{ g.drawn_at | localtime }}<br>
-        <span class="small">{{ t('Gewinner') }}: {{ winners[g.id] | join(', ') if winners[g.id] else t('keine Teilnehmer') }}</span></li>
+        <span class="small">{% if user and user.id in winners[g.id] %}🎉 <strong>{{ t('Du hast gewonnen!') }}</strong>
+          {% elif winners[g.id] | length == 1 %}{{ t('1 Gewinner') }}{% elif winners[g.id] %}{{ t('{n} Gewinner', n=winners[g.id] | length) }}
+          {% else %}{{ t('keine Teilnehmer') }}{% endif %}</span></li>
     {% endfor %}
   </ul>
 </section>
