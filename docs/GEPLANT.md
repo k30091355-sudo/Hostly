@@ -13,12 +13,15 @@
   Reiter-Unterstrich gleitet. Alles aus, wenn „Bewegung reduzieren“ im System eingeschaltet ist.
 - Aufwand: klein (nur CSS + Schriftdatei) → wäre **Version 1.3.1**.
 
-## 2. Neue Startseite mit Widgets – 4 Ideen (wartet auf Entscheidung)
+## 2. Neue Startseite im Stil von Idee D (gewählt, wartet auf „bauen“)
 **Vorschau:** [`entwuerfe/startseite-ideen.html`](entwuerfe/startseite-ideen.html) ·
-A [`hell`](entwuerfe/startseite-a.png) [`dunkel`](entwuerfe/startseite-a-dunkel.png) [`Handy`](entwuerfe/startseite-a-handy.png) ·
-B [`hell`](entwuerfe/startseite-b.png) · C [`hell`](entwuerfe/startseite-c.png) [`dunkel`](entwuerfe/startseite-c-dunkel.png) · D [`Besucher`](entwuerfe/startseite-d.png)
-- **A „Mein Cockpit“:** Begrüßung + Widget-Raster (Meine Server mit Balken, Coins mit Verlauf, Aktion-Countdown, Gerade online, Platz im Hostly).
-- **B „Server im Mittelpunkt“:** großer blauer Hauptserver oben (Adresse, Knöpfe, Spieler, Restzeit, RAM, Umschalter), darunter „Was ist passiert?“-Verlauf.
-- **C „Bento-Kacheln“:** verschieden große Kacheln (Spieler-Kurve, Coins, Online, Code direkt einlösen, Platz-Ring, beliebte Server, Gewinnspiel).
-- **D Besucher-Startseite:** große Überschrift, Live-Zahlen, Modelle, öffentliche Server, „So geht's“.
-- Widgets sind mischbar. Aufwand: mittel → wäre **Version 1.4.0**.
+Besucher [`PC`](entwuerfe/startseite-d.png) [`Handy`](entwuerfe/startseite-d-handy.png) ·
+Eingeloggt [`hell`](entwuerfe/startseite-d-eingeloggt.png) [`dunkel`](entwuerfe/startseite-d-eingeloggt-dunkel.png) [`Handy`](entwuerfe/startseite-d-eingeloggt-handy.png)
+(Ideen A–C liegen auch noch dort, wurden aber nicht gewählt.)
+- **Besucher:** große Überschrift „Dein eigener Minecraft-Server. Komplett kostenlos.“, Live-Zahlen
+  (Spieler heute, Server aktiv, 0 €), Registrieren-Knopf mit Startbonus, die 3 Modelle, öffentliche Server, „So geht's“.
+- **Eingeloggt:** gleicher Stil: „Willkommen zurück, Name!“, Knöpfe Kaufen/Code/Meine Server, Warnungen als Streifen,
+  Zahlen (Coins ≈ Wochen, deine Server, Spieler online, Tage übrig), „Deine Server“ als Karten + Karte „Neuer Server“
+  (zeigt, welche Modelle gerade Platz haben), Aktion als Streifen mit Countdown, öffentliche Server, „Was ist passiert?“
+  (Beitritte, Whitelist-Anfragen, Gewinnspiele, Meldungen).
+- Aufwand: mittel → **Version 1.4.0**.
