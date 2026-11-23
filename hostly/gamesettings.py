@@ -52,8 +52,9 @@ def commands(rules: dict) -> tuple[list[str], list[str]]:
         if key == SLEEP_RULE[0]:
             new.append(f"gamerule {key} {int(value)}")
             old.append(f"gamerule {SLEEP_RULE[1]} {int(value)}")
-        elif key == "pvp":   # gibt es als Gamerule erst ab 26.x (vorher server.properties)
+        elif key == "pvp":   # Gamerule erst ab 1.21.9 (vorher nur server.properties, siehe OLD_NAME_SINCE)
             new.append(f"gamerule pvp {'true' if value else 'false'}")
+            old.append(f"gamerule pvp {'true' if value else 'false'}")
         elif key in GAMERULES:
             text = "true" if value else "false"
             new.append(f"gamerule {key} {text}")
@@ -61,27 +62,35 @@ def commands(rules: dict) -> tuple[list[str], list[str]]:
     return new, old
 
 
-def uses_new_names(mc_version: str | None) -> bool:
-    """Neue Gamerule-Namen (snake_case) gibt es ab Minecraft 1.21.11 und bei allen 26.x-Versionen.
-    „LATEST“ ist immer die neueste Version → neue Namen."""
+def version_tuple(mc_version: str | None) -> tuple:
+    """Vergleichbare Version: „1.21.4“ → (1, 21, 4), „26.1“ → (26, 1, 0). „LATEST“/Unbekanntes → ganz neu."""
     v = (mc_version or "LATEST").strip()
-    if not v[:1].isdigit():
-        return True
     try:
         parts = [int(p) for p in v.split("-")[0].split(".")]
     except ValueError:
-        return True
-    if parts[0] >= 2:          # 26.1, 26.3 … (neues Versionsschema)
-        return True
-    minor = parts[1] if len(parts) > 1 else 0
-    patch = parts[2] if len(parts) > 2 else 0
-    return (minor, patch) >= (21, 11)
+        return (999, 0, 0)
+    return tuple((parts + [0, 0])[:3])
+
+
+def uses_new_names(mc_version: str | None) -> bool:
+    """Neue Gamerule-Namen (snake_case) gibt es ab Minecraft 1.21.11 und bei allen 26.x-Versionen.
+    „LATEST“ ist immer die neueste Version → neue Namen."""
+    return version_tuple(mc_version) >= (1, 21, 11)
+
+
+# Gamerules, die es erst ab einer bestimmten Version gibt. Ein unbekannter Name im Datapack würde die ganze
+# Funktion ungültig machen – dann gälte keine einzige Regel.
+OLD_NAME_SINCE = {"pvp": (1, 21, 9), "locatorBar": (1, 21, 6), "playersSleepingPercentage": (1, 17, 0), "doImmediateRespawn": (1, 15, 0),
+                  "doInsomnia": (1, 15, 0), "fallDamage": (1, 15, 0)}
 
 
 def commands_for(server, rules: dict | None = None) -> list[str]:
     """Nur die Befehle, die zur Minecraft-Version des Servers passen (keine Fehlermeldungen im Protokoll)."""
     new, old = commands(changed_rules(server) if rules is None else rules)
-    return new if uses_new_names(server["mc_version"]) else old
+    if uses_new_names(server["mc_version"]):
+        return new
+    v = version_tuple(server["mc_version"])
+    return [c for c in old if v >= OLD_NAME_SINCE.get(c.split()[1], (0, 0, 0))]
 
 
 def clamp(value, lo_hi: tuple[int, int], default: int) -> int:

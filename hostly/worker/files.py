@@ -146,6 +146,24 @@ def sync_extensions(conn, server) -> str:
     return f"{done} Dateien geändert"
 
 
+def remove_from_userlist(server_id: int, filename: str, name: str) -> bool:
+    """Spieler aus ops.json/whitelist.json entfernen, während der Server aus ist (auch im Archiv)."""
+    for base in (minecraft.data_dir(server_id), minecraft.archive_dir(server_id)):
+        path = base / filename
+        if not path.exists():
+            continue
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8") or "[]")
+        except (OSError, ValueError):
+            return False
+        keep = [e for e in entries if str(e.get("name", "")).lower() != name.lower()]
+        if len(keep) != len(entries):
+            path.write_text(json.dumps(keep, indent=2), encoding="utf-8")
+            chown(path)
+            return True
+    return False
+
+
 # ---------- /code-Datapack (Server-Kürzel im Spiel: /trigger code) ----------
 
 def write_rules_datapack(server) -> None:

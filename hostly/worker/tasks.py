@@ -31,6 +31,7 @@ def update_status(w, conn, server_id: int) -> None:
     if server is None or server["state"] not in ("active", "creating", "reactivating", "archiving"):
         return
     st = w.ops.state(minecraft.container_name(server_id))
+    w.clear_stale_pause(server_id, st)
     paused = st["running"] and w.is_paused(server_id)
     model = servers.model(conn, server["model_id"])
     online, players = 0, ""

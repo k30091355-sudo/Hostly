@@ -52,7 +52,7 @@ def test_promotion_discount_and_ram(client):
     assert s["extra_ram_gb"] == 1
     w = make_worker()
     run_jobs(w)
-    assert w.ops.containers["hostly-mc-1"]["spec"]["env"]["MEMORY"] == "4096M"
+    assert w.ops.containers["hostly-mc-1"]["spec"]["env"]["MEMORY"] == "3840M"
     assert servers.capacity(c)["used"] == 4.5
     c.execute("UPDATE servers SET extra_ram_until = '2000-01-01 00:00:00'")
     tasks.end_ram_promotions(w)

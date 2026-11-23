@@ -14,6 +14,25 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.8 (24.11.2026) – Minecraft-Server laufen stabiler
+Einfach Schritt 1–5 unten (die Datenbank wird automatisch erweitert). Danach zeigen alle Server einmal
+„Neustart nötig“ – bitte (oder die Besitzer) einmal neu starten, damit der neue Speicherschutz greift.
+- **Abstürze durch Speichermangel verhindert:** Gemessen mit echten Servern: Ein Holz-Server (2 GB) lag unter
+  Last bei **97 %** seiner Speichergrenze – kommt dann noch ein Spieler dazu, beendet Docker ihn hart. Jetzt bekommt
+  das Spiel 256 MB weniger, damit Java selbst genug Platz hat (unter derselben Last: 87 %, kein Absturz).
+- **Nach einem PC-Neustart** konnte ein Server dauerhaft als „eingefroren“ gelten (alte `.paused`-Datei) –
+  dann wurden Spielerzahl und Status nicht mehr aktualisiert. Behoben.
+- **„Starten“ bei eingefrorenem Server** wartete 60 Sekunden und beendete ihn dann hart – jetzt sauber.
+- **Server aus beim Übertragen / MC-Namen ändern:** Der alte Name blieb OP. Jetzt wird er auch offline entfernt.
+- **Whitelist:** Wer offline von der Whitelist entfernt wurde (oder der letzte Eintrag), durfte weiter rein. Behoben.
+- **Gamerules auf älteren Versionen:** Eine Regel, die es dort noch nicht gibt (z. B. Ortungsleiste vor 1.21.6),
+  machte alle Regeln unwirksam. Jetzt werden nur passende Regeln geschickt. PvP aus wirkt jetzt auch auf 1.21.9/1.21.10.
+- **Welttyp** (flach, große Biome …) funktioniert jetzt auch für Minecraft vor 1.19.
+- **Versionswechsel/Updates:** Braucht die neue Version einer Mod/eines Plugins zusätzlich etwas Neues, wird es
+  mitinstalliert (sonst startete der Server nicht).
+- **Welt hochladen mit dem Namen der aktiven Welt:** Der Server wird jetzt vorher gestoppt und gesichert und danach
+  wieder gestartet – vorher konnte die Welt kaputtgehen.
+
 ### Version 1.5.7 (23.11.2026) – Nachtpause respektiert gestoppte Server
 Einfach Schritt 1–5 unten (die Datenbank wird automatisch erweitert).
 - Ein Server, den der Besitzer **von Hand gestoppt** hat, wird nach der Nachtpause nicht mehr automatisch gestartet.

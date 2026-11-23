@@ -63,7 +63,7 @@ def test_worker_creates_and_controls_server(client):
     assert server["state"] == "active"
     spec = w.ops.containers["hostly-mc-1"]["spec"]
     assert spec["ip"] == "172.30.0.11"
-    assert spec["env"]["MEMORY"] == "3072M" and spec["env"]["MAX_PLAYERS"] == "7"
+    assert spec["env"]["MEMORY"] == "2816M" and spec["env"]["MAX_PLAYERS"] == "7"
     assert spec["env"]["TYPE"] == "PAPER" and spec["env"]["ENABLE_AUTOPAUSE"] == "TRUE"
     assert spec["mem_limit"] == int(3.5 * 1024 ** 3)
     st = c.execute("SELECT * FROM server_status").fetchone()

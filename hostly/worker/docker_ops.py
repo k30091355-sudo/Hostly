@@ -6,6 +6,17 @@ from .. import config
 log = logging.getLogger("hostly.worker")
 
 
+def _timestamp(text: str | None) -> float | None:
+    """Docker-Zeit (z. B. 2026-11-24T00:03:04.123456789Z) → Sekunden seit 1970."""
+    from datetime import datetime
+    if not text or text.startswith("0001"):
+        return None
+    try:
+        return datetime.fromisoformat(text).timestamp()
+    except ValueError:
+        return None
+
+
 class DockerOps:
     def __init__(self):
         import docker  # erst hier, damit die Website docker nicht braucht
@@ -38,13 +49,14 @@ class DockerOps:
         try:
             c = self.client.containers.get(name)
         except self.docker.errors.NotFound:
-            return {"exists": False, "running": False, "health": None, "restart_count": 0}
+            return {"exists": False, "running": False, "health": None, "restart_count": 0, "started_at": None}
         s = c.attrs.get("State", {})
         return {
             "exists": True,
             "running": bool(s.get("Running")),
             "health": (s.get("Health") or {}).get("Status"),
             "restart_count": int(c.attrs.get("RestartCount") or 0),
+            "started_at": _timestamp(s.get("StartedAt")),
         }
 
     def stats(self, name: str) -> dict | None:

@@ -64,7 +64,7 @@ def test_gamerule_names_by_version():
 def test_gamerule_commands_both_names():
     new, old = gamesettings.commands({"keep_inventory": True, "pvp": False})
     assert new == ["gamerule keep_inventory true", "gamerule pvp false"]
-    assert old == ["gamerule keepInventory true"]
+    assert old == ["gamerule keepInventory true", "gamerule pvp false"]   # pvp wird je nach Version gefiltert
 
 
 def test_new_world_backup_then_delete(client):

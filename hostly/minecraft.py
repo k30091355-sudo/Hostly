@@ -39,7 +39,8 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
         "EULA": "TRUE",
         "TYPE": server["type"],
         "VERSION": server["mc_version"] or "LATEST",
-        "MEMORY": f"{int(ram * 1024)}M",
+        # Spielspeicher etwas kleiner als das Modell-RAM: der Rest bis zur Container-Grenze ist für Java selbst
+        "MEMORY": f"{int(ram * 1024) - config.JAVA_HEADROOM_MB}M",
         "MAX_PLAYERS": str(model["max_players"]),
         "MOTD": server["motd"] or server["name"],
         "ONLINE_MODE": "TRUE",
@@ -79,7 +80,7 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
     if server["world_seed"]:
         env["SEED"] = server["world_seed"]
     if server["world_type"]:
-        env["LEVEL_TYPE"] = server["world_type"]
+        env["LEVEL_TYPE"] = level_type(server["world_type"], server["mc_version"])
     if server["resource_pack_url"]:
         env["RESOURCE_PACK"] = server["resource_pack_url"]
         env["RESOURCE_PACK_SHA1"] = server["resource_pack_sha1"] or ""
@@ -104,6 +105,15 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
         "host_data_dir": str(config.HOST_DATA_DIR / "servers" / str(server["id"])),
         "labels": {"hostly.server": str(server["id"])},
     }
+
+
+def level_type(world_type: str, mc_version: str | None) -> str:
+    """Welttyp für server.properties: ab 1.19 „minecraft:flat“ usw., davor „flat“, „largeBiomes“, „default“."""
+    from .gamesettings import version_tuple
+    if version_tuple(mc_version) >= (1, 19, 0):
+        return world_type
+    name = world_type.split(":")[-1]
+    return {"normal": "default", "large_biomes": "largeBiomes"}.get(name, name)
 
 
 def reload_command(server_type: str) -> str:

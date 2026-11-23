@@ -447,6 +447,10 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE night_pause_log ADD COLUMN was_running INTEGER NOT NULL DEFAULT 1;
     """,
+    # 10 – Version 1.5.8: neuer Speicherschutz (Java-Heap = RAM − 256 MB) gilt erst nach einem Neustart
+    """
+    UPDATE servers SET needs_restart = 1 WHERE state = 'active';
+    """,
 ]
 
 

@@ -13,7 +13,7 @@ SUPPORT_EMAIL = "k3009135@gmail.com"
 
 # Versionsnummer: GROSS.NEU.KLEIN – GROSS nur bei etwas Riesigem, NEU bei großen Neuerungen,
 # KLEIN bei kleinen Updates/Fehlerbehebungen. Bei jedem Update erhöhen + in docs/UPDATE.md eintragen.
-VERSION = "1.5.7"
+VERSION = "1.5.8"
 
 # Sitzung: wie lange man eingeloggt bleibt
 SESSION_DAYS = 30
@@ -56,5 +56,8 @@ CODE_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz"
 DEFAULT_RAM_TOTAL_GB = 12.0     # RAM für WSL
 DEFAULT_RAM_RESERVE_GB = 1.5    # muss nach jedem Kauf frei bleiben
 CONTAINER_EXTRA_GB = 0.5        # Container-Grenze = Modell-RAM + 0,5 GB
+# Java selbst (Programmcode, Threads, Netzwerkpuffer) braucht neben dem Spielspeicher 0,3–0,45 GB. Ohne diesen
+# Abzug lag ein Holz-Server unter Last bei 97 % der Container-Grenze → Docker beendet ihn hart (Absturz).
+JAVA_HEADROOM_MB = 256          # Spielspeicher (Java-Heap) = Modell-RAM − 256 MB
 
 TIMEZONE = "Europe/Berlin"

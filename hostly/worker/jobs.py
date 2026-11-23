@@ -40,6 +40,20 @@ class Worker:
     def is_paused(self, server_id: int) -> bool:
         return (minecraft.data_dir(server_id) / ".paused").exists()
 
+    def clear_stale_pause(self, server_id: int, st: dict) -> None:
+        """`.paused` von einem früheren Container-Lauf entfernen. itzg legt die Datei beim Einfrieren an, löscht
+        sie aber beim Containerstart nicht. Wurde der Mini-PC mit einem eingefrorenen Server heruntergefahren,
+        bliebe sie liegen – Hostly hielte den laufenden Server dann für eingefroren (keine Spielerzahl, falscher
+        Status). Echte Pausen entstehen immer NACH dem Containerstart."""
+        flag = minecraft.data_dir(server_id) / ".paused"
+        started = st.get("started_at")
+        try:
+            if started and st.get("running") and flag.stat().st_mtime < started - 5:
+                flag.unlink()
+                log.info("Veraltete .paused-Datei von Server %s entfernt", server_id)
+        except OSError:
+            pass
+
     def spec_for(self, conn, server) -> dict:
         model = servers.model(conn, server["model_id"])
         tunnel = conn.execute("SELECT * FROM tunnels WHERE id = ?", (server["tunnel_id"],)).fetchone()
@@ -52,6 +66,7 @@ class Worker:
     def prepare_data_dir(self, server) -> None:
         path = minecraft.data_dir(server["id"])
         path.mkdir(parents=True, exist_ok=True)
+        (path / ".paused").unlink(missing_ok=True)   # der neue Container startet wach
         if minecraft.has_icon(server):
             shutil.copyfile(minecraft.icon_file(server["id"]), path / "server-icon.png")
         else:   # kein eigenes Icon → auch kein altes im Spiel anzeigen
@@ -78,6 +93,9 @@ class Worker:
 
     def recreate(self, conn, server) -> None:
         server = self.load(conn, server["id"])
+        # läuft der alte Container noch (z. B. „Starten“ bei eingefrorenem Server), erst sauber beenden –
+        # sonst wartet Docker 60 s auf den eingefrorenen Prozess und beendet ihn dann hart
+        self.graceful_stop(conn, server)
         self.prepare_data_dir(server)
         files.sync_extensions(conn, server)
         try:
@@ -92,8 +110,14 @@ class Worker:
             files.tune_paper(server, servers.model(conn, server["model_id"])["cpu_limit"])
         except OSError:
             log.warning("paper-global.yml für Server %s nicht anpassbar", server["id"])
+        spec = self.spec_for(conn, server)
+        if "WHITELIST" not in spec["env"]:
+            # leere Whitelist: itzg gleicht nur ab, wenn Namen da sind – sonst blieben alte Einträge erlaubt
+            wl = minecraft.data_dir(server["id"]) / "whitelist.json"
+            if wl.exists():
+                wl.write_text("[]", encoding="utf-8")
         files.fix_owner(minecraft.data_dir(server["id"]))   # Minecraft (Benutzer 1000) muss überall schreiben dürfen
-        self.ops.recreate(self.spec_for(conn, server))
+        self.ops.recreate(spec)
         conn.execute("UPDATE servers SET needs_restart = 0, crash_locked = 0 WHERE id = ?", (server["id"],))
 
     def awake(self, server) -> bool:
@@ -231,6 +255,14 @@ class Worker:
         """Von Hostly selbst erzeugte Befehle (Whitelist, OP). Nur wenn der Server läuft."""
         server = self.load(conn, job["server_id"])
         if server["state"] != "active" or not self.ops.state(minecraft.container_name(server["id"]))["running"]:
+            # Hinzufügen übernimmt itzg beim Start (OPS/WHITELIST), Entfernen aber nicht (ops.json wird nur
+            # ergänzt) – sonst bliebe z. B. der alte Besitzer nach einer Übertragung OP. Darum direkt in der Datei.
+            for cmd in payload.get("commands", []):
+                parts = cmd.split()
+                if len(parts) == 2 and parts[0] == "deop":
+                    files.remove_from_userlist(server["id"], "ops.json", parts[1])
+                elif len(parts) == 3 and parts[:2] == ["whitelist", "remove"]:
+                    files.remove_from_userlist(server["id"], "whitelist.json", parts[2])
             return "Server offline – wird beim nächsten Start übernommen"
         out = [self.server_rcon(conn, server, cmd) for cmd in payload.get("commands", [])]
         return "\n".join(o for o in out if o)
@@ -402,11 +434,23 @@ class Worker:
     def job_world_upload(self, conn, job, payload):
         server = self.load(conn, job["server_id"])
         zip_path = config.UPLOADS_DIR / "worlds" / payload["file"]
+        level = server["level_name"] or "world"
+        # Die gerade benutzte Welt ersetzen geht nur bei gestopptem Server – sonst schreibt Minecraft die alte
+        # Welt aus dem Speicher wieder darüber (kaputte Welt). Vorher sichern, danach wieder starten.
+        active = payload["name"] in (level, f"{level}_nether", f"{level}_the_end")
+        was_running = active and server["state"] == "active" and \
+            self.ops.state(minecraft.container_name(server["id"]))["running"]
         try:
+            if active:
+                self.graceful_stop(conn, server)
+                if server["state"] == "active":
+                    self.backup(conn, server, "vor-aenderung")
             files.extract_world(zip_path, minecraft.data_dir(server["id"]) / payload["name"])
+            files.fix_owner(minecraft.data_dir(server["id"]))
         finally:
             zip_path.unlink(missing_ok=True)
-        files.fix_owner(minecraft.data_dir(server["id"]))
+            if was_running:   # auch wenn die ZIP kaputt war: Server wieder starten
+                self.recreate(conn, server)
         return "Welt hochgeladen"
 
     def job_world_delete(self, conn, job, payload):

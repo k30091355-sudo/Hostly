@@ -188,7 +188,7 @@ def plan_change(conn: sqlite3.Connection, server: sqlite3.Row, new_type: str, ne
             disable.append({"row": dict(row), "reason": f"nicht verfügbar für {new_version}"})
         elif v["id"] != row["version_id"]:
             update.append({"row": dict(row), "version": v})
-    return {"update": update, "disable": disable}
+    return {"update": update, "disable": disable, "type": new_type, "version": new_version}
 
 
 def apply_change(conn: sqlite3.Connection, server: sqlite3.Row, plan: dict) -> None:
@@ -202,6 +202,37 @@ def apply_change(conn: sqlite3.Connection, server: sqlite3.Row, plan: dict) -> N
         )
     for item in plan["disable"]:
         conn.execute("UPDATE server_extensions SET enabled = 0 WHERE id = ?", (item["row"]["id"],))
+    _add_new_dependencies(conn, server, plan)
+
+
+def _add_new_dependencies(conn: sqlite3.Connection, server: sqlite3.Row, plan: dict) -> None:
+    """Neue Versionen brauchen manchmal zusätzliche Mods/Plugins (z. B. eine neue Bibliothek). Ohne sie startet
+    der Server nicht („requires … which is missing“) – darum hier gleich mitinstallieren."""
+    new_type, new_version = plan.get("type") or server["type"], plan.get("version") or server["mc_version"]
+    present = {r[0] for r in conn.execute(
+        "SELECT project_id FROM server_extensions WHERE server_id = ? AND enabled = 1", (server["id"],))}
+    queue = [(item["row"]["kind"], dep) for item in plan["update"] for dep in item["version"].get("dependencies") or []]
+    entries = []
+    while queue:
+        kind, dep = queue.pop(0)
+        pid = dep.get("project_id")
+        if dep.get("dependency_type") != "required" or not pid or pid in present:
+            continue
+        present.add(pid)
+        try:
+            dproj = modrinth.project(pid)
+            dv = modrinth.best_version(pid, modrinth.loaders_for(kind, new_type), new_version) if dproj else None
+        except modrinth.ModrinthError:
+            continue
+        if dv is None:
+            continue
+        entries.append(entry_from_version(new_type, kind, dproj, dv, is_dependency=True))
+        queue.extend((kind, d) for d in dv.get("dependencies") or [])
+    for e in entries:
+        # war die Abhängigkeit schon mal da (deaktiviert), wieder einschalten und aktualisieren
+        conn.execute("DELETE FROM server_extensions WHERE server_id = ? AND project_id = ? AND enabled = 0",
+                     (server["id"], e["project_id"]))
+    add_entries(conn, server["id"], entries)
 
 
 def pick_template_version(template_key: str) -> tuple[str, list[dict]]:
