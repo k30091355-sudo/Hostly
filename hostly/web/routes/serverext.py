@@ -169,9 +169,10 @@ async def ext_admin_upload(server_id: int, kind: str = Form(...), file: UploadFi
         return _ext_page(ctx, server, 400, error=ctx.t(str(exc)))
     with db.transaction(ctx.conn):
         ctx.conn.execute(
-            """INSERT INTO server_extensions (server_id, source, kind, title, filename, size, project_id)
-               VALUES (?, 'upload', ?, ?, ?, ?, ?)""",
-            (server_id, kind, name, name, size, "upload:" + name))
+            """INSERT INTO server_extensions (server_id, source, kind, title, filename, size, project_id, subfolder)
+               VALUES (?, 'upload', ?, ?, ?, ?, ?, ?)""",
+            (server_id, kind, name, name, size, "upload:" + name,
+             extensions.BENTOBOX_ADDONS if kind == "plugin" and extensions.is_bentobox_addon_jar(dest) else None))
         extensions.mark_changed(ctx.conn, server_id, ctx.user["id"])
     raise Redirect(f"/server/{server_id}/erweiterungen")
 
@@ -293,7 +294,8 @@ async def worlds_action(server_id: int, ctx: Ctx = Depends(get_ctx)):
         ctx.conn.execute("UPDATE servers SET level_name = ?, world_seed = ?, world_type = ?, needs_restart = 1 WHERE id = ?",
                          (name, seed, "minecraft:" + level_type, server_id))
     elif action == "delete":
-        if name == server["level_name"]:
+        level = server["level_name"] or "world"
+        if name in (level, f"{level}_nether", f"{level}_the_end"):
             return _worlds_page(ctx, server, 400, error=ctx.t("Die aktive Welt kann nicht gelöscht werden."))
         db.add_job(ctx.conn, "world_delete", server_id, ctx.user["id"], {"name": name})
     elif action == "upload":
@@ -331,6 +333,11 @@ async def worlds_action(server_id: int, ctx: Ctx = Depends(get_ctx)):
 
 
 def _public_base(ctx: Ctx) -> str:
+    """Adresse, unter der Spieler das Resourcepack laden – immer die öffentliche (Tailscale-Funnel-)Adresse,
+    auch wenn der Besitzer die Seite gerade zu Hause über die lokale IP geöffnet hat."""
+    public = db.get_setting(ctx.conn, "public_url")
+    if public:
+        return public.rstrip("/")
     proto = ctx.request.headers.get("x-forwarded-proto", ctx.request.url.scheme)
     host = ctx.request.headers.get("host", "localhost:8000")
     if host.endswith(".ts.net"):

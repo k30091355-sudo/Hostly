@@ -9,6 +9,7 @@ from hostly import config, db
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "test.sqlite")
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path / "data")   # Backups, verwaist/ … nie nach /srv/hostly
     for name in ("SERVERS_DIR", "ARCHIVES_DIR", "UPLOADS_DIR", "DOWNLOADS_DIR"):
         monkeypatch.setattr(config, name, tmp_path / name.lower())
     from hostly.web.app import app

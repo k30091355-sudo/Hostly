@@ -41,15 +41,24 @@ def test_gamerules_datapack_and_rcon(client):
                                               "players_sleeping_percentage": "30", "csrf": token})
     run_jobs(w)
     assert "gamerule keep_inventory true" in w.rcon.commands
-    assert "gamerule keepInventory true" in w.rcon.commands          # ältere Versionen
+    assert "gamerule keepInventory true" not in w.rcon.commands      # nur passende Namen (LATEST = neu)
     assert "gamerule spawn_mobs false" in w.rcon.commands
     assert "gamerule players_sleeping_percentage 30" in w.rcon.commands
     pack = minecraft.data_dir(1) / "world" / "datapacks" / "hostly-rules"
-    assert "gamerule keep_inventory true" in (pack / "data/hostly_rules/function/new.mcfunction").read_text()
+    text = (pack / "data/hostly_rules/function/apply.mcfunction").read_text()
+    assert "gamerule keep_inventory true" in text and "keepInventory" not in text
     tag = json.loads((pack / "data/minecraft/tags/function/load.json").read_text())
-    assert all(v["required"] is False for v in tag["values"])        # unpassende Funktion stört nicht
+    assert tag["values"] == ["hostly_rules:apply"]
     page = client.get("/server/1/einstellungen").text
     assert 'name="keep_inventory" value="1" checked' in page
+
+
+def test_gamerule_names_by_version():
+    assert gamesettings.uses_new_names("LATEST") and gamesettings.uses_new_names("26.3")
+    assert gamesettings.uses_new_names("1.21.11") and not gamesettings.uses_new_names("1.21.10")
+    assert not gamesettings.uses_new_names("1.20.4")
+    server = {"mc_version": "1.21.4", "gamerules": '{"keep_inventory": true}'}
+    assert gamesettings.commands_for(server) == ["gamerule keepInventory true"]
 
 
 def test_gamerule_commands_both_names():

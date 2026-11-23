@@ -801,5 +801,6 @@
   "Du hast gewonnen!": "You won!",
   "1 Gewinner": "1 winner",
   "{n} Gewinner": "{n} winners",
-  "Ansehen": "View"
+  "Ansehen": "View",
+  "Bitte einen Befehl eingeben.": "Please enter a command."
 }

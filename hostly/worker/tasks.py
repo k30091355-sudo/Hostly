@@ -15,8 +15,11 @@ from . import files
 log = logging.getLogger("hostly.worker")
 
 LIST_RE = re.compile(r"There are (\d+) of a max(?: of)? (\d+) players online:?(.*)", re.S)
-JOIN_RE = re.compile(r"^\[(\d\d:\d\d:\d\d)\].*?\]: ([A-Za-z0-9_]{1,16}) joined the game")
-LEFT_RE = re.compile(r"^\[(\d\d:\d\d:\d\d)\].*?\]: ([A-Za-z0-9_]{1,16}) left the game")
+# Vanilla/Fabric: "[17:54:15] [Server thread/INFO]: Steve joined the game"
+# Paper:          "[17:54:15 INFO]: Steve joined the game"
+_LOG_PREFIX = r"^\[(\d\d:\d\d:\d\d)[^\]]*\](?: \[[^\]]*\])?: "
+JOIN_RE = re.compile(_LOG_PREFIX + r"([A-Za-z0-9_]{1,16}) joined the game")
+LEFT_RE = re.compile(_LOG_PREFIX + r"([A-Za-z0-9_]{1,16}) left the game")
 VERSION_RE = re.compile(r"Starting minecraft server version (\S+)")
 
 

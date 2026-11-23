@@ -20,6 +20,12 @@ def icon_file(server_id: int):
     return config.UPLOADS_DIR / "icons" / f"{server_id}.png"
 
 
+def has_icon(server) -> bool:
+    """Hat der Besitzer für genau diesen Server ein Icon hochgeladen? (icon_path wird nur beim Hochladen gesetzt –
+    eine alte Datei eines früheren Servers mit derselben Nummer zählt nicht.)"""
+    return bool(server["icon_path"]) and icon_file(server["id"]).exists()
+
+
 def backup_dir(server_id: int):
     return config.DATA_DIR / "backups" / str(server_id)
 

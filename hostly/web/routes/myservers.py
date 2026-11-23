@@ -186,6 +186,8 @@ def console_command(server_id: int, command: str = Form(""), csrf: str = Form(""
     error = None
     if not is_active(server):
         error = "Der Server ist nicht aktiv."
+    elif not cmd:
+        error = "Bitte einen Befehl eingeben."
     elif console.is_blocked(cmd):
         error = "Dieser Befehl ist gesperrt – bitte die Knöpfe benutzen (Stoppen, Neustarten, Reload)."
     else:
@@ -207,7 +209,7 @@ def console_command(server_id: int, command: str = Form(""), csrf: str = Form(""
 def appearance(server_id: int, ctx: Ctx = Depends(get_ctx)):
     server = load(ctx, server_id)
     return page(ctx, "servers/appearance.html", server, saved=ctx.request.query_params.get("ok"),
-                has_icon=minecraft.icon_file(server_id).exists())
+                has_icon=minecraft.has_icon(server))
 
 
 @router.post("/server/{server_id}/name")
@@ -218,7 +220,7 @@ def rename(server_id: int, name: str = Form(""), csrf: str = Form(""), ctx: Ctx 
     err = servers.check_name(name)
     if err:
         return page(ctx, "servers/appearance.html", server, 400, error=ctx.t(err),
-                    has_icon=minecraft.icon_file(server_id).exists())
+                    has_icon=minecraft.has_icon(server))
     ctx.conn.execute("UPDATE servers SET name = ? WHERE id = ?", (name, server_id))
     raise Redirect(f"/server/{server_id}/darstellung?ok=name")
 
@@ -231,7 +233,7 @@ def save_motd(server_id: int, text: str = Form(""), csrf: str = Form(""), ctx: C
     err = motd.check(text)
     if err:
         return page(ctx, "servers/appearance.html", server, 400, error=ctx.t(err), motd_text=text,
-                    has_icon=minecraft.icon_file(server_id).exists())
+                    has_icon=minecraft.has_icon(server))
     ctx.conn.execute("UPDATE servers SET motd = ?, needs_restart = 1 WHERE id = ?", (text or None, server_id))
     raise Redirect(f"/server/{server_id}/darstellung?ok=motd")
 
@@ -246,7 +248,7 @@ async def upload_icon(server_id: int, icon: UploadFile = File(...), csrf: str = 
         png = images.square_png(data, 64)  # Minecraft braucht genau 64×64
     except images.ImageError as exc:
         return page(ctx, "servers/appearance.html", server, 400, error=ctx.t(str(exc)),
-                    has_icon=minecraft.icon_file(server_id).exists())
+                    has_icon=minecraft.has_icon(server))
     path = minecraft.icon_file(server_id)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -260,9 +262,11 @@ async def upload_icon(server_id: int, icon: UploadFile = File(...), csrf: str = 
 
 
 @router.get("/server/{server_id}/icon.png")
-def icon_png(server_id: int):
+def icon_png(server_id: int, ctx: Ctx = Depends(get_ctx)):
+    server = ctx.conn.execute("SELECT id, icon_path FROM servers WHERE id = ?", (server_id,)).fetchone()
     path = minecraft.icon_file(server_id)
-    if not path.exists():
+    # Nur ein Icon zeigen, das für DIESEN Server hochgeladen wurde (alte Dateien mit gleicher Nummer ignorieren)
+    if server is None or not minecraft.has_icon(server):
         return FileResponse(Path(__file__).parent.parent / "static" / "favicon.svg", media_type="image/svg+xml")
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "no-cache"})
 

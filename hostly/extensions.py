@@ -34,6 +34,41 @@ FABRIC_API = "fabric-api"   # Modrinth-Kürzel der Fabric API
 
 FOLDERS = {"plugin": "plugins", "mod": "mods", "datapack": "datapacks"}
 
+BENTOBOX_ID = "aBVLHiAW"            # Modrinth-ID von BentoBox
+BENTOBOX_ADDONS = "BentoBox/addons"  # dort müssen BentoBox-Addons liegen (sonst startet SkyBlock/OneBlock nicht)
+
+
+# Bekannte BentoBox-Addons. Auf Modrinth fehlt bei manchen Versionen die Angabe „braucht BentoBox“ (z. B. AOneBlock 1.30).
+KNOWN_BENTOBOX_ADDONS = {
+    "bskyblock", "aoneblock", "acidisland", "caveblock", "skygrid", "boxed", "poseidon", "stranger-realms", "level",
+    "challenges", "warps", "biomes", "greenhouses", "limits", "bank", "upgrades", "border", "magiccobblestonegenerator",
+    "visit", "likes", "invswitcher", "controlpanel", "chat", "cauldronwitchery", "parkour", "twerkingfortrees",
+    "extramobs",
+}
+
+
+def subfolder_for(kind: str, version: dict, slug: str | None = None) -> str | None:
+    """BentoBox-Addons (BSkyBlock, AOneBlock …) gehören nicht direkt in plugins/, sondern nach
+    plugins/BentoBox/addons/ – sonst lädt Paper sie nicht und SkyBlock/OneBlock startet nicht."""
+    if kind != "plugin":
+        return None
+    if (slug or "").lower() in KNOWN_BENTOBOX_ADDONS:
+        return BENTOBOX_ADDONS
+    for dep in version.get("dependencies") or []:
+        if dep.get("project_id") == BENTOBOX_ID and dep.get("dependency_type") == "required":
+            return BENTOBOX_ADDONS
+    return None
+
+
+def is_bentobox_addon_jar(path) -> bool:
+    """Für hochgeladene Dateien: BentoBox-Addons haben eine addon.yml."""
+    import zipfile
+    try:
+        with zipfile.ZipFile(path) as z:
+            return "addon.yml" in z.namelist()
+    except (OSError, zipfile.BadZipFile):
+        return False
+
 
 class ExtensionError(Exception):
     def __init__(self, message: str):
@@ -48,6 +83,7 @@ def entry_from_version(server_type: str, kind: str, proj: dict, v: dict, is_depe
         "filename": f["filename"], "url": f["url"], "sha1": f.get("hashes", {}).get("sha1"),
         "sha512": f.get("hashes", {}).get("sha512"), "size": f.get("size", 0),
         "client_side": proj.get("client_side"), "is_dependency": int(is_dependency),
+        "subfolder": subfolder_for(kind, v, proj.get("slug")),
     }
 
 
@@ -79,6 +115,13 @@ def resolve(server_type: str, mc_version: str, project_ref: str, kind: str,
             raise ExtensionError(f"Benötigte Abhängigkeit „{dproj.get('title')}“ gibt es nicht für {mc_version}.")
         result.append(entry_from_version(server_type, kind, dproj, dv, is_dependency=True))
         queue.extend(dv.get("dependencies") or [])
+    if any(e["subfolder"] == BENTOBOX_ADDONS for e in result) and not any(e["project_id"] == BENTOBOX_ID for e in result):
+        # BentoBox-Addon ohne eingetragene Abhängigkeit → BentoBox selbst mitinstallieren
+        bproj = modrinth.project(BENTOBOX_ID)
+        bv = modrinth.best_version(bproj["id"], loaders, mc_version) if bproj else None
+        if bv is None:
+            raise ExtensionError(f"Benötigte Abhängigkeit „BentoBox“ gibt es nicht für {mc_version}.")
+        result.append(entry_from_version(server_type, kind, bproj, bv, is_dependency=True))
     if server_type == "FABRIC" and kind == "mod" and not any(e["slug"] == FABRIC_API for e in result):
         # Fast jede Fabric-Mod braucht die Fabric API – manche tragen das auf Modrinth nicht ein
         # (z. B. TabTPS). Ohne sie startet der Server nicht ("requires fabric-api, which is missing").
@@ -100,17 +143,17 @@ def add_entries(conn: sqlite3.Connection, server_id: int, entries: list[dict]) -
             if not e["is_dependency"]:
                 conn.execute(
                     """UPDATE server_extensions SET version_id = ?, version_number = ?, filename = ?, url = ?,
-                       sha1 = ?, sha512 = ?, size = ?, enabled = 1, is_dependency = 0 WHERE id = ?""",
+                       sha1 = ?, sha512 = ?, size = ?, enabled = 1, is_dependency = 0, subfolder = ? WHERE id = ?""",
                     (e["version_id"], e["version_number"], e["filename"], e["url"], e["sha1"], e["sha512"],
-                     e["size"], existing["id"]),
+                     e["size"], e.get("subfolder"), existing["id"]),
                 )
             continue
         conn.execute(
             """INSERT INTO server_extensions (server_id, source, kind, project_id, slug, title, version_id,
-               version_number, filename, url, sha1, sha512, size, client_side, is_dependency)
+               version_number, filename, url, sha1, sha512, size, client_side, is_dependency, subfolder)
                VALUES (:server_id, :source, :kind, :project_id, :slug, :title, :version_id, :version_number,
-                       :filename, :url, :sha1, :sha512, :size, :client_side, :is_dependency)""",
-            {**e, "server_id": server_id},
+                       :filename, :url, :sha1, :sha512, :size, :client_side, :is_dependency, :subfolder)""",
+            {"subfolder": None, **e, "server_id": server_id},
         )
         added += 1
     return added

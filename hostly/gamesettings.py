@@ -7,7 +7,7 @@ VIEW_DISTANCE = (4, 12)        # mehr kostet viel CPU/RAM und bremst die Verbind
 SPAWN_PROTECTION = (0, 64)
 
 # Gamerules: neuer Name (ab Minecraft 1.21.11 / 26.x, geprüft mit 26.3) → alter Name (ältere Versionen).
-# Hostly schickt beide – der falsche wird vom Server einfach abgelehnt.
+# Hostly schickt nur die Namen, die zur Version des Servers passen (uses_new_names).
 GAMERULES = {
     "keep_inventory": ("keepInventory", False, "Inventar nach dem Tod behalten"),
     "advance_time": ("doDaylightCycle", True, "Tag und Nacht wechseln"),
@@ -59,6 +59,29 @@ def commands(rules: dict) -> tuple[list[str], list[str]]:
             new.append(f"gamerule {key} {text}")
             old.append(f"gamerule {GAMERULES[key][0]} {text}")
     return new, old
+
+
+def uses_new_names(mc_version: str | None) -> bool:
+    """Neue Gamerule-Namen (snake_case) gibt es ab Minecraft 1.21.11 und bei allen 26.x-Versionen.
+    „LATEST“ ist immer die neueste Version → neue Namen."""
+    v = (mc_version or "LATEST").strip()
+    if not v[:1].isdigit():
+        return True
+    try:
+        parts = [int(p) for p in v.split("-")[0].split(".")]
+    except ValueError:
+        return True
+    if parts[0] >= 2:          # 26.1, 26.3 … (neues Versionsschema)
+        return True
+    minor = parts[1] if len(parts) > 1 else 0
+    patch = parts[2] if len(parts) > 2 else 0
+    return (minor, patch) >= (21, 11)
+
+
+def commands_for(server, rules: dict | None = None) -> list[str]:
+    """Nur die Befehle, die zur Minecraft-Version des Servers passen (keine Fehlermeldungen im Protokoll)."""
+    new, old = commands(changed_rules(server) if rules is None else rules)
+    return new if uses_new_names(server["mc_version"]) else old
 
 
 def clamp(value, lo_hi: tuple[int, int], default: int) -> int:

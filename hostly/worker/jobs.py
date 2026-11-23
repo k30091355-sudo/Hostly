@@ -49,17 +49,36 @@ class Worker:
             "SELECT minecraft_name FROM whitelist WHERE server_id = ? ORDER BY minecraft_name", (server["id"],))]
         return minecraft.build_spec(server, model, tunnel, ops, wl)
 
-    def prepare_data_dir(self, server_id: int) -> None:
-        path = minecraft.data_dir(server_id)
+    def prepare_data_dir(self, server) -> None:
+        path = minecraft.data_dir(server["id"])
         path.mkdir(parents=True, exist_ok=True)
-        icon = minecraft.icon_file(server_id)
-        if icon.exists():
-            shutil.copyfile(icon, path / "server-icon.png")
+        if minecraft.has_icon(server):
+            shutil.copyfile(minecraft.icon_file(server["id"]), path / "server-icon.png")
+        else:   # kein eigenes Icon → auch kein altes im Spiel anzeigen
+            (path / "server-icon.png").unlink(missing_ok=True)
         _chown_tree_top(path)
+
+    def clear_leftovers(self, server_id: int, keep_icon: bool = False) -> None:
+        """Ein NEUER Server darf nichts von einem früheren Server mit derselben Nummer erben
+        (Welt, Icon, Backups) – z. B. nach dem Zurücksetzen aller Accounts. Alte Reste werden nicht gelöscht,
+        sondern nach /srv/hostly/verwaist/ verschoben."""
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        target = config.DATA_DIR / "verwaist" / f"server-{server_id}-{stamp}"
+        for name, path in (("daten", minecraft.data_dir(server_id)), ("archiv", minecraft.archive_dir(server_id)),
+                           ("backups", minecraft.backup_dir(server_id)),
+                           ("dateien", config.UPLOADS_DIR / "admin-files" / str(server_id))):
+            if path.exists():
+                target.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(path), str(target / name))
+                log.warning("Reste eines früheren Servers %s nach %s verschoben", server_id, target / name)
+        icon = minecraft.icon_file(server_id)
+        if icon.exists() and not keep_icon:
+            target.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(icon), str(target / "icon.png"))
 
     def recreate(self, conn, server) -> None:
         server = self.load(conn, server["id"])
-        self.prepare_data_dir(server["id"])
+        self.prepare_data_dir(server)
         files.sync_extensions(conn, server)
         try:
             files.write_code_datapack(server, db.get_setting(conn, "public_url"))
@@ -153,6 +172,7 @@ class Worker:
         server = self.load(conn, job["server_id"])
         if server["state"] != "creating":
             return "übersprungen"
+        self.clear_leftovers(server["id"], keep_icon=bool(server["icon_path"]))
         # zuerst aktiv setzen: schlägt der Start fehl, kann der User ihn mit „Starten“ erneut versuchen
         conn.execute("UPDATE servers SET state = 'active' WHERE id = ? AND state = 'creating'", (server["id"],))
         self.recreate(conn, server)
@@ -335,9 +355,8 @@ class Worker:
         files.write_rules_datapack(server)
         if not self.ops.state(minecraft.container_name(server["id"]))["running"]:
             return "wird beim nächsten Start übernommen"
-        new, old = gamesettings.commands(gamesettings.changed_rules(server))
         ok = 0
-        for cmd in new + old:
+        for cmd in gamesettings.commands_for(server):
             try:
                 out = self.server_rcon(conn, server, cmd)
                 if "Incorrect" not in out and "Unknown" not in out:
@@ -355,7 +374,15 @@ class Worker:
         self.backup(conn, server, "vor-aenderung")
         level = server["level_name"] or "world"
         data = minecraft.data_dir(server["id"])
-        for name in (level, f"{level}_nether", f"{level}_the_end"):
+        names = [level, f"{level}_nether", f"{level}_the_end"]
+        bentobox = data / "plugins" / "BentoBox"
+        if bentobox.is_dir():
+            # SkyBlock/OneBlock: Insel-Welten (bei älteren Versionen eigene Ordner) + Insel-Datenbank mit löschen,
+            # sonst glaubt BentoBox, die alten Inseln gäbe es noch
+            names += [p.name for p in data.iterdir() if p.is_dir() and p.name != level
+                      and p.name.endswith(("_world", "_world_nether", "_world_the_end"))]
+            names += ["plugins/BentoBox/database"]
+        for name in names:
             target = safe_path(server["id"], name)
             if target != data:
                 shutil.rmtree(target, ignore_errors=True)
@@ -376,7 +403,8 @@ class Worker:
 
     def job_world_delete(self, conn, job, payload):
         server = self.load(conn, job["server_id"])
-        if payload["name"] == server["level_name"]:
+        if payload["name"] in (server["level_name"] or "world", f"{server['level_name'] or 'world'}_nether",
+                               f"{server['level_name'] or 'world'}_the_end"):
             raise RuntimeError("Die aktive Welt kann nicht gelöscht werden.")
         target = safe_path(server["id"], payload["name"])
         shutil.rmtree(target, ignore_errors=True)

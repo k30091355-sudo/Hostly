@@ -433,6 +433,16 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX host_samples_at ON host_samples(at);
     """,
+    # 8 – Version 1.4.1: Unterordner für Erweiterungen. BentoBox-Addons (BSkyBlock, AOneBlock …) laden auf
+    #     neuem Paper nur aus plugins/BentoBox/addons/ – im plugins-Ordner startet SkyBlock nicht.
+    """
+    ALTER TABLE server_extensions ADD COLUMN subfolder TEXT;
+    UPDATE server_extensions SET subfolder = 'BentoBox/addons'
+        WHERE kind = 'plugin' AND lower(slug) IN ('bskyblock', 'aoneblock', 'acidisland', 'caveblock', 'skygrid',
+              'boxed', 'poseidon', 'stranger-realms', 'level', 'challenges', 'warps', 'biomes', 'greenhouses',
+              'limits', 'bank', 'upgrades', 'border', 'magiccobblestonegenerator', 'visit', 'likes', 'invswitcher',
+              'controlpanel', 'chat', 'cauldronwitchery', 'parkour', 'twerkingfortrees', 'extramobs');
+    """,
 ]
 
 

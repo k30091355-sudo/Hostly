@@ -14,6 +14,32 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.4.1 (23.11.2026) – Fehlerbehebungen vor dem Release
+Einfach Schritt 1–5 unten. Danach **jeden laufenden Server einmal neu starten** (Knopf „Neustarten“), damit
+die Korrekturen bei Plugins und Gamerules greifen. Die Datenbank wird beim Start automatisch erweitert.
+
+Alle 8 Vorlagen wurden mit echten Minecraft-Servern getestet (Vanilla pur, Vanilla+, Survival, Creative,
+SkyBlock, OneBlock, Performance, Abenteuer) – plus normale Vanilla-/Paper-/Fabric-Server in alter und neuer Version.
+
+- **SkyBlock und OneBlock starten jetzt richtig.** BSkyBlock und AOneBlock sind Erweiterungen von BentoBox und
+  müssen im Ordner `plugins/BentoBox/addons/` liegen – Hostly hat sie bisher direkt in `plugins/` gelegt, dort lädt
+  Paper sie nicht („Could not load plugin“). Bestehende Server werden beim nächsten Neustart automatisch repariert.
+- **Altes Server-Bild bei neuem Server behoben.** Nach dem Zurücksetzen aller Accounts bekommen neue Server wieder
+  die Nummern 1, 2, 3 … – und haben das Bild (und sogar die Welt!) des alten Servers mit derselben Nummer geerbt.
+  Jetzt zeigt ein neuer Server immer das Hostly-Logo, bis der Besitzer ein eigenes Bild hochlädt. Reste alter Server
+  werden beim Erstellen nicht gelöscht, sondern nach `/srv/hostly/verwaist/` verschoben (kannst du später löschen).
+  ⚠️ Server, die schon **vor** diesem Update erstellt wurden, können noch eine alte Welt haben – dann im Reiter
+  „Einstellungen“ → „Neue Welt“ drücken.
+- **Spieler-Verlauf bei Paper-Servern repariert.** „Wer war online“, „Was ist passiert?“ auf der Startseite und die
+  Spielernamen in der Statistik waren bei Paper-Servern (auch SkyBlock, OneBlock, Survival, Creative) immer leer.
+- **Gamerules ohne Fehlermeldung:** Hostly schickt nur noch die Namen, die zur Minecraft-Version passen
+  (vorher stand bei jedem Start „Failed to load function hostly_rules:old“ rot in der Konsole).
+- **`/trigger code` funktioniert jetzt auch auf älteren Versionen** (z. B. 1.21.4 – vorher Fehler beim Laden).
+- **Resourcepacks:** Der Link für die Spieler zeigt immer auf die öffentliche Adresse – auch wenn du die Seite
+  zu Hause über die lokale IP geöffnet hast (vorher konnten Spieler das Pack dann nicht laden).
+- Die aktive Welt (auch Nether/End) kann nicht mehr aus Versehen gelöscht werden; leere Konsolen-Befehle werden
+  nicht mehr gesendet.
+
 ### Version 1.4.0 (23.11.2026) – Neue Startseite + anonym
 Nichts Besonderes zu beachten, einfach Schritt 1–5 unten.
 - **Neue Startseite für Besucher:** große Überschrift „Dein eigener Minecraft-Server. Komplett kostenlos.“, Live-Zahlen

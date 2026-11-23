@@ -1,0 +1,133 @@
+"""Version 1.4.1: Fehlerbehebungen vor dem Release (SkyBlock/OneBlock, altes Icon, Paper-Join-Verlauf …)."""
+from hostly import config, extensions, minecraft
+from hostly.worker import files, tasks
+from hostly.worker.jobs import Worker
+
+from .conftest import conn, csrf_of
+from .helpers import FakeOps, FakeRcon, buy, run_jobs, setup_shop
+
+
+def test_new_server_ignores_leftovers_of_old_server_with_same_number(client):
+    """Nach dem Zurücksetzen aller Accounts bekommt ein neuer Server wieder die Nummer 1 –
+    er darf weder das alte Icon noch die alte Welt erben."""
+    old_icon = minecraft.icon_file(1)
+    old_icon.parent.mkdir(parents=True, exist_ok=True)
+    old_icon.write_bytes(b"\x89PNG alt")
+    old_world = minecraft.data_dir(1) / "world"
+    old_world.mkdir(parents=True)
+    (old_world / "level.dat").write_text("alt")
+    (minecraft.data_dir(1) / "server-icon.png").write_bytes(b"alt")
+    c = setup_shop(client)
+    buy(client)
+    page = client.get("/server/1/icon.png")
+    assert page.headers["content-type"].startswith("image/svg")        # Standard-Logo, nicht das alte PNG
+    run_jobs(Worker(FakeOps(), FakeRcon()))
+    assert not (minecraft.data_dir(1) / "world" / "level.dat").exists()
+    assert not (minecraft.data_dir(1) / "server-icon.png").exists()
+    assert not old_icon.exists()
+    moved = list((config.DATA_DIR / "verwaist").iterdir())
+    assert len(moved) == 1 and (moved[0] / "daten" / "world" / "level.dat").exists()
+    assert c.execute("SELECT state FROM servers").fetchone()[0] == "active"
+
+
+def test_uploaded_icon_is_shown_and_copied(client):
+    c = setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    token = csrf_of(client, "/server/1/darstellung")
+    from PIL import Image
+    import io
+    buf = io.BytesIO()
+    Image.new("RGB", (100, 80), "red").save(buf, "PNG")
+    client.post("/server/1/icon", data={"csrf": token}, files={"icon": ("a.png", buf.getvalue(), "image/png")})
+    assert client.get("/server/1/icon.png").headers["content-type"] == "image/png"
+    client.post("/server/1/aktion", data={"action": "restart", "csrf": token})
+    run_jobs(w)
+    assert (minecraft.data_dir(1) / "server-icon.png").exists()
+
+
+def test_paper_join_lines_are_recorded(client):
+    c = setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    log = minecraft.data_dir(1) / "logs"
+    log.mkdir(parents=True)
+    (log / "latest.log").write_text(
+        "[09:01:00 INFO]: Steve joined the game\n"
+        "[09:02:00 INFO]: <Bob> Alex joined the game\n"          # Chat-Trick zählt nicht
+        "[09:05:00 INFO]: Steve left the game\n")
+    tasks.status_all(w)
+    rows = c.execute("SELECT * FROM player_sessions").fetchall()
+    assert [r["minecraft_name"] for r in rows] == ["Steve"] and rows[0]["left_at"] is not None
+
+
+def test_bentobox_addons_go_to_addons_folder():
+    assert extensions.subfolder_for("plugin", {"dependencies": []}, "AOneBlock") == "BentoBox/addons"
+    dep = {"dependencies": [{"project_id": extensions.BENTOBOX_ID, "dependency_type": "required"}]}
+    assert extensions.subfolder_for("plugin", dep, "irgendwas") == "BentoBox/addons"
+    assert extensions.subfolder_for("plugin", {"dependencies": []}, "worldedit") is None
+    assert extensions.subfolder_for("mod", dep, "bskyblock") is None
+    server = {"id": 1, "level_name": None}
+    row = {"kind": "plugin", "filename": "BSkyBlock.jar", "subfolder": "BentoBox/addons"}
+    active, _ = files.ext_paths(server, row)
+    assert active == minecraft.data_dir(1) / "plugins" / "BentoBox" / "addons" / "BSkyBlock.jar"
+    evil = {"kind": "plugin", "filename": "x.jar", "subfolder": "../../etc"}
+    assert files.ext_paths(server, evil)[0] == minecraft.data_dir(1) / "plugins" / "etc" / "x.jar"
+
+
+def test_addon_jar_in_plugins_is_moved(client, tmp_path):
+    """Sicherheitsnetz: liegt ein Addon (addon.yml) direkt in plugins/, wird es verschoben."""
+    import zipfile
+    c = setup_shop(client)
+    buy(client)
+    run_jobs(Worker(FakeOps(), FakeRcon()))
+    plugins = minecraft.data_dir(1) / "plugins"
+    plugins.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(plugins / "Addon.jar", "w") as z:
+        z.writestr("addon.yml", "name: X")
+        z.writestr("plugin.yml", "name: X")
+    c.execute("""INSERT INTO server_extensions (server_id, source, kind, project_id, slug, title, filename)
+                 VALUES (1, 'modrinth', 'plugin', 'p1', 'neues-addon', 'X', 'Addon.jar')""")
+    server = c.execute("SELECT * FROM servers WHERE id = 1").fetchone()
+    files.sync_extensions(c, server)
+    assert (plugins / "BentoBox" / "addons" / "Addon.jar").exists() and not (plugins / "Addon.jar").exists()
+    assert c.execute("SELECT subfolder FROM server_extensions").fetchone()[0] == "BentoBox/addons"
+
+
+def test_active_world_cannot_be_deleted_without_level_name(client):
+    c = setup_shop(client)
+    buy(client)
+    run_jobs(Worker(FakeOps(), FakeRcon()))
+    token = csrf_of(client, "/server/1/welten")
+    r = client.post("/server/1/welten", data={"action": "delete", "name": "world", "csrf": token})
+    assert r.status_code == 400
+    assert conn().execute("SELECT COUNT(*) FROM jobs WHERE kind = 'world_delete'").fetchone()[0] == 0
+
+
+def test_empty_console_command_is_not_sent(client):
+    c = setup_shop(client)
+    buy(client)
+    run_jobs(Worker(FakeOps(), FakeRcon()))
+    token = csrf_of(client, "/server/1/konsole")
+    client.post("/server/1/konsole", data={"command": "   ", "csrf": token})
+    assert c.execute("SELECT COUNT(*) FROM jobs WHERE kind = 'command'").fetchone()[0] == 0
+
+
+def test_new_world_also_resets_skyblock_islands(client):
+    c = setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    data = minecraft.data_dir(1)
+    for d in ("world", "bskyblock_world", "bskyblock_world_nether", "plugins/BentoBox/database", "plugins/BentoBox/addons",
+              "andere_welt"):
+        (data / d).mkdir(parents=True, exist_ok=True)
+        (data / d / "x").write_text("x")
+    token = csrf_of(client, "/server/1/einstellungen")
+    client.post("/server/1/neue-welt", data={"seed": "", "confirm": "1", "csrf": token})
+    run_jobs(w)
+    assert not (data / "bskyblock_world" / "x").exists() and not (data / "bskyblock_world_nether").exists()
+    assert not (data / "plugins/BentoBox/database").exists()
+    assert (data / "plugins/BentoBox/addons/x").exists() and (data / "andere_welt/x").exists()
