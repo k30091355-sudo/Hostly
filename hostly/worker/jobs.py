@@ -130,6 +130,7 @@ class Worker:
         src = minecraft.data_dir(server["id"])
         if not src.exists():
             return 0
+        files.check_disk_space()
         prev = conn.execute(
             "SELECT folder FROM backups WHERE server_id = ? AND status = 'fertig' ORDER BY id DESC LIMIT 1",
             (server["id"],)).fetchone()
@@ -335,6 +336,7 @@ class Worker:
             src = minecraft.archive_dir(server["id"])
         if not src.exists():
             raise RuntimeError("Keine Server-Dateien gefunden.")
+        files.check_disk_space()
         config.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
         filename = f"server-{server['id']}-{job['id']}-{part}.zip"
         dest = config.DOWNLOADS_DIR / filename
@@ -450,6 +452,11 @@ class Worker:
     def job_world_upload(self, conn, job, payload):
         server = self.load(conn, job["server_id"])
         zip_path = config.UPLOADS_DIR / "worlds" / payload["file"]
+        try:
+            files.check_disk_space()
+        except RuntimeError:
+            zip_path.unlink(missing_ok=True)
+            raise
         level = server["level_name"] or "world"
         # Die gerade benutzte Welt ersetzen geht nur bei gestopptem Server – sonst schreibt Minecraft die alte
         # Welt aus dem Speicher wieder darüber (kaputte Welt). Vorher sichern, danach wieder starten.

@@ -14,6 +14,18 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.10 (24.11.2026) – Schutz bei voller Festplatte, Kisten-Schutz-Plugins
+Einfach Schritt 1–5 unten. Paper-Server, die seit 1.5.0 gelaufen sind, zeigen einmal „Neustart nötig“.
+- **Festplatte fast voll** (weniger als 3 GB frei): Hostly erstellt dann keine Backups, ZIP-Downloads und Welt-Uploads
+  mehr (mit verständlicher Meldung). Eine volle Festplatte kann laufende Welten beim Speichern beschädigen.
+- **Paper:** Die Einstellung „Trichter-Ereignis aus“ (seit 1.5.0) wird zurückgenommen – sie machte Plugins
+  wirkungslos, die Kisten absperren (ein Trichter darunter hätte fremde Kisten leeren können).
+- **Absturz-Meldung:** Der gespeicherte Protokoll-Ausschnitt zeigt jetzt die echten letzten Zeilen statt
+  Hostlys Statusabfragen – der Fehler-Erklärer erkennt die Ursache dadurch besser.
+- Echt geprüft (mit echtem Docker und echtem Worker): Kaufen, Starten, eingefrorenen Server starten, PC-Neustart mit
+  eingefrorenem Server, Neustart, Stoppen, Konsole, Absturz (automatischer Neustart + Meldung), Backup,
+  ZIP-Download, neue Welt mit Seed, Archivieren und Reaktivieren.
+
 ### Version 1.5.9 (24.11.2026) – Starten/Stoppen noch sauberer, Minecraft-Image bleibt aktuell
 Einfach Schritt 1–5 unten.
 - **Stoppen kurz nach dem Start** (z. B. Neustart und gleich danach Stopp): Der Stopp-Befehl ging verloren, Docker

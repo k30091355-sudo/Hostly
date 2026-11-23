@@ -96,7 +96,9 @@ def handle_crash(w, conn, server) -> None:
     """Absturz-Schutz: Docker startet automatisch neu. Nach 3 Abstürzen in 10 Minuten ist Schluss."""
     excerpt = ""
     if hasattr(w.ops, "logs_tail"):
-        excerpt = w.ops.logs_tail(minecraft.container_name(server["id"]), 25)[-3000:]
+        from ..diagnose import without_noise
+        raw = w.ops.logs_tail(minecraft.container_name(server["id"]), 300)
+        excerpt = "\n".join(without_noise(raw)[-25:])[-3000:]
     conn.execute("INSERT INTO crashes (server_id, log_excerpt) VALUES (?, ?)", (server["id"], excerpt))
     recent = conn.execute(
         "SELECT COUNT(*) FROM crashes WHERE server_id = ? AND created_at > datetime('now', '-10 minutes')",

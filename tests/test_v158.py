@@ -185,3 +185,30 @@ def test_rcon_status_lines_hidden_in_console():
     from hostly.web.routes.myservers import RCON_NOISE
     assert RCON_NOISE.search("[00:03:06] [RCON Listener #1/INFO]: Thread RCON Client /127.0.0.1 started")
     assert not RCON_NOISE.search("[00:03:06] [Server thread/INFO]: Steve joined the game")
+
+
+def test_no_backup_when_disk_almost_full(client, monkeypatch):
+    import shutil as sh
+    import pytest
+    w = _server(client)
+    from collections import namedtuple
+    Usage = namedtuple("Usage", "total used free")
+    monkeypatch.setattr(sh, "disk_usage", lambda p: Usage(100 * 1024 ** 3, 99 * 1024 ** 3, 1 * 1024 ** 3))
+    with pytest.raises(RuntimeError, match="fast voll"):
+        w.backup(conn(), conn().execute("SELECT * FROM servers WHERE id = 1").fetchone(), "taeglich")
+    assert conn().execute("SELECT COUNT(*) FROM backups").fetchone()[0] == 0
+
+
+def test_hopper_tweak_is_undone_once(tmp_path, monkeypatch):
+    from hostly.worker import files
+    monkeypatch.setattr(minecraft, "data_dir", lambda sid: tmp_path)
+    (tmp_path / "config").mkdir()
+    cfg = tmp_path / "config" / "paper-world-defaults.yml"
+    cfg.write_text("hopper:\n  cooldown-when-full: true\n  disable-move-event: true\n")
+    server = {"type": "PAPER", "id": 1}
+    assert files.tune_paper(server, 2.0, dry_run=True)            # → „Neustart nötig“
+    files.tune_paper(server, 2.0)
+    assert "disable-move-event: false" in cfg.read_text()
+    cfg.write_text(cfg.read_text().replace("disable-move-event: false", "disable-move-event: true"))
+    files.tune_paper(server, 2.0)                                   # eigene Wahl des Besitzers bleibt
+    assert "disable-move-event: true" in cfg.read_text()

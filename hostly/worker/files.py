@@ -215,14 +215,18 @@ PAPER_TUNING = [
     ("config/paper-world-defaults.yml", ("collisions", "max-entity-collisions"), "8", "2"),
     # Explosionen (TNT) schneller berechnen – gleiches Ergebnis
     ("config/paper-world-defaults.yml", ("environment", "optimize-explosions"), "false", "true"),
-    # Trichter: kein Plugin-Ereignis pro Gegenstand
-    ("config/paper-world-defaults.yml", ("hopper", "disable-move-event"), "false", "true"),
     # schnellere Redstone-Berechnung (Alternate Current)
     ("config/paper-world-defaults.yml", ("misc", "redstone-implementation"), "VANILLA", "ALTERNATE_CURRENT"),
     # herumliegende Gegenstände und XP zusammenfassen
     ("spigot.yml", ("world-settings", "default", "merge-radius", "item"), "0.5", "2.0"),
     ("spigot.yml", ("world-settings", "default", "merge-radius", "exp"), "-1.0", "3.0"),
 ]
+
+# Einmalig zurücknehmen (Marker-Datei, damit eine eigene Einstellung des Besitzers danach bleibt):
+# „hopper.disable-move-event: true“ (1.5.0) schaltet Schutz-Plugins für Kisten aus – Trichter könnten fremde,
+# abgesperrte Kisten leeren.
+PAPER_UNDO = [("config/paper-world-defaults.yml", ("hopper", "disable-move-event"), "true", "false")]
+UNDO_MARKER = ".hostly-tuning-2"
 
 _KEY_RE = re.compile(r"^( *)([A-Za-z0-9_.\-]+):(?: (.*))?$")
 
@@ -257,6 +261,9 @@ def tune_paper(server, cpu_limit: float, dry_run: bool = False) -> bool:
     data = minecraft.data_dir(server["id"])
     rules = PAPER_TUNING + [("config/paper-global.yml", ("chunk-system", "worker-threads"), "-1",
                              str(max(1, int(cpu_limit) - 1)))]
+    marker = data / UNDO_MARKER
+    if not marker.exists() and (data / "config" / "paper-world-defaults.yml").exists():
+        rules = rules + PAPER_UNDO
     changed = False
     for rel in dict.fromkeys(r[0] for r in rules):
         path = data / rel
@@ -272,6 +279,9 @@ def tune_paper(server, cpu_limit: float, dry_run: bool = False) -> bool:
             if not dry_run:
                 path.write_text(new, encoding="utf-8")
                 chown(path)
+    if not dry_run and not marker.exists() and (data / "config" / "paper-world-defaults.yml").exists():
+        marker.write_text("")
+        chown(marker)
     return changed
 
 
@@ -308,6 +318,19 @@ def write_code_datapack(server, public_url: str | None) -> None:
 
 
 # ---------- Backups (rsync mit Hardlinks, Schnecken-Tempo) ----------
+
+MIN_FREE_GB = 3   # so viel muss frei bleiben – läuft die Festplatte voll, gehen beim Speichern Welten kaputt
+
+
+def check_disk_space() -> None:
+    """Vor Backups/ZIPs: genug Platz? Sonst lieber nichts kopieren als laufende Server gefährden."""
+    try:
+        free = shutil.disk_usage(config.DATA_DIR).free / 1024 ** 3
+    except OSError:
+        return
+    if free < MIN_FREE_GB:
+        raise RuntimeError(f"Die Festplatte ist fast voll (nur {free:.1f} GB frei) – bitte alte Backups/Archive "
+                           "löschen oder den Admin informieren.")
 
 def make_backup(src: Path, dest: Path, previous: Path | None, slow: bool = True) -> int:
     """Inkrementelle Kopie. Liefert die Größe der neu kopierten Dateien."""

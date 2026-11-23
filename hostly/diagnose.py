@@ -26,6 +26,14 @@ PAPER_DEPENDENCY = re.compile(r"Unknown/missing dependency plugins: \[([^\]]+)\]
 PAPER_API = re.compile(r"Unsupported API version (\S+)")
 KEEP_UP = re.compile(r"Can't keep up! Is the server overloaded\? Running (\d+)ms")
 TIMED_OUT = re.compile(r"(\w{1,16}) lost connection: Timed out")
+# Hostlys Statusabfragen (RCON, 1× pro Minute) erzeugen bei Vanilla/Fabric je zwei Protokollzeilen → ausblenden
+RCON_NOISE = re.compile(r"Thread RCON (Client|Listener)|RCON Client /[\d.]+ (started|shutting down)")
+
+
+def without_noise(text: str) -> list[str]:
+    return [line for line in text.splitlines() if not RCON_NOISE.search(line)]
+
+
 MIXIN = re.compile(r"Mixin apply(?:ing)? (?:for mod )?(\S+) failed|MixinApplyError.*?mod (\S+)", re.I)
 
 
