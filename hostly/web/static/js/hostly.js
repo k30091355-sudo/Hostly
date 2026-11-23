@@ -30,9 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!btn) return;
     try {
       await navigator.clipboard.writeText(btn.dataset.copy);
-      const old = btn.textContent;
+      const old = btn.innerHTML;   // innerHTML: Knöpfe mit <code>-Adresse behalten ihr Aussehen
       btn.textContent = "✓";
-      setTimeout(() => { btn.textContent = old; }, 1200);
+      setTimeout(() => { btn.innerHTML = old; }, 1200);
     } catch (e) { prompt("Kopieren:", btn.dataset.copy); }
   });
 

@@ -397,9 +397,17 @@ def transfer_server(conn: sqlite3.Connection, server: sqlite3.Row, from_id: int,
         raise ServerError("Diesen Benutzer gibt es nicht.")
     if to["id"] == server["owner_id"]:
         raise ServerError("Der Server gehört diesem Benutzer schon.")
+    old_owner = conn.execute("SELECT minecraft_name FROM users WHERE id = ?", (server["owner_id"],)).fetchone()
     conn.execute("UPDATE servers SET owner_id = ? WHERE id = ?", (to["id"], server["id"]))
-    if to["minecraft_name"] and server["state"] == "active":
-        db.add_job(conn, "rcon", server["id"], from_id, {"commands": [f"op {to['minecraft_name']}"]})
+    if server["state"] == "active":
+        # neuer Besitzer bekommt OP, der alte verliert sie (sonst bliebe er Admin im Spiel)
+        commands = []
+        if old_owner and old_owner["minecraft_name"] and old_owner["minecraft_name"] != to["minecraft_name"]:
+            commands.append(f"deop {old_owner['minecraft_name']}")
+        if to["minecraft_name"]:
+            commands.append(f"op {to['minecraft_name']}")
+        if commands:
+            db.add_job(conn, "rcon", server["id"], from_id, {"commands": commands})
     db.notify(conn, to["id"], "transfer", f"Dir wurde der Server „{server['name']}“ übertragen.", server["id"])
     db.audit(conn, from_id, "server_transferred", f"#{server['id']} an {to['username']}")
     return to

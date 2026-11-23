@@ -14,6 +14,15 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.5 (23.11.2026) – Weitere Fehlersuche
+Einfach Schritt 1–5 unten.
+- **Wartung:** Wurde eine geplante Wartung früher von Hand beendet, hat Hostly eine spätere, von Hand
+  eingeschaltete Wartung sofort wieder ausgeschaltet. Behoben.
+- **Server übertragen:** Der alte Besitzer behielt OP-Rechte im Spiel – jetzt werden sie entfernt.
+- **Adresse kopieren** auf der Startseite: Nach dem Klick verlor der Knopf sein Aussehen. Behoben.
+- **Admin-Übersicht:** Einige Ereignisse (Wartung geplant, Server-Einstellungen, neue Welt, Start-Coins)
+  standen als Code-Text da – jetzt verständlich. Fehlende englische Texte ergänzt.
+
 ### Version 1.5.4 (23.11.2026) – Fehlersuche
 Einfach Schritt 1–5 unten.
 - **Konsole:** Die Sperre für `stop`/`restart`/`reload` ließ sich mit `execute … run stop` umgehen – jetzt gesperrt.

@@ -85,5 +85,9 @@
   "event.server_transferred": "hat einen Server übertragen",
   "event.account_deleted": "hat den Account gelöscht",
   "event.maintenance": "Wartungsmodus",
-  "event.server_version": "hat Version/Typ gewechselt"
+  "event.server_version": "hat Version/Typ gewechselt",
+  "event.maintenance_planned": "Wartung geplant",
+  "event.server_settings": "Server-Einstellungen geändert",
+  "event.welcome_coins": "Start-Coins geändert",
+  "event.world_reset": "Neue Welt erstellt"
 }

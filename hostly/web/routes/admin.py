@@ -429,6 +429,9 @@ def maintenance(enabled: str = Form("0"), csrf: str = Form(""), ctx: Ctx = Depen
     ctx.require_admin()
     ctx.check_csrf(csrf)
     db.set_setting(ctx.conn, "maintenance_mode", "1" if enabled == "1" else "0")
+    # Von Hand geschaltet → ein altes automatisches Ende (geplante Wartung) gilt nicht mehr,
+    # sonst würde der worker eine neue Wartung gleich wieder ausschalten
+    db.set_setting(ctx.conn, "maintenance_auto_end", "")
     db.audit(ctx.conn, ctx.user["id"], "maintenance", "an" if enabled == "1" else "aus")
     raise Redirect("/admin/einstellungen?ok=1")
 
