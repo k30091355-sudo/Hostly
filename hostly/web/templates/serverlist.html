@@ -16,6 +16,7 @@
       <div class="mc-motd">{{ (s.motd or s.name) | motd }}</div>
       <div class="mc-bottom"><code class="mono small">{{ s.public_address }}</code>
         <button type="button" class="btn small" data-copy="{{ s.public_address }}">{{ t('Kopieren') }}</button>
+        {% if s.id in modpacks %}<a class="btn small" href="/modpack/{{ s.short_code }}.mrpack" title="{{ t('Alle Mods des Servers – in der Modrinth App oder im Prism Launcher öffnen') }}">📦 {{ t('Modpack') }}</a>{% endif %}
         <a class="small" href="/s/{{ s.short_code }}">{{ t('Statistik') }}</a>
         {% if s.whitelist_enabled %}<a class="small" href="/s/{{ s.short_code }}#anfrage">{{ t('Whitelist-Anfrage') }}</a>{% endif %}</div>
     </div>

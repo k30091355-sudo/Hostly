@@ -14,6 +14,13 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.2 (23.11.2026) – Modpack für alle
+Einfach Schritt 1–5 unten.
+- Bei Fabric-Servern mit Mods gibt es jetzt für **jeden** (auch ohne Login) einen Knopf **„📦 Modpack“** in der
+  öffentlichen Serverliste und **„📦 Modpack herunterladen“** auf der Statistik-Seite (`/s/<kürzel>`).
+  Die Datei in der Modrinth App oder im Prism Launcher öffnen → alle Mods des Servers sind drin.
+  Mods, die nur auf dem Server laufen, sind nicht im Modpack.
+
 ### Version 1.5.1 (23.11.2026) – Fußzeile
 Einfach Schritt 1–5 unten. Der Text „// selbst gebaut, läuft auf einem Mini-PC“ unten auf der Seite ist wieder weg.
 

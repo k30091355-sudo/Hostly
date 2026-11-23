@@ -251,3 +251,12 @@ def find_updates(conn: sqlite3.Connection, server: sqlite3.Row) -> list[dict]:
 def apply_updates(conn: sqlite3.Connection, server: sqlite3.Row, updates: list[dict]) -> int:
     apply_change(conn, server, {"update": updates, "disable": []})
     return len(updates)
+
+
+def has_modpack(conn: sqlite3.Connection, server) -> bool:
+    """Gibt es für Spieler ein Modpack (.mrpack)? Nur Fabric, feste Version, mind. eine Mod, die auch im Spiel läuft."""
+    if server["type"] != "FABRIC" or server["mc_version"] == "LATEST" or server["state"] != "active":
+        return False
+    return conn.execute(
+        """SELECT 1 FROM server_extensions WHERE server_id = ? AND enabled = 1 AND source = 'modrinth' AND kind = 'mod'
+           AND COALESCE(client_side, 'optional') != 'unsupported' LIMIT 1""", (server["id"],)).fetchone() is not None

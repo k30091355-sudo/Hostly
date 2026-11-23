@@ -174,3 +174,20 @@ def test_paper_tuning_and_restart_hint(client):
     env = w.ops.containers["hostly-mc-1"]["spec"]["env"]
     assert env["MAX_CHAINED_NEIGHBOR_UPDATES"] == "200000" and "MaxDirectMemorySize" in env["JVM_XX_OPTS"]
     assert c.execute("SELECT needs_restart FROM servers").fetchone()[0] == 0
+
+
+def test_public_modpack_button(client):
+    c = setup_shop(client)
+    buy(client, server_type="FABRIC")
+    run_jobs(Worker(FakeOps(), FakeRcon()))
+    c.execute("UPDATE servers SET mc_version = '26.3', public_listed = 1")
+    assert "Modpack herunterladen" not in client.get("/s/" + c.execute("SELECT short_code FROM servers").fetchone()[0]).text
+    c.execute("""INSERT INTO server_extensions (server_id, source, kind, project_id, slug, title, filename, url, sha1, sha512,
+                 size, client_side) VALUES (1, 'modrinth', 'mod', 'p', 'sodium', 'Sodium', 's.jar', 'https://cdn.modrinth.com/s.jar',
+                 'a', 'b', 1, 'required')""")
+    code = c.execute("SELECT short_code FROM servers").fetchone()[0]
+    client.cookies.clear()                                            # auch ohne Login
+    assert "Modpack herunterladen" in client.get(f"/s/{code}").text
+    assert f"/modpack/{code}.mrpack" in client.get("/serverliste").text
+    r = client.get(f"/modpack/{code}.mrpack")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/x-modrinth-modpack")

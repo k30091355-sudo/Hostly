@@ -18,7 +18,10 @@ def server_list(ctx: Ctx = Depends(get_ctx)):
            LEFT JOIN server_status st ON st.server_id = s.id
            WHERE s.public_listed = 1 AND s.state = 'active' ORDER BY st.players_online DESC, s.id"""
     ).fetchall()
-    return ctx.render("serverlist.html", rows=rows)
+    from ... import extensions
+    modpacks = {r["id"] for r in ctx.conn.execute("SELECT * FROM servers WHERE public_listed = 1 AND state = 'active'")
+                if extensions.has_modpack(ctx.conn, r)}
+    return ctx.render("serverlist.html", rows=rows, modpacks=modpacks)
 
 
 @router.get("/statistik", response_class=HTMLResponse)
@@ -50,7 +53,9 @@ def server_stats(code: str, ctx: Ctx = Depends(get_ctx)):
         if ctx.user["minecraft_name"]:
             on_list = ctx.conn.execute("SELECT 1 FROM whitelist WHERE server_id = ? AND minecraft_name = ?",
                                        (server["id"], ctx.user["minecraft_name"])).fetchone()
+    from ... import extensions
     return ctx.render("stats.html", server=server, st=st, data=data, exts=exts, my_request=my_request,
+                      modpack=extensions.has_modpack(ctx.conn, server),
                       on_list=on_list, sent=ctx.request.query_params.get("anfrage"),
                       chart24=stats.chart(data["samples"], 24, server["max_players"]),
                       chart7=stats.chart(data["samples"], 24 * 7, server["max_players"]))

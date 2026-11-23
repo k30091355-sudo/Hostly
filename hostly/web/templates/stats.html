@@ -49,6 +49,12 @@
   <section class="card"><h2>{{ t('Plugins/Mods') }}</h2>
     {% if exts %}<ul class="events">{% for e in exts %}<li>{{ e.title }}</li>{% endfor %}</ul>
     {% else %}<p class="muted small">{{ t('Keine.') }}</p>{% endif %}
+    {% if modpack %}
+    <div class="modpack-box">
+      <a class="btn primary small" href="/modpack/{{ server.short_code }}.mrpack">📦 {{ t('Modpack herunterladen') }}</a>
+      <p class="small muted">{{ t('Damit hast du alle Mods des Servers mit einem Klick: Datei in der Modrinth App oder im Prism Launcher öffnen (Importieren), dann das neue Profil starten und dem Server beitreten.') }}</p>
+    </div>
+    {% endif %}
     {% if server.public_address and server.state == 'active' %}<p class="small">{{ t('Adresse') }}: <code class="mono">{{ server.public_address }}</code></p>{% endif %}</section>
 </div>
 {% endblock %}

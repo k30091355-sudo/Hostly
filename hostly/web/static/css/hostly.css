@@ -524,3 +524,5 @@ main h2::before, .section-title::before { content: "> "; font-family: var(--mono
 .new-card { box-shadow: none; }
 .new-card:hover { box-shadow: none; transform: none; }
 @media (prefers-reduced-motion: reduce) { .landing h1::after { animation: none; } }
+.modpack-box { margin: .8rem 0; }
+.modpack-box .btn { margin-bottom: .4rem; }
