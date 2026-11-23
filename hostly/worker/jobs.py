@@ -88,6 +88,10 @@ class Worker:
             files.write_rules_datapack(server)
         except OSError:
             log.warning("Gamerule-Datapack für Server %s konnte nicht geschrieben werden", server["id"])
+        try:
+            files.tune_paper(server, servers.model(conn, server["model_id"])["cpu_limit"])
+        except OSError:
+            log.warning("paper-global.yml für Server %s nicht anpassbar", server["id"])
         files.fix_owner(minecraft.data_dir(server["id"]))   # Minecraft (Benutzer 1000) muss überall schreiben dürfen
         self.ops.recreate(self.spec_for(conn, server))
         conn.execute("UPDATE servers SET needs_restart = 0, crash_locked = 0 WHERE id = ?", (server["id"],))
@@ -134,11 +138,15 @@ class Worker:
         st = self.ops.state(name)
         if not st["running"]:
             return
-        try:
-            # eingefrorene Server wachen beim RCON-Versuch auf, dann wird sauber gespeichert
-            self.server_rcon(conn, server, "save-all", attempts=6)
-        except rcon.RconError as exc:
-            log.warning("save-all für Server %s fehlgeschlagen: %s", server["id"], exc)
+        if self.is_paused(server["id"]):
+            # Eingefroren: erst aufwecken (der RCON-Versuch weckt ihn), sonst kann er beim Stoppen nicht speichern.
+            # Nur kurz versuchen – hängt der Server, stoppt Docker ihn trotzdem.
+            try:
+                self.server_rcon(conn, server, "save-all", attempts=3)
+            except rcon.RconError as exc:
+                log.warning("Aufwecken von Server %s fehlgeschlagen: %s", server["id"], exc)
+        # Docker schickt „stop“ an Minecraft – das speichert die Welt sauber. Ein zusätzliches save-all über RCON
+        # ist nicht nötig und hat bei einem überlasteten Server den Neustart um Minuten verzögert.
         self.ops.stop(name, timeout=60)
 
     # ---------- Auftrag ausführen ----------

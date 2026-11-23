@@ -14,6 +14,17 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.4.2 (23.11.2026) – Schnellerer Neustart, weniger Ruckler bei Paper
+Einfach Schritt 1–5 unten. Danach Paper-Server (auch SkyBlock/OneBlock) **einmal neu starten**.
+- **Neustart schneller und zuverlässiger:** Hostly hat vor jedem Stoppen zusätzlich „save-all“ geschickt und bei
+  einem überlasteten Server bis zu 6× gewartet – der Neustart hing dann 2–3 Minuten („Aktion läuft …“).
+  Jetzt speichert Minecraft beim Stoppen selbst (wie vorher auch). Ein Neustart dauert ca. 20 Sekunden.
+- **Weniger Hänger beim Betreten neuer Gebiete (Paper):** Paper hat bei Holz und Eisen nur 1 Thread zum Erzeugen
+  der Welt benutzt („Paper is using 1 worker threads“) – beim ersten Betreten neuer Gebiete hing der Server dann teils
+  minutenlang („Timed out waiting for world statistics“). Jetzt: Holz 1, Eisen 2, Diamant 3 Threads.
+- Hinweis: Die Meldung „spark … NumberFormatException: Infinite or NaN“ nach dem Aufwachen aus dem Einfrieren ist
+  harmlos (Fehler im mitgelieferten Profiler spark, nicht in Hostly oder deiner Welt).
+
 ### Version 1.4.1 (23.11.2026) – Fehlerbehebungen vor dem Release
 Einfach Schritt 1–5 unten. Danach **jeden laufenden Server einmal neu starten** (Knopf „Neustarten“), damit
 die Korrekturen bei Plugins und Gamerules greifen. Die Datenbank wird beim Start automatisch erweitert.

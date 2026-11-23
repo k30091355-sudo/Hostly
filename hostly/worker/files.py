@@ -175,6 +175,23 @@ def write_rules_datapack(server) -> None:
         chown(p)
 
 
+def tune_paper(server, cpu_limit: float) -> bool:
+    """Paper nutzt bei 2–3 CPU-Kernen nur 1 Thread für das Erzeugen der Welt → beim ersten Betreten
+    neuer Gebiete hängt der Server teils minutenlang. Wir setzen Kerne − 1 (Holz 1, Eisen 2, Diamant 3).
+    Nur wenn der Wert noch auf Standard (-1) steht – eigene Einstellungen bleiben."""
+    path = minecraft.data_dir(server["id"]) / "config" / "paper-global.yml"
+    if server["type"] != "PAPER" or not path.exists():
+        return False
+    text = path.read_text(encoding="utf-8")
+    workers = max(1, int(cpu_limit) - 1)
+    new = re.sub(r"(?m)^(chunk-system:\n(?:  .*\n)*?  worker-threads: )-1$", rf"\g<1>{workers}", text, count=1)
+    if new == text:
+        return False
+    path.write_text(new, encoding="utf-8")
+    chown(path)
+    return True
+
+
 def write_code_datapack(server, public_url: str | None) -> None:
     root = minecraft.data_dir(server["id"]) / (server["level_name"] or "world") / "datapacks" / "hostly-code"
     link = f"{public_url.rstrip('/')}/s/{server['short_code']}" if public_url else ""

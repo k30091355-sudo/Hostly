@@ -71,10 +71,12 @@ def test_worker_creates_and_controls_server(client):
     assert "online 1/7" in client.get("/server/1").text
 
     token = csrf_of(client, "/server/1")
+    (minecraft.data_dir(1) / ".paused").touch()          # eingefroren → erst per RCON aufwecken
     client.post("/server/1/aktion", data={"action": "stop", "csrf": token})
     run_jobs(w)
     assert "save-all" in w.rcon.commands
     assert not w.ops.containers["hostly-mc-1"]["running"]
+    (minecraft.data_dir(1) / ".paused").unlink()
     assert "cap\">aus<" in client.get("/server/1").text
 
 
