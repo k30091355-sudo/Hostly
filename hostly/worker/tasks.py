@@ -18,8 +18,11 @@ LIST_RE = re.compile(r"There are (\d+) of a max(?: of)? (\d+) players online:?(.
 # Vanilla/Fabric: "[17:54:15] [Server thread/INFO]: Steve joined the game"
 # Paper:          "[17:54:15 INFO]: Steve joined the game"
 _LOG_PREFIX = r"^\[(\d\d:\d\d:\d\d)[^\]]*\](?: \[[^\]]*\])?: "
+# Beitritt: „Steve[/1.2.3.4:5678] logged in with entity id …“ – diese Zeile ändern Plugins nicht (EssentialsX & Co.
+# ersetzen oft „joined the game“ durch eigene Texte). „joined the game“ zählt zusätzlich, falls noch nicht erkannt.
+LOGIN_RE = re.compile(_LOG_PREFIX + r"([A-Za-z0-9_]{1,16})\[[^\]]*\] logged in with entity id")
 JOIN_RE = re.compile(_LOG_PREFIX + r"([A-Za-z0-9_]{1,16}) joined the game")
-LEFT_RE = re.compile(_LOG_PREFIX + r"([A-Za-z0-9_]{1,16}) left the game")
+LEFT_RE = re.compile(_LOG_PREFIX + r"([A-Za-z0-9_]{1,16}) (?:left the game|lost connection: )")
 VERSION_RE = re.compile(r"Starting minecraft server version (\S+)")
 
 
@@ -189,10 +192,13 @@ def read_log(conn, server_id: int) -> None:
                     # Version festhalten, damit der Server nicht ungewollt auf neue Versionen springt
                     conn.execute("UPDATE servers SET mc_version = ? WHERE id = ?", (v.group(1), server_id))
                     server = {"mc_version": v.group(1)}
-            j = JOIN_RE.search(line)
+            j = LOGIN_RE.search(line) or JOIN_RE.search(line)
             if j:
-                conn.execute("INSERT INTO player_sessions (server_id, minecraft_name, joined_at) VALUES (?, ?, ?)",
-                             (server_id, j.group(2), _log_time(j.group(1))))
+                already = conn.execute("SELECT 1 FROM player_sessions WHERE server_id = ? AND minecraft_name = ? "
+                                       "AND left_at IS NULL", (server_id, j.group(2))).fetchone()
+                if not already:
+                    conn.execute("INSERT INTO player_sessions (server_id, minecraft_name, joined_at) VALUES (?, ?, ?)",
+                                 (server_id, j.group(2), _log_time(j.group(1))))
                 continue
             left = LEFT_RE.search(line)
             if left:
@@ -357,7 +363,10 @@ def night_pauses(w, current: datetime | None = None) -> None:
                 db.add_job(conn, "stop", server["id"])
             else:
                 minutes = (nightpause.next_start(current, server["night_pause_start"]) - current).total_seconds() / 60
-                if 4 < minutes <= 5:
+                st = conn.execute("SELECT running, paused, players_online FROM server_status WHERE server_id = ?",
+                                  (server["id"],)).fetchone()
+                # nur warnen, wenn jemand spielt – sonst würde die Nachricht einen eingefrorenen Server wecken
+                if 4 < minutes <= 5 and st and st["running"] and not st["paused"] and st["players_online"]:
                     db.add_job(conn, "rcon", server["id"], payload={
                         "commands": ["say Nachtpause: Der Server geht in 5 Minuten offline."]})
     finally:

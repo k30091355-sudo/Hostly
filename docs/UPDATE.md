@@ -14,6 +14,16 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.11 (24.11.2026) – Join-Verlauf auch mit Plugins, weniger unnötiges Aufwecken
+Einfach Schritt 1–5 unten.
+- **Join-Verlauf/Statistik:** Plugins wie EssentialsX ersetzen „… joined the game“ oft durch eigene Texte – dann
+  fehlten Beitritte im Verlauf und in der Statistik. Hostly erkennt Beitritte jetzt an der Login-Zeile, die kein
+  Plugin ändert, und Verlassen auch an „lost connection“.
+- **Nachtpause-Warnung** („Server geht in 5 Minuten offline“) nur noch, wenn wirklich jemand spielt – vorher
+  weckte die Nachricht eingefrorene Server unnötig auf.
+- Echt geprüft: Ein Spieler-Verbindungsversuch über den Tunnel-Weg weckt einen eingefrorenen Server sofort auf;
+  MOTD mit Farbcodes, Umlauten, € und zwei Zeilen kommt korrekt in der Serverliste an.
+
 ### Version 1.5.10 (24.11.2026) – Schutz bei voller Festplatte, Kisten-Schutz-Plugins
 Einfach Schritt 1–5 unten. Paper-Server, die seit 1.5.0 gelaufen sind, zeigen einmal „Neustart nötig“.
 - **Festplatte fast voll** (weniger als 3 GB frei): Hostly erstellt dann keine Backups, ZIP-Downloads und Welt-Uploads

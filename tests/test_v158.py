@@ -212,3 +212,38 @@ def test_hopper_tweak_is_undone_once(tmp_path, monkeypatch):
     cfg.write_text(cfg.read_text().replace("disable-move-event: false", "disable-move-event: true"))
     files.tune_paper(server, 2.0)                                   # eigene Wahl des Besitzers bleibt
     assert "disable-move-event: true" in cfg.read_text()
+
+
+def test_night_pause_warning_only_with_players(client):
+    from datetime import datetime, timedelta, timezone
+    from hostly import nightpause
+    w = _server(client)
+    c = conn()
+    c.execute("UPDATE servers SET night_pause_start = 1, night_pause_end = 8")
+    before = nightpause.next_start(datetime.now(timezone.utc), 1) - timedelta(minutes=4, seconds=30)
+    c.execute("DELETE FROM jobs")
+    c.execute("UPDATE server_status SET running = 1, paused = 1, players_online = 0")
+    tasks.night_pauses(w, before)
+    assert c.execute("SELECT COUNT(*) FROM jobs WHERE kind = 'rcon'").fetchone()[0] == 0   # nicht wecken
+    c.execute("UPDATE server_status SET paused = 0, players_online = 2")
+    tasks.night_pauses(w, before)
+    assert c.execute("SELECT COUNT(*) FROM jobs WHERE kind = 'rcon'").fetchone()[0] == 1
+
+
+def test_join_history_with_custom_join_messages(client):
+    """EssentialsX & Co. ersetzen „joined the game“ – die Login-Zeile bleibt."""
+    w = _server(client)
+    log = minecraft.data_dir(1) / "logs"
+    log.mkdir(parents=True, exist_ok=True)
+    (log / "latest.log").write_text(
+        "[10:00:00] [User Authenticator #1/INFO]: UUID of player Steve is 069a79f4-44e9-4726-a5be-fca90e38aaf5\n"
+        "[10:00:01] [Server thread/INFO]: Steve[/172.30.0.1:51234] logged in with entity id 77 at (1.5, 64.0, 2.5)\n"
+        "[10:00:01] [Server thread/INFO]: Steve joined the game\n"
+        "[10:00:02 INFO]: Alex[/172.30.0.1:51235] logged in with entity id 78 at ([world]1.5, 64.0, 2.5)\n"
+        "[10:00:02 INFO]: §6Alex ist da!\n"
+        "[10:00:03 INFO]: <Bob> Eve[/1.2.3.4:5] logged in with entity id 1\n"
+        "[10:05:00] [Server thread/INFO]: Steve lost connection: Disconnected\n"
+        "[10:05:00] [Server thread/INFO]: Steve left the game\n")
+    tasks.read_log(conn(), 1)
+    rows = conn().execute("SELECT minecraft_name, left_at FROM player_sessions ORDER BY id").fetchall()
+    assert [(r[0], r[1] is not None) for r in rows] == [("Steve", True), ("Alex", False)]
