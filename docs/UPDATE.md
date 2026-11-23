@@ -14,6 +14,9 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.1 (23.11.2026) – Fußzeile
+Einfach Schritt 1–5 unten. Der Text „// selbst gebaut, läuft auf einem Mini-PC“ unten auf der Seite ist wieder weg.
+
 ### Version 1.5.0 (23.11.2026) – Schutz gegen Lags und Abstürze + neuer Look
 Einfach Schritt 1–5 unten. Danach **jeden Server einmal neu starten** (bei Paper-Servern zeigt Hostly
 „Neustart nötig“ an, sobald der Schutz bereit ist).
@@ -36,7 +39,7 @@ Einfach Schritt 1–5 unten. Danach **jeden Server einmal neu starten** (bei Pap
 **Neuer Look („selbst gebaut“)**
 - Klare Linien und Kanten-Schatten statt weicher Schatten, Karopapier-Hintergrund, Knöpfe „drücken“ sich beim Klick ein.
 - Kleine Terminal-Details: „>“ vor Überschriften, blinkender Cursor auf der Startseite, Monospace-Schrift für
-  Adressen, Zahlen und Status; unten „// selbst gebaut, läuft auf einem Mini-PC“.
+  Adressen, Zahlen und Status.
 
 ### Version 1.4.3 (23.11.2026) – Einige Vorlagen vorerst gesperrt
 Einfach Schritt 1–5 unten.

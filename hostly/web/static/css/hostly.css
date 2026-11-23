@@ -518,7 +518,6 @@ main h2::before, .section-title::before { content: "> "; font-family: var(--mono
 .topbar { border-bottom: 1.5px solid var(--line); }
 .brand { letter-spacing: -.02em; }
 .footer { font-family: var(--mono); font-size: .8rem; }
-.footer .handmade { opacity: .8; }
 .alert { border-width: 1.5px; border-radius: 7px; }
 .choice-card { border-width: 1.5px; border-radius: 7px; }
 .choice-card:has(input:checked) { box-shadow: 3px 3px 0 var(--edge); }
