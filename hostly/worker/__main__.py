@@ -83,6 +83,7 @@ def main() -> None:
     sched.add_job(host.sample, "interval", minutes=5, args=[w], max_instances=1, coalesce=True)
     sched.add_job(tasks.backup_database, "cron", hour=2, minute=3)
     sched.add_job(tasks.disk_usage, "cron", hour=5, minute=41, args=[w])
+    sched.add_job(tasks.update_mc_image, "cron", day_of_week="tue", hour=4, minute=47, args=[w])
     def stop(signum, frame):
         """Beim Beenden (z. B. Update) sofort aufhören. Halbfertige Aufträge laufen beim nächsten Start erneut."""
         log.info("hostly-worker wird beendet")

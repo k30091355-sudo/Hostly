@@ -14,6 +14,21 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.9 (24.11.2026) – Starten/Stoppen noch sauberer, Minecraft-Image bleibt aktuell
+Einfach Schritt 1–5 unten.
+- **Stoppen kurz nach dem Start** (z. B. Neustart und gleich danach Stopp): Der Stopp-Befehl ging verloren, Docker
+  hat den Server nach 60 Sekunden hart beendet. Jetzt wartet Hostly, bis der Server bereit ist (meist wenige
+  Sekunden), und stoppt ihn dann sauber. Echt getestet: 11 Sekunden statt 60 + harter Abbruch.
+- **Minecraft-Image wird aktuell gehalten:** Jeden Dienstag um 04:47 Uhr holt Hostly die neueste Fassung von
+  `itzg/minecraft-server` (gilt ab dem nächsten Serverstart). Bisher blieb es für immer auf dem Stand der
+  Installation – neue Minecraft-Versionen brauchen aber oft ein neueres Java. Alte Fassungen werden gelöscht.
+- **Konsole:** Die Zeilen „Thread RCON Client … started/shutting down“ (entstehen jede Minute durch Hostlys
+  Statusabfrage) werden ausgeblendet – die Konsole zeigt wieder, was wirklich passiert.
+- **Update während ein Server erstellt wird:** Der Server blieb dann ohne Container („offline“). Jetzt macht
+  Hostly die Erstellung nach dem Update automatisch fertig (auch beim Reaktivieren).
+- Echt geprüft: Minecraft 1.18.2, 1.19.4, 1.20.1 (Vanilla/Paper/Fabric) starten mit dem aktuellen Java 25;
+  Hostlys Datapacks (/trigger code, Gamerules) funktionieren dort.
+
 ### Version 1.5.8 (24.11.2026) – Minecraft-Server laufen stabiler
 Einfach Schritt 1–5 unten (die Datenbank wird automatisch erweitert). Danach zeigen alle Server einmal
 „Neustart nötig“ – bitte (oder die Besitzer) einmal neu starten, damit der neue Speicherschutz greift.

@@ -159,3 +159,29 @@ def test_status_ignores_stale_pause_flag(client):
     tasks.update_status(w, conn(), 1)
     st = conn().execute("SELECT paused, players_online FROM server_status").fetchone()
     assert st["paused"] == 0 and st["players_online"] == 1
+
+
+def test_stop_while_starting_waits_until_ready(client):
+    """„stop“ in den ersten Sekunden nach dem Start ginge verloren → erst warten, bis der Server antwortet."""
+    w = _server(client)
+    orig = w.ops.state
+    w.ops.state = lambda name: {**orig(name), "health": "starting"} if orig(name)["running"] else orig(name)
+    w.rcon.commands.clear()
+    w.graceful_stop(conn(), conn().execute("SELECT * FROM servers WHERE id = 1").fetchone())
+    assert w.rcon.commands == ["list"] and ("stop", "hostly-mc-1") in w.ops.calls
+
+
+def test_interrupted_create_is_finished_after_worker_restart(client):
+    setup_shop(client)
+    buy(client)
+    c = conn()
+    c.execute("UPDATE servers SET state = 'active'")       # Worker starb nach „aktiv setzen“, vor dem Container
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    assert "hostly-mc-1" in w.ops.containers
+
+
+def test_rcon_status_lines_hidden_in_console():
+    from hostly.web.routes.myservers import RCON_NOISE
+    assert RCON_NOISE.search("[00:03:06] [RCON Listener #1/INFO]: Thread RCON Client /127.0.0.1 started")
+    assert not RCON_NOISE.search("[00:03:06] [Server thread/INFO]: Steve joined the game")

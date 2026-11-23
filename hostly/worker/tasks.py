@@ -482,6 +482,18 @@ def backup_database() -> None:
             f.unlink(missing_ok=True)
 
 
+def update_mc_image(w) -> None:
+    """Einmal pro Woche nachts das Minecraft-Image aktualisieren. Sonst bliebe es für immer auf dem Stand der
+    Installation – neue Minecraft-Versionen brauchen aber oft ein neueres Java bzw. neuere Startskripte."""
+    if not hasattr(w.ops, "update_image"):
+        return
+    try:
+        if w.ops.update_image(config.MC_IMAGE):
+            log.info("Minecraft-Image %s aktualisiert – gilt ab dem nächsten Serverstart", config.MC_IMAGE)
+    except Exception:
+        log.exception("Minecraft-Image konnte nicht aktualisiert werden (nächste Woche erneut)")
+
+
 def disk_usage(w) -> None:
     """Größe von Backups/Archiven/Servern – einmal täglich, nicht live (spart Last)."""
     conn = w.conn()

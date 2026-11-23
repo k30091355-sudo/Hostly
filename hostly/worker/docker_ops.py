@@ -43,6 +43,22 @@ class DockerOps:
             repo, _, tag = image.partition(":")
             self.client.images.pull(repo, tag=tag or "latest")
 
+    def update_image(self, image: str) -> bool:
+        """Neueste Fassung des Images holen (nur geänderte Teile werden geladen). Gilt ab dem nächsten (Neu-)Start
+        eines Servers. Alte, nicht mehr benutzte Fassungen werden gelöscht. Liefert True, wenn es neu war."""
+        before = None
+        try:
+            before = self.client.images.get(image).id
+        except self.docker.errors.ImageNotFound:
+            pass
+        repo, _, tag = image.partition(":")
+        new = self.client.images.pull(repo, tag=tag or "latest")
+        try:
+            self.client.images.prune(filters={"dangling": True})
+        except self.docker.errors.APIError:
+            pass
+        return new.id != before
+
     # ---------- Container ----------
 
     def state(self, name: str) -> dict:

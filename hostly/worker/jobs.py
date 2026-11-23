@@ -48,7 +48,7 @@ class Worker:
         flag = minecraft.data_dir(server_id) / ".paused"
         started = st.get("started_at")
         try:
-            if started and st.get("running") and flag.stat().st_mtime < started - 5:
+            if started and st.get("running") and flag.stat().st_mtime < started:
                 flag.unlink()
                 log.info("Veraltete .paused-Datei von Server %s entfernt", server_id)
         except OSError:
@@ -162,6 +162,15 @@ class Worker:
         st = self.ops.state(name)
         if not st["running"]:
             return
+        self.clear_stale_pause(server["id"], st)
+        if st.get("health") == "starting" and not self.is_paused(server["id"]):
+            # Server startet gerade erst: In den ersten Sekunden geht „stop“ verloren (Startskripte laufen noch) –
+            # Docker würde nach 60 s hart beenden, mitten im Laden der Welt. Darum warten, bis er bereit ist
+            # (antwortet auf RCON), höchstens ca. 2 Minuten.
+            try:
+                self.server_rcon(conn, server, "list", attempts=45)
+            except rcon.RconError:
+                log.warning("Server %s wurde beim Starten nicht bereit – wird trotzdem gestoppt", server["id"])
         if self.is_paused(server["id"]):
             # Eingefroren: erst aufwecken (der RCON-Versuch weckt ihn), sonst kann er beim Stoppen nicht speichern.
             # Nur kurz versuchen – hängt der Server, stoppt Docker ihn trotzdem.
@@ -202,6 +211,10 @@ class Worker:
 
     def job_create(self, conn, job, payload):
         server = self.load(conn, job["server_id"])
+        if server["state"] == "active" and not self.ops.state(minecraft.container_name(server["id"]))["exists"]:
+            # Auftrag wurde unterbrochen (z. B. Update während des ersten Starts) → einfach fertig machen
+            self.recreate(conn, server)
+            return "erstellt"
         if server["state"] != "creating":
             return "übersprungen"
         self.clear_leftovers(server["id"], keep_icon=bool(server["icon_path"]))
@@ -287,6 +300,9 @@ class Worker:
 
     def job_reactivate(self, conn, job, payload):
         server = self.load(conn, job["server_id"])
+        if server["state"] == "active" and not self.ops.state(minecraft.container_name(server["id"]))["exists"]:
+            self.recreate(conn, server)   # Auftrag wurde unterbrochen → fertig machen
+            return "reaktiviert"
         if server["state"] != "reactivating":
             return "übersprungen"
         src, dst = minecraft.archive_dir(server["id"]), minecraft.data_dir(server["id"])

@@ -1,4 +1,5 @@
 """„Meine Server“: Übersicht, Steuerung, Konsole, Darstellung, Spieler, Miete, Download."""
+import re
 import secrets
 from pathlib import Path
 
@@ -11,7 +12,9 @@ from ..deps import Ctx, Redirect, get_ctx
 
 router = APIRouter()
 
-LOG_TAIL_BYTES = 64 * 1024
+LOG_TAIL_BYTES = 256 * 1024
+# Hostlys eigene Statusabfragen (1× pro Minute) erzeugen bei Vanilla/Fabric je zwei Protokollzeilen – ausblenden
+RCON_NOISE = re.compile(r"Thread RCON (Client|Listener)|RCON Client /[\d.]+ (started|shutting down)")
 ACTIONS = ("start", "stop", "restart", "restart_warn", "reload")
 
 
@@ -150,7 +153,7 @@ def read_log_tail(server_id: int, lines: int = 300) -> str:
         size = path.stat().st_size
         f.seek(max(0, size - LOG_TAIL_BYTES))
         data = f.read().decode("utf-8", errors="replace")
-    return "\n".join(data.splitlines()[-lines:])
+    return "\n".join([line for line in data.splitlines() if not RCON_NOISE.search(line)][-lines:])
 
 
 def recent_commands(ctx: Ctx, server_id: int):
