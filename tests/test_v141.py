@@ -239,3 +239,72 @@ def test_download_does_not_block_restart():
                    ("start", 2, "pending")])
     got = [r["kind"] for r in claim_jobs(c, 5)]
     assert "restart" in got and "start" in got and "download" not in got   # ZIP läuft schon → kein zweites
+
+
+def test_full_lifecycle_coins_add_up(client):
+    """Ein Server durchläuft alles – am Ende muss jede Coin-Bewegung im Verlauf stehen und nichts negativ sein."""
+    from datetime import timedelta
+    from hostly import coins
+    from .helpers import set_until
+    c = setup_shop(client, coins_amount=5000)
+    w = Worker(FakeOps(), FakeRcon())
+    assert buy(client, model_id=1, days=10).status_code == 303
+    run_jobs(w)
+    t = csrf_of(client, "/server/1/miete")
+    steps = [
+        ("/server/1/verlaengern", {"days": 5, "request_id": "e1"}),
+        ("/server/1/nachtpause", {"enabled": "1", "start": 1, "end": 8}),
+        ("/server/1/modell", {"model_id": 3}),          # Upgrade
+        ("/server/1/modell", {"model_id": 2}),          # Downgrade
+        ("/server/1/auto-verlaengern", {"enabled": "1"}),
+        ("/server/1/nachtpause", {"enabled": ""}),
+    ]
+    for url, data in steps:
+        r = client.post(url, data={**data, "csrf": t}, follow_redirects=False)
+        assert r.status_code in (303, 200), (url, r.status_code)
+        run_jobs(w)
+    # Ablauf ohne genug Coins → archiviert
+    balance = coins.balance(c, 1)
+    c.execute("INSERT INTO coin_ledger (user_id, amount, reason) VALUES (1, ?, 'admin')", (-balance,))
+    set_until(1, timedelta(seconds=-5))
+    tasks.check_expiry(w)
+    run_jobs(w)
+    assert c.execute("SELECT state FROM servers").fetchone()[0] == "archived"
+    # wieder Coins, reaktivieren, löschen mit Erstattung
+    c.execute("INSERT INTO coin_ledger (user_id, amount, reason) VALUES (1, 3000, 'admin')")
+    r = client.post("/server/1/reaktivieren", data={"days": 20, "request_id": "re1", "csrf": t}, follow_redirects=False)
+    assert r.status_code == 303
+    run_jobs(w)
+    assert c.execute("SELECT state FROM servers").fetchone()[0] == "active"
+    before = coins.balance(c, 1)
+    client.post("/server/1/loeschen", data={"confirm_name": "Survival", "csrf": t})
+    run_jobs(w)
+    refund = coins.balance(c, 1) - before
+    paid = c.execute("SELECT paid_total FROM servers").fetchone()[0]
+    assert 0 < refund <= paid                                    # anteilig, nie mehr als bezahlt
+    assert c.execute("SELECT state FROM servers").fetchone()[0] == "deleted"
+    # Ledger = Kontostand, nie negativ
+    running = 0
+    for (a,) in c.execute("SELECT amount FROM coin_ledger WHERE user_id = 1 ORDER BY id"):
+        running += a
+        assert running >= 0
+    assert running == coins.balance(c, 1)
+
+
+def test_night_pause_does_not_start_manually_stopped_server(client):
+    from datetime import datetime, timedelta, timezone
+    c = setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    c.execute("UPDATE servers SET night_pause_start = 1, night_pause_end = 8")
+    c.execute("UPDATE server_status SET running = 0")                       # Besitzer hat ihn gestoppt
+    from hostly import nightpause
+    now = datetime.now(timezone.utc)
+    inside = nightpause.next_start(now, 1) + timedelta(minutes=30)
+    tasks.night_pauses(w, inside)
+    assert c.execute("SELECT was_running FROM night_pause_log").fetchone()[0] == 0
+    c.execute("DELETE FROM jobs")
+    tasks.night_pauses(w, inside + timedelta(hours=8))                         # Pause vorbei
+    assert c.execute("SELECT status FROM night_pause_log").fetchone()[0] == "erstattet"
+    assert c.execute("SELECT COUNT(*) FROM jobs WHERE kind = 'start'").fetchone()[0] == 0

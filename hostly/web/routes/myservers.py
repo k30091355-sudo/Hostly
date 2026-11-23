@@ -463,7 +463,7 @@ def set_night_pause(server_id: int, enabled: str = Form(""), start: int = Form(1
     running = servers.night_pause_running(ctx.conn, server_id)
     if running and (not enabled or (start, end) != (server["night_pause_start"], server["night_pause_end"])):
         ctx.conn.execute("UPDATE night_pause_log SET status = 'unterbrochen' WHERE id = ?", (running["id"],))
-        if is_active(server):
+        if is_active(server) and running["was_running"]:
             db.add_job(ctx.conn, "start", server_id, ctx.user["id"])
     raise Redirect(f"/server/{server_id}/miete?ok=np")
 

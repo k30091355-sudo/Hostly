@@ -443,6 +443,10 @@ MIGRATIONS: list[str] = [
               'limits', 'bank', 'upgrades', 'border', 'magiccobblestonegenerator', 'visit', 'likes', 'invswitcher',
               'controlpanel', 'chat', 'cauldronwitchery', 'parkour', 'twerkingfortrees', 'extramobs');
     """,
+    # 9 – Version 1.5.7: Nachtpause merkt sich, ob der Server vorher lief (nur dann danach wieder starten)
+    """
+    ALTER TABLE night_pause_log ADD COLUMN was_running INTEGER NOT NULL DEFAULT 1;
+    """,
 ]
 
 

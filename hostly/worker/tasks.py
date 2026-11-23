@@ -331,7 +331,8 @@ def night_pauses(w, current: datetime | None = None) -> None:
                                note=f"{server['name']} · {s_h:02d}–{e_h:02d} Uhr", ref_type="server", ref_id=server["id"])
                 conn.execute("UPDATE night_pause_log SET status = 'erstattet', refund_coins = ? WHERE id = ?",
                              (amount, log_row["id"]))
-                db.add_job(conn, "start", server["id"])   # Server wieder an (friert ein, bis jemand kommt)
+                if log_row["was_running"]:
+                    db.add_job(conn, "start", server["id"])   # Server wieder an (friert ein, bis jemand kommt)
 
         # 2) neue Pausen beginnen, Spieler vorher warnen
         rows = conn.execute(
@@ -340,11 +341,14 @@ def night_pauses(w, current: datetime | None = None) -> None:
             win = nightpause.window_containing(current, server["night_pause_start"], server["night_pause_end"])
             if win:
                 start_at = fmt(win[0])
+                st = conn.execute("SELECT running FROM server_status WHERE server_id = ?", (server["id"],)).fetchone()
+                was_running = 1 if st is None or st["running"] else 0   # von Hand gestoppt → danach aus lassen
                 try:
                     conn.execute(
-                        "INSERT INTO night_pause_log (server_id, start_at, end_at, planned_hours, status) VALUES (?, ?, ?, ?, 'laeuft')",
+                        """INSERT INTO night_pause_log (server_id, start_at, end_at, planned_hours, status, was_running)
+                           VALUES (?, ?, ?, ?, 'laeuft', ?)""",
                         (server["id"], start_at, fmt(win[1]),
-                         nightpause.planned_hours(server["night_pause_start"], server["night_pause_end"])))
+                         nightpause.planned_hours(server["night_pause_start"], server["night_pause_end"]), was_running))
                 except sqlite3.IntegrityError:
                     continue  # diese Pause läuft schon
                 db.add_job(conn, "stop", server["id"])

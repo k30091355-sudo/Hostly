@@ -14,6 +14,14 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.7 (23.11.2026) – Nachtpause respektiert gestoppte Server
+Einfach Schritt 1–5 unten (die Datenbank wird automatisch erweitert).
+- Ein Server, den der Besitzer **von Hand gestoppt** hat, wird nach der Nachtpause nicht mehr automatisch gestartet.
+  (Die Erstattung für die Pause gibt es weiterhin.)
+- Geprüft (ohne Fehler): alle Formulare passen zu den Seiten und haben den Fälschungsschutz; ein kompletter
+  Server-Lebenslauf (kaufen → verlängern → Nachtpause → Up-/Downgrade → Ablauf → Archiv → Reaktivieren → Löschen)
+  ergibt korrekte Coins.
+
 ### Version 1.5.6 (23.11.2026) – Downloads blockieren nichts mehr
 Einfach Schritt 1–5 unten.
 - **ZIP-Download** (Welt / alle Dateien) lief bisher als „einziger Auftrag“ des Servers – bei großen Welten
