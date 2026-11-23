@@ -191,3 +191,13 @@ def test_public_modpack_button(client):
     assert f"/modpack/{code}.mrpack" in client.get("/serverliste").text
     r = client.get(f"/modpack/{code}.mrpack")
     assert r.status_code == 200 and r.headers["content-type"].startswith("application/x-modrinth-modpack")
+    import io, json, zipfile
+    idx = json.loads(zipfile.ZipFile(io.BytesIO(r.content)).read("modrinth.index.json"))
+    assert idx["files"][0]["env"]["client"] == "required" and r.headers["cache-control"] == "no-store"
+    first = idx["versionId"]
+    c.execute("""INSERT INTO server_extensions (server_id, source, kind, project_id, slug, title, filename, url, sha1,
+                 sha512, size, client_side) VALUES (1, 'modrinth', 'mod', 'p2', 'appleskin', 'AppleSkin', 'a.jar',
+                 'https://cdn.modrinth.com/a.jar', 'c', 'd', 1, 'optional')""")       # später hinzugefügt
+    idx = json.loads(zipfile.ZipFile(io.BytesIO(client.get(f"/modpack/{code}.mrpack").content)).read("modrinth.index.json"))
+    assert [f["path"] for f in idx["files"]] == ["mods/s.jar", "mods/a.jar"] and idx["versionId"] != first
+    assert all(f["env"]["client"] == "required" for f in idx["files"])

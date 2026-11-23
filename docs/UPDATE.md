@@ -14,6 +14,14 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.3 (23.11.2026) – Modpack enthält alle Mods
+Einfach Schritt 1–5 unten. Spieler sollten das Modpack danach **neu herunterladen**.
+- Nachträglich hinzugefügte Mods (auch bei Vorlagen wie Performance-Vanilla) waren zwar in der Modpack-Datei,
+  aber als „optional“ markiert – die Modrinth App und Prism haben sie deshalb nicht geladen bzw. ausgeschaltet.
+  Jetzt sind alle Mods Pflicht und werden automatisch installiert.
+- Die Datei wird nie zwischengespeichert und hat bei jeder Mod-Änderung eine neue Kennung → Launcher erkennen,
+  dass es eine neue Fassung ist.
+
 ### Version 1.5.2 (23.11.2026) – Modpack für alle
 Einfach Schritt 1–5 unten.
 - Bei Fabric-Servern mit Mods gibt es jetzt für **jeden** (auch ohne Login) einen Knopf **„📦 Modpack“** in der

@@ -192,11 +192,15 @@ def modpack(short_code: str, ctx: Ctx = Depends(get_ctx)):
     rows = ctx.conn.execute(
         """SELECT * FROM server_extensions WHERE server_id = ? AND enabled = 1 AND source = 'modrinth' AND kind = 'mod'
            AND COALESCE(client_side, 'optional') != 'unsupported'""", (server["id"],)).fetchall()
+    # versionId ändert sich, sobald Mods dazukommen/wegfallen → Launcher erkennen die neue Fassung
+    stamp = hashlib.sha1(",".join(sorted(r["sha1"] or r["filename"] for r in rows)).encode()).hexdigest()[:8]
     index = {
-        "formatVersion": 1, "game": "minecraft", "versionId": server["short_code"],
+        "formatVersion": 1, "game": "minecraft", "versionId": f"{server['short_code']}-{stamp}",
         "name": f"{server['name']} (Hostly)",
         "files": [{"path": f"mods/{r['filename']}", "hashes": {"sha1": r["sha1"], "sha512": r["sha512"]},
-                   "env": {"client": "required" if r["client_side"] == "required" else "optional", "server": "required"},
+                   # immer „required“: bei „optional“ laden Modrinth App/Prism die Mod nicht automatisch
+                   # (dann fehlten z. B. nachträglich hinzugefügte Mods). Reine Server-Mods sind oben schon raus.
+                   "env": {"client": "required", "server": "required"},
                    "downloads": [r["url"]], "fileSize": r["size"]} for r in rows],
         "dependencies": {"minecraft": server["mc_version"], "fabric-loader": modrinth.fabric_loader_version()},
     }
@@ -205,7 +209,8 @@ def modpack(short_code: str, ctx: Ctx = Depends(get_ctx)):
         zf.writestr("modrinth.index.json", json.dumps(index, indent=2))
     safe = re.sub(r"[^A-Za-z0-9_\-]", "_", server["name"])[:40] or "modpack"
     return Response(buf.getvalue(), media_type="application/x-modrinth-modpack+zip",
-                    headers={"Content-Disposition": f'attachment; filename="{safe}.mrpack"'})
+                    headers={"Content-Disposition": f'attachment; filename="{safe}.mrpack"',
+                             "Cache-Control": "no-store"})   # immer die aktuelle Mod-Liste
 
 
 # ---------- Version & Typ ----------
