@@ -14,6 +14,30 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.0 (23.11.2026) – Schutz gegen Lags und Abstürze + neuer Look
+Einfach Schritt 1–5 unten. Danach **jeden Server einmal neu starten** (bei Paper-Servern zeigt Hostly
+„Neustart nötig“ an, sobald der Schutz bereit ist).
+
+**Stabilere Welten (alle Server)**
+- Riesige Redstone-/Sand-Kettenreaktionen werden begrenzt (Lag-Maschinen bringen den Server nicht mehr zum Hängen).
+- Entities werden nur bis 80 % der Sichtweite an Spieler geschickt → weniger Daten durch den playit-Tunnel.
+- Java darf für Netzwerkpuffer höchstens 256 MB extra nehmen – vorher konnte Java mehr RAM belegen als der
+  Container hat, dann wurde der Server hart beendet („Absturz“ ohne Fehlermeldung).
+
+**Zusätzlich bei Paper (auch SkyBlock/OneBlock)** – nur Werte, die noch auf Standard stehen; eigene Änderungen bleiben:
+- Welt wird gleichmäßiger erzeugt (max. 40 Chunks/Sekunde pro Spieler) und langsamer gesendet → weniger Hänger
+  und weniger „Timed out“ beim ersten Betreten neuer Gebiete.
+- Spieler können nicht mehr in ungeladene Gebiete fliegen (häufige Lag-Spitze).
+- Speichern wird auf mehr Ticks verteilt (kein Ruckler alle 5 Minuten).
+- Zu viele Pfeile/XP-Kugeln in einem Chunk können ihn nicht mehr kaputt machen.
+- Schnellere Berechnung von Explosionen, Redstone (Alternate Current), Trichtern und Tierfarmen
+  (max. 2 Zusammenstöße pro Tier); Gegenstände/XP am Boden werden zusammengefasst.
+
+**Neuer Look („selbst gebaut“)**
+- Klare Linien und Kanten-Schatten statt weicher Schatten, Karopapier-Hintergrund, Knöpfe „drücken“ sich beim Klick ein.
+- Kleine Terminal-Details: „>“ vor Überschriften, blinkender Cursor auf der Startseite, Monospace-Schrift für
+  Adressen, Zahlen und Status; unten „// selbst gebaut, läuft auf einem Mini-PC“.
+
 ### Version 1.4.3 (23.11.2026) – Einige Vorlagen vorerst gesperrt
 Einfach Schritt 1–5 unten.
 - **Survival mit Freunden, Creative, SkyBlock, OneBlock und Abenteuer** sind beim Kaufen grau und zeigen

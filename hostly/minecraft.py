@@ -64,6 +64,12 @@ def build_spec(server: sqlite3.Row, model: sqlite3.Row, tunnel: sqlite3.Row,
         "AUTOPAUSE_TIMEOUT_INIT": "300",
         "AUTOPAUSE_TIMEOUT_KN": "60",
         "MAX_TICK_TIME": "-1",
+        # Schutz gegen Lags/Abstürze (1.5.0): Entities nur in 80 % der Entfernung an Spieler schicken (weniger Daten
+        # durch den Tunnel), riesige Redstone-/Sand-Kettenreaktionen begrenzen (Standard 1 000 000 → Lag-Maschinen),
+        # Java-Netzwerkpuffer begrenzen – sonst kann Java mehr RAM nehmen als der Container hat und wird beendet.
+        "ENTITY_BROADCAST_RANGE_PERCENTAGE": "80",
+        "MAX_CHAINED_NEIGHBOR_UPDATES": "200000",
+        "JVM_XX_OPTS": "-XX:MaxDirectMemorySize=256M",
         # Whitelist: die Liste im Reiter "Spieler" ist maßgeblich
         "OVERRIDE_WHITELIST": "TRUE",
     }

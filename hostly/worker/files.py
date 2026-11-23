@@ -175,21 +175,86 @@ def write_rules_datapack(server) -> None:
         chown(p)
 
 
-def tune_paper(server, cpu_limit: float) -> bool:
-    """Paper nutzt bei 2–3 CPU-Kernen nur 1 Thread für das Erzeugen der Welt → beim ersten Betreten
-    neuer Gebiete hängt der Server teils minutenlang. Wir setzen Kerne − 1 (Holz 1, Eisen 2, Diamant 3).
-    Nur wenn der Wert noch auf Standard (-1) steht – eigene Einstellungen bleiben."""
-    path = minecraft.data_dir(server["id"]) / "config" / "paper-global.yml"
-    if server["type"] != "PAPER" or not path.exists():
+# Schutz gegen Lags und Abstürze (Version 1.5.0). Nur Werte, die noch auf Paper-Standard stehen, werden geändert –
+# was der Besitzer selbst im Dateimanager einstellt, bleibt. (Datei, Pfad, Paper-Standard, Hostly-Wert)
+PAPER_TUNING = [
+    # Welt erzeugen gleichmäßiger verteilen statt alles auf einmal (beim ersten Betreten neuer Gebiete)
+    ("config/paper-global.yml", ("chunk-loading-basic", "player-max-chunk-generate-rate"), "-1.0", "40.0"),
+    # weniger Daten pro Sekunde zum Spieler – der playit-Tunnel kommt besser mit (weniger „Timed out“)
+    ("config/paper-global.yml", ("chunk-loading-basic", "player-max-chunk-send-rate"), "75.0", "50.0"),
+    # Spieler können nicht in noch nicht geladene Gebiete fliegen/laufen (häufige Ursache für Lag-Spitzen)
+    ("config/paper-world-defaults.yml", ("chunks", "prevent-moving-into-unloaded-chunks"), "false", "true"),
+    # Speichern auf mehr Ticks verteilen → kein Ruckler alle 5 Minuten
+    ("config/paper-world-defaults.yml", ("chunks", "max-auto-save-chunks-per-tick"), "24", "8"),
+    # zu viele Pfeile/XP-Kugeln o. Ä. in einem Chunk können ihn beim Laden abstürzen lassen
+    ("config/paper-world-defaults.yml", ("chunks", "entity-per-chunk-save-limit", "arrow"), "-1", "16"),
+    ("config/paper-world-defaults.yml", ("chunks", "entity-per-chunk-save-limit", "experience_orb"), "-1", "16"),
+    ("config/paper-world-defaults.yml", ("chunks", "entity-per-chunk-save-limit", "snowball"), "-1", "8"),
+    ("config/paper-world-defaults.yml", ("chunks", "entity-per-chunk-save-limit", "ender_pearl"), "-1", "8"),
+    ("config/paper-world-defaults.yml", ("chunks", "entity-per-chunk-save-limit", "fireball"), "-1", "8"),
+    ("config/paper-world-defaults.yml", ("chunks", "entity-per-chunk-save-limit", "small_fireball"), "-1", "8"),
+    # Tierfarmen: weniger Zusammenstoß-Berechnungen
+    ("config/paper-world-defaults.yml", ("collisions", "max-entity-collisions"), "8", "2"),
+    # Explosionen (TNT) schneller berechnen – gleiches Ergebnis
+    ("config/paper-world-defaults.yml", ("environment", "optimize-explosions"), "false", "true"),
+    # Trichter: kein Plugin-Ereignis pro Gegenstand
+    ("config/paper-world-defaults.yml", ("hopper", "disable-move-event"), "false", "true"),
+    # schnellere Redstone-Berechnung (Alternate Current)
+    ("config/paper-world-defaults.yml", ("misc", "redstone-implementation"), "VANILLA", "ALTERNATE_CURRENT"),
+    # herumliegende Gegenstände und XP zusammenfassen
+    ("spigot.yml", ("world-settings", "default", "merge-radius", "item"), "0.5", "2.0"),
+    ("spigot.yml", ("world-settings", "default", "merge-radius", "exp"), "-1.0", "3.0"),
+]
+
+_KEY_RE = re.compile(r"^( *)([A-Za-z0-9_.\-]+):(?: (.*))?$")
+
+
+def yaml_set(text: str, path: tuple, expect: str, value: str) -> str:
+    """Einen Wert in einer YAML-Datei ändern (ohne Zusatz-Bibliothek, Kommentare bleiben).
+    Nur wenn der aktuelle Wert genau `expect` ist."""
+    lines = text.split("\n")
+    stack: list[tuple[int, str]] = []
+    for i, line in enumerate(lines):
+        m = _KEY_RE.match(line)
+        if not m:
+            continue
+        indent, key, val = len(m.group(1)), m.group(2), (m.group(3) or "").strip()
+        while stack and stack[-1][0] >= indent:
+            stack.pop()
+        stack.append((indent, key))
+        if tuple(k for _, k in stack) == tuple(path):
+            if val == expect:
+                lines[i] = f"{m.group(1)}{key}: {value}"
+            break
+    return "\n".join(lines)
+
+
+def tune_paper(server, cpu_limit: float, dry_run: bool = False) -> bool:
+    """Paper gegen Lags und Abstürze einstellen (siehe PAPER_TUNING) und genug Threads zum Erzeugen der Welt
+    geben (Paper nimmt bei 2–3 Kernen nur 1 → minutenlange Hänger beim Betreten neuer Gebiete):
+    Kerne − 1 (Holz 1, Eisen 2, Diamant 3). Die Dateien legt Paper beim ersten Start an – danach greift es.
+    Gibt zurück, ob sich etwas geändert hat (bzw. bei dry_run: ändern würde)."""
+    if server["type"] != "PAPER":
         return False
-    text = path.read_text(encoding="utf-8")
-    workers = max(1, int(cpu_limit) - 1)
-    new = re.sub(r"(?m)^(chunk-system:\n(?:  .*\n)*?  worker-threads: )-1$", rf"\g<1>{workers}", text, count=1)
-    if new == text:
-        return False
-    path.write_text(new, encoding="utf-8")
-    chown(path)
-    return True
+    data = minecraft.data_dir(server["id"])
+    rules = PAPER_TUNING + [("config/paper-global.yml", ("chunk-system", "worker-threads"), "-1",
+                             str(max(1, int(cpu_limit) - 1)))]
+    changed = False
+    for rel in dict.fromkeys(r[0] for r in rules):
+        path = data / rel
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        new = text
+        for f, key, expect, value in rules:
+            if f == rel:
+                new = yaml_set(new, key, expect, value)
+        if new != text:
+            changed = True
+            if not dry_run:
+                path.write_text(new, encoding="utf-8")
+                chown(path)
+    return changed
 
 
 def write_code_datapack(server, public_url: str | None) -> None:

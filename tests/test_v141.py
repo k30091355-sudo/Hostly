@@ -141,3 +141,36 @@ def test_soon_templates_are_greyed_out_and_cannot_be_bought(client):
     token = csrf_of(client, "/kaufen")
     r = client.post("/kaufen", data={"model_id": 2, "days": 1, "name": "X", "template": "oneblock", "csrf": token})
     assert r.status_code == 400 and c.execute("SELECT COUNT(*) FROM servers").fetchone()[0] == 0
+
+
+# ---------- Version 1.5.0: Lag-/Absturz-Schutz ----------
+
+def test_yaml_set_only_changes_defaults():
+    text = "chunks:\n  max-auto-save-chunks-per-tick: 24\n  prevent-moving-into-unloaded-chunks: false\nmisc:\n  x: 1\n"
+    out = files.yaml_set(text, ("chunks", "max-auto-save-chunks-per-tick"), "24", "8")
+    assert "max-auto-save-chunks-per-tick: 8" in out and "misc:\n  x: 1" in out
+    own = text.replace(": 24", ": 12")                                # selbst eingestellt → bleibt
+    assert files.yaml_set(own, ("chunks", "max-auto-save-chunks-per-tick"), "24", "8") == own
+
+
+def test_paper_tuning_and_restart_hint(client):
+    c = setup_shop(client)
+    buy(client)
+    w = Worker(FakeOps(), FakeRcon())
+    run_jobs(w)
+    cfg = minecraft.data_dir(1) / "config"
+    cfg.mkdir(parents=True, exist_ok=True)
+    (cfg / "paper-global.yml").write_text("chunk-loading-basic:\n  player-max-chunk-generate-rate: -1.0\n"
+                                          "chunk-system:\n  io-threads: -1\n  worker-threads: -1\n")
+    (cfg / "paper-world-defaults.yml").write_text("collisions:\n  max-entity-collisions: 8\n")
+    tasks.status_all(w)                                               # Paper hat Dateien angelegt → Neustart nötig
+    assert c.execute("SELECT needs_restart FROM servers").fetchone()[0] == 1
+    token = csrf_of(client, "/server/1")
+    client.post("/server/1/aktion", data={"action": "restart", "csrf": token})
+    run_jobs(w)
+    g = (cfg / "paper-global.yml").read_text()
+    assert "player-max-chunk-generate-rate: 40.0" in g and "worker-threads: 2" in g      # Eisen: 3 Kerne − 1
+    assert "max-entity-collisions: 2" in (cfg / "paper-world-defaults.yml").read_text()
+    env = w.ops.containers["hostly-mc-1"]["spec"]["env"]
+    assert env["MAX_CHAINED_NEIGHBOR_UPDATES"] == "200000" and "MaxDirectMemorySize" in env["JVM_XX_OPTS"]
+    assert c.execute("SELECT needs_restart FROM servers").fetchone()[0] == 0

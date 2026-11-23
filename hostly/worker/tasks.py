@@ -51,6 +51,14 @@ def update_status(w, conn, server_id: int) -> None:
                 cpu, mem = s.get("cpu_percent"), s.get("mem_mb")
             except Exception:
                 log.debug("Docker-Werte für Server %s nicht lesbar", server_id)
+        # Paper legt seine Einstellungsdateien erst beim ersten Start an → dann einmal „Neustart nötig“ anzeigen,
+        # damit der Lag-Schutz greift
+        if server["type"] == "PAPER" and not server["needs_restart"]:
+            try:
+                if files.tune_paper(server, model["cpu_limit"], dry_run=True):
+                    conn.execute("UPDATE servers SET needs_restart = 1 WHERE id = ?", (server_id,))
+            except OSError:
+                pass
     restarts = st.get("restart_count", 0)
     old = conn.execute("SELECT restart_count FROM server_status WHERE server_id = ?", (server_id,)).fetchone()
     conn.execute(
