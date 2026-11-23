@@ -14,6 +14,12 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.4.3 (23.11.2026) – Einige Vorlagen vorerst gesperrt
+Einfach Schritt 1–5 unten.
+- **Survival mit Freunden, Creative, SkyBlock, OneBlock und Abenteuer** sind beim Kaufen grau und zeigen
+  „Kommt bald …“ – man kann sie nicht mehr auswählen. Bereits gekaufte Server mit diesen Vorlagen laufen weiter.
+  Freigeben später: in `hostly/extensions.py` bei der Vorlage `"soon": True` entfernen.
+
 ### Version 1.4.2 (23.11.2026) – Schnellerer Neustart, weniger Ruckler bei Paper
 Einfach Schritt 1–5 unten. Danach Paper-Server (auch SkyBlock/OneBlock) **einmal neu starten**.
 - **Neustart schneller und zuverlässiger:** Hostly hat vor jedem Stoppen zusätzlich „save-all“ geschickt und bei

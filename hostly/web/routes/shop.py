@@ -58,6 +58,8 @@ def buy(model_id: int = Form(...), server_type: str = Form("PAPER"), days: int =
             "np_on": bool(np_on), "np_start": np_start, "np_end": np_end, "public": bool(public)}
     mc_version, entries = "LATEST", []
     tpl = extensions.TEMPLATES.get(template)
+    if tpl and tpl.get("soon"):
+        return _shop(ctx, 400, error=ctx.t("Diese Vorlage kommt bald – bitte eine andere wählen."), form=form)
     if tpl:
         server_type = tpl["type"]
         try:

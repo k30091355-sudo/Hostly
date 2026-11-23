@@ -7,24 +7,25 @@ import sqlite3
 from . import db, modrinth
 
 # Templates: Server-Vorlagen (KONZEPT.md 20a). Verfügbarkeit wird beim Kauf über Modrinth geprüft.
+# "soon": True = gesperrt, im Shop grau mit „Kommt bald“ (Wunsch des Besitzers, Nov. 2026 – später wieder freigeben).
 TEMPLATES = {
     "vanilla": {"name": "Vanilla pur", "type": "VANILLA", "projects": [],
                 "text": "Original-Minecraft ohne Extras."},
     "vanilla_plus": {"name": "Vanilla+", "type": "VANILLA", "projects": [("afk-display", "datapack"), ("veinminer", "datapack")],
                      "text": "Vanilla mit kleinen Komfort-Datapacks (AFK-Anzeige, Erz-Abbau in einem Rutsch)."},
-    "survival": {"name": "Survival mit Freunden", "type": "PAPER",
+    "survival": {"soon": True, "name": "Survival mit Freunden", "type": "PAPER",
                  "projects": [("essentialsx", "plugin"), ("luckperms", "plugin"), ("coreprotect", "plugin")],
                  "text": "Homes & Teleport (EssentialsX), Rechte (LuckPerms), Grief-Schutz (CoreProtect)."},
-    "creative": {"name": "Creative", "type": "PAPER", "projects": [("worldedit", "plugin"), ("worldguard", "plugin")],
+    "creative": {"soon": True, "name": "Creative", "type": "PAPER", "projects": [("worldedit", "plugin"), ("worldguard", "plugin")],
                  "text": "Bauen mit WorldEdit, Bereiche schützen mit WorldGuard."},
-    "skyblock": {"name": "SkyBlock", "type": "PAPER", "projects": [("bentobox", "plugin"), ("bskyblock", "plugin")],
+    "skyblock": {"soon": True, "name": "SkyBlock", "type": "PAPER", "projects": [("bentobox", "plugin"), ("bskyblock", "plugin")],
                  "text": "Klassisches SkyBlock mit BentoBox."},
-    "oneblock": {"name": "OneBlock", "type": "PAPER", "projects": [("bentobox", "plugin"), ("aoneblock", "plugin")],
+    "oneblock": {"soon": True, "name": "OneBlock", "type": "PAPER", "projects": [("bentobox", "plugin"), ("aoneblock", "plugin")],
                  "text": "Ein einziger Block, aus dem alles kommt (BentoBox AOneBlock)."},
     "performance": {"name": "Performance-Vanilla", "type": "FABRIC",
                     "projects": [("lithium", "mod"), ("ferrite-core", "mod"), ("chunky", "mod")],
                     "text": "Schneller und sparsamer – ideal für Holz."},
-    "adventure": {"name": "Abenteuer", "type": "FABRIC",
+    "adventure": {"soon": True, "name": "Abenteuer", "type": "FABRIC",
                   "projects": [("terralith", "mod"), ("yungs-better-dungeons", "mod"), ("lithium", "mod"),
                                ("ferrite-core", "mod")],
                   "text": "Neue Landschaften und Dungeons + Performance. Mit Modpack für Spieler."},

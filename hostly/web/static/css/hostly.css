@@ -467,3 +467,6 @@ input.switch:checked::after { transform: translateX(18px); }
 .home-split .card { margin: 0; }
 @media (min-width: 760px) { .home-split { grid-template-columns: 1fr 1fr; } }
 .steps-list { margin: 0; padding-left: 1.2rem; display: grid; gap: .5rem; }
+
+/* Vorlagen „Kommt bald“ (gesperrt) */
+.choice-card.soon { opacity: .5; cursor: not-allowed; filter: grayscale(1); }

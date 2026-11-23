@@ -46,9 +46,9 @@
       <span><strong>{{ t('Selbst wählen') }}</strong><br><span class="small muted">{{ t('Vanilla, Paper oder Fabric ohne Extras') }}</span></span>
     </label>
     {% for key, tpl in templates.items() %}
-      <label class="choice-card">
-        <input type="radio" name="template" value="{{ key }}" {% if form.template == key %}checked{% endif %} data-toggle-types="0">
-        <span><strong>{{ t(tpl.name) }}</strong> <span class="pill">{{ tpl.type | capitalize }}</span><br><span class="small muted">{{ t(tpl.text) }}</span></span>
+      <label class="choice-card{{ ' soon' if tpl.soon }}">
+        <input type="radio" name="template" value="{{ key }}" {% if tpl.soon %}disabled{% elif form.template == key %}checked{% endif %} data-toggle-types="0">
+        <span><strong>{{ t(tpl.name) }}</strong> {% if tpl.soon %}<span class="pill">{{ t('Kommt bald …') }}</span>{% else %}<span class="pill">{{ tpl.type | capitalize }}</span>{% endif %}<br><span class="small muted">{{ t(tpl.text) }}</span></span>
       </label>
     {% endfor %}
   </fieldset>

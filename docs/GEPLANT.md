@@ -13,3 +13,8 @@
   Reiter-Unterstrich gleitet. Alles aus, wenn „Bewegung reduzieren“ im System eingeschaltet ist.
 - Aufwand: klein (nur CSS + Schriftdatei) → wäre **Version 1.3.1**.
 
+## 2. Gesperrte Vorlagen wieder freigeben (später)
+Survival, Creative, SkyBlock, OneBlock und Abenteuer sind seit 1.4.3 „Kommt bald …“ (Fehler im Betrieb, z. B. OneBlock).
+Vor dem Freigeben jede Vorlage auf dem Mini-PC mit echtem Beitritt testen. Freigeben: `"soon": True` in
+`hostly/extensions.py` entfernen.
+

@@ -131,3 +131,13 @@ def test_new_world_also_resets_skyblock_islands(client):
     assert not (data / "bskyblock_world" / "x").exists() and not (data / "bskyblock_world_nether").exists()
     assert not (data / "plugins/BentoBox/database").exists()
     assert (data / "plugins/BentoBox/addons/x").exists() and (data / "andere_welt/x").exists()
+
+
+def test_soon_templates_are_greyed_out_and_cannot_be_bought(client):
+    c = setup_shop(client)
+    page = client.get("/kaufen").text
+    assert 'value="skyblock" disabled' in page and "Kommt bald" in page
+    assert 'value="performance" disabled' not in page
+    token = csrf_of(client, "/kaufen")
+    r = client.post("/kaufen", data={"model_id": 2, "days": 1, "name": "X", "template": "oneblock", "csrf": token})
+    assert r.status_code == 400 and c.execute("SELECT COUNT(*) FROM servers").fetchone()[0] == 0
