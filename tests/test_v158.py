@@ -247,3 +247,20 @@ def test_join_history_with_custom_join_messages(client):
     tasks.read_log(conn(), 1)
     rows = conn().execute("SELECT minecraft_name, left_at FROM player_sessions ORDER BY id").fetchall()
     assert [(r[0], r[1] is not None) for r in rows] == [("Steve", True), ("Alex", False)]
+
+
+def test_transfer_of_archived_server_removes_old_op(client):
+    from hostly import servers as srv
+    w = _server(client)
+    c = conn()
+    c.execute("UPDATE users SET minecraft_name = 'AlterBesitzer' WHERE id = 1")
+    c.execute("INSERT INTO users (username, password_hash, minecraft_name) VALUES ('neu', 'x', 'Neu')")
+    run_jobs(w)
+    c.execute("UPDATE servers SET state = 'archived'")
+    data = minecraft.data_dir(1)
+    minecraft.archive_dir(1).parent.mkdir(parents=True, exist_ok=True)
+    data.rename(minecraft.archive_dir(1))
+    (minecraft.archive_dir(1) / "ops.json").write_text(json.dumps([{"uuid": "a", "name": "AlterBesitzer"}]))
+    srv.transfer_server(c, c.execute("SELECT * FROM servers WHERE id = 1").fetchone(), 1, "neu")
+    run_jobs(w)
+    assert json.loads((minecraft.archive_dir(1) / "ops.json").read_text()) == []

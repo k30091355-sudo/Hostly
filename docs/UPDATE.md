@@ -14,6 +14,13 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.12 (24.11.2026) – OP-Rechte auch bei archivierten Servern
+Einfach Schritt 1–5 unten.
+- **Server übertragen / Minecraft-Namen ändern** bei einem archivierten Server: Der alte Name blieb OP und hatte
+  nach dem Reaktivieren wieder Admin-Rechte im Spiel. Jetzt wird er auch im Archiv entfernt.
+- **Server umbenennen ohne eigene MOTD:** Der Name erscheint in der Minecraft-Serverliste – jetzt kommt dafür
+  der Hinweis „Neustart nötig“.
+
 ### Version 1.5.11 (24.11.2026) – Join-Verlauf auch mit Plugins, weniger unnötiges Aufwecken
 Einfach Schritt 1–5 unten.
 - **Join-Verlauf/Statistik:** Plugins wie EssentialsX ersetzen „… joined the game“ oft durch eigene Texte – dann

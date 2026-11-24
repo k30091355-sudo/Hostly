@@ -399,8 +399,9 @@ def transfer_server(conn: sqlite3.Connection, server: sqlite3.Row, from_id: int,
         raise ServerError("Der Server gehört diesem Benutzer schon.")
     old_owner = conn.execute("SELECT minecraft_name FROM users WHERE id = ?", (server["owner_id"],)).fetchone()
     conn.execute("UPDATE servers SET owner_id = ? WHERE id = ?", (to["id"], server["id"]))
-    if server["state"] == "active":
-        # neuer Besitzer bekommt OP, der alte verliert sie (sonst bliebe er Admin im Spiel)
+    if server["state"] in ("active", "archived"):
+        # neuer Besitzer bekommt OP, der alte verliert sie (sonst bliebe er Admin im Spiel). Ist der Server aus oder
+        # archiviert, entfernt der worker den alten Namen direkt aus ops.json; OP gibt itzg beim nächsten Start.
         commands = []
         if old_owner and old_owner["minecraft_name"] and old_owner["minecraft_name"] != to["minecraft_name"]:
             commands.append(f"deop {old_owner['minecraft_name']}")

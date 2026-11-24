@@ -222,7 +222,9 @@ def rename(server_id: int, name: str = Form(""), csrf: str = Form(""), ctx: Ctx 
     if err:
         return page(ctx, "servers/appearance.html", server, 400, error=ctx.t(err),
                     has_icon=minecraft.has_icon(server))
-    ctx.conn.execute("UPDATE servers SET name = ? WHERE id = ?", (name, server_id))
+    # ohne eigene MOTD zeigt die Minecraft-Serverliste den Namen → gilt nach einem Neustart
+    ctx.conn.execute("UPDATE servers SET name = ?, needs_restart = CASE WHEN motd IS NULL OR motd = '' "
+                     "THEN 1 ELSE needs_restart END WHERE id = ?", (name, server_id))
     raise Redirect(f"/server/{server_id}/darstellung?ok=name")
 
 

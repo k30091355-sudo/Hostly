@@ -135,7 +135,9 @@ def set_minecraft_name(minecraft_name: str = Form(""), csrf: str = Form(""), ctx
         commands = ([f"deop {old}"] if old and old.lower() != name.lower() else []) + ([f"op {name}"] if name else [])
         if commands:
             for row in ctx.conn.execute(
-                    "SELECT id FROM servers WHERE owner_id = ? AND state = 'active'", (ctx.user["id"],)).fetchall():
+                    # auch archivierte: dort entfernt der worker den alten Namen direkt aus ops.json
+                    "SELECT id FROM servers WHERE owner_id = ? AND state IN ('active', 'archived')",
+                    (ctx.user["id"],)).fetchall():
                 db.add_job(ctx.conn, "rcon", row["id"], ctx.user["id"], {"commands": commands})
     raise Redirect("/einstellungen?msg=minecraft")
 
