@@ -92,6 +92,15 @@ async def handle_http_error(request: Request, exc: StarletteHTTPException):
     return _simple_page(request, lang, exc.status_code, translate(lang, key))
 
 
+@app.exception_handler(Exception)
+async def handle_unexpected(request: Request, exc: Exception):
+    """Unerwarteter Fehler: verständliche Seite statt „Internal Server Error“ (Details stehen im Protokoll)."""
+    import logging
+    logging.getLogger("hostly.web").exception("Fehler bei %s %s", request.method, request.url.path)
+    lang = _lang(request)
+    return _simple_page(request, lang, 500, translate(lang, "err.generic"))
+
+
 def _simple_page(request: Request, lang: str, status: int, message: str) -> HTMLResponse:
     def t(key, **v):
         return translate(lang, key, **v)

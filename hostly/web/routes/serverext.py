@@ -374,8 +374,12 @@ def _modrinth_pack(ctx: Ctx, server, project: str) -> None:
     tmp = config.UPLOADS_DIR / "resourcepacks" / f"tmp-{secrets.token_hex(6)}.zip"
     tmp.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(f["url"], headers={"User-Agent": modrinth.USER_AGENT})
-    with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as out:
-        out.write(resp.read(MAX_PACK_UPLOAD + 1))
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp, open(tmp, "wb") as out:
+            out.write(resp.read(MAX_PACK_UPLOAD + 1))
+    except OSError:   # Netzwerkfehler → verständliche Meldung statt Fehlerseite
+        tmp.unlink(missing_ok=True)
+        raise ValueError("Modrinth ist gerade nicht erreichbar – bitte später erneut versuchen.")
     _store_pack(ctx, server["id"], tmp)
 
 

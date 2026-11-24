@@ -63,6 +63,11 @@ def update_status(w, conn, server_id: int) -> None:
                     conn.execute("UPDATE servers SET needs_restart = 1 WHERE id = ?", (server_id,))
             except OSError:
                 pass
+    if not st["running"]:
+        # Server aus (gestoppt, Absturz ohne Neustart, archiviert …) → niemand ist mehr online.
+        # Sonst liefe die Spielzeit in der Statistik endlos weiter.
+        conn.execute("UPDATE player_sessions SET left_at = datetime('now') WHERE server_id = ? AND left_at IS NULL",
+                     (server_id,))
     restarts = st.get("restart_count", 0)
     old = conn.execute("SELECT restart_count FROM server_status WHERE server_id = ?", (server_id,)).fetchone()
     conn.execute(

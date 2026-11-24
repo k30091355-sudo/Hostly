@@ -14,6 +14,23 @@ Ab jetzt hat jedes Update eine Versionsnummer, z. B. **1.2.0**. Du siehst sie un
 
 ## Besondere Hinweise – neueste Version zuerst
 
+### Version 1.5.13 (24.11.2026) – Sicherheit + Fehlersuche bei den Vorlagen
+Einfach Schritt 1–5 unten.
+- **Sicherheitslücke geschlossen:** Plugins/Mods können im Server-Ordner „Verknüpfungen“ (symbolische Links)
+  anlegen. Hostly ist ihnen beim Schreiben (Server-Icon, Whitelist, Datapacks, Lag-Schutz, Plugin-Abgleich) und
+  beim ZIP-Download gefolgt – ein bösartiges Plugin hätte so z. B. Hostlys Datenbank überschreiben oder in den
+  ZIP-Download packen können. Jetzt prüft Hostly vor jedem Zugriff, dass alles im Server-Ordner bleibt.
+- **Konsole** zeigt nur noch das echte Protokoll des Servers (kein Link nach außen).
+- Die öffentliche Adresse für Links im Spiel (/trigger code, Resourcepack) kann nur noch ein Admin-Besuch ändern.
+- **Spielzeit-Statistik:** Lief ein Server aus (gestoppt, archiviert, Absturz), zählte die Spielzeit von noch
+  „online“ Spielern endlos weiter. Behoben. Spieler-Grafik zeichnet nach einem Downgrade nicht mehr über den Rand.
+- Resourcepack von Modrinth bei Netzwerkfehler: verständliche Meldung statt Fehlerseite. Unerwartete Fehler zeigen
+  eine normale Hostly-Seite statt „Internal Server Error“.
+- Altes eigenes Profilbild wird gelöscht, wenn man auf „kein Bild“ oder „Minecraft-Kopf“ wechselt.
+- **Gesperrte Vorlagen:** Ursachen gefunden und mit einem Test-Spieler bestätigt (OneBlock/SkyBlock: Insel wird
+  nicht automatisch erstellt; Survival: Spieler haben keine Rechte für /home usw.; Creative: kein Kreativmodus).
+  Noch NICHT eingebaut – Details und getestete Lösungen in `docs/GEPLANT.md`.
+
 ### Version 1.5.12 (24.11.2026) – OP-Rechte auch bei archivierten Servern
 Einfach Schritt 1–5 unten.
 - **Server übertragen / Minecraft-Namen ändern** bei einem archivierten Server: Der alte Name blieb OP und hatte

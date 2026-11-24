@@ -290,6 +290,8 @@ def mark_archived(conn: sqlite3.Connection, server_id: int) -> None:
         (server_id,),
     )
     conn.execute("DELETE FROM server_status WHERE server_id = ?", (server_id,))
+    conn.execute("UPDATE player_sessions SET left_at = datetime('now') WHERE server_id = ? AND left_at IS NULL",
+                 (server_id,))
 
 
 # ---------- Anzeige ----------

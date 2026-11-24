@@ -40,6 +40,7 @@ def chart(samples, hours: int, max_players: int) -> Markup:
         i = min(buckets - 1, int((at - start) / size))
         values[i] = max(values[i], s["players"])
     top = max(max_players, 1)
+    values = [min(v, top) for v in values]   # z. B. nach einem Downgrade nicht über den Rand zeichnen
     w, h, bw = 560, 120, 560 / buckets
     bars = "".join(
         f'<rect x="{i * bw + 1:.1f}" y="{h - v / top * (h - 4):.1f}" width="{bw - 2:.1f}" height="{v / top * (h - 4):.1f}" rx="2"><title>{v}</title></rect>'
