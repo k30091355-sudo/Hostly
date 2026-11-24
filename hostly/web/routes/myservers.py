@@ -147,6 +147,9 @@ def read_log_tail(server_id: int, lines: int = 300) -> str:
     path = minecraft.data_dir(server_id) / "logs" / "latest.log"
     if not path.exists():
         return ""
+    base = minecraft.data_dir(server_id).resolve()
+    if not str(path.resolve()).startswith(str(base) + "/"):
+        return ""   # Link aus dem Server-Ordner heraus (z. B. von einem Plugin angelegt) – nicht lesen
     with open(path, "rb") as f:
         size = path.stat().st_size
         f.seek(max(0, size - LOG_TAIL_BYTES))

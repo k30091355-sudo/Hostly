@@ -264,3 +264,26 @@ def test_transfer_of_archived_server_removes_old_op(client):
     srv.transfer_server(c, c.execute("SELECT * FROM servers WHERE id = 1").fetchone(), 1, "neu")
     run_jobs(w)
     assert json.loads((minecraft.archive_dir(1) / "ops.json").read_text()) == []
+
+
+def test_worker_never_follows_symlinks_out_of_server_dir(client, tmp_path):
+    """Ein Plugin könnte Links anlegen (server-icon.png → Datenbank). Der worker (root) darf ihnen nicht folgen."""
+    from hostly.worker import files, zipper
+    w = _server(client)
+    data = minecraft.data_dir(1)
+    secret = tmp_path / "geheim.sqlite"
+    secret.write_text("DATENBANK")
+    (data / "server-icon.png").unlink(missing_ok=True)
+    (data / "server-icon.png").symlink_to(secret)
+    (data / "whitelist.json").symlink_to(secret)
+    (data / "world").mkdir(exist_ok=True)
+    (data / "world" / "klau").symlink_to(tmp_path)
+    c = conn()
+    c.execute("UPDATE servers SET whitelist_enabled = 1")
+    add_job(c, "restart", 1)
+    run_jobs(w)
+    assert secret.read_text() == "DATENBANK"                       # nicht überschrieben
+    assert not (data / "server-icon.png").is_symlink()
+    assert not files.inside(1, data / "world" / "klau" / "x")
+    names = [p.name for p in zipper.walk_files(data)]
+    assert "geheim.sqlite" not in names                              # ZIP packt die Datenbank nicht ein

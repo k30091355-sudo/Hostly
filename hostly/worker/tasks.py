@@ -156,7 +156,7 @@ def _log_time(hms: str) -> str:
 def read_log(conn, server_id: int) -> None:
     """Neue Zeilen aus logs/latest.log lesen (Datei lesen weckt den Server nicht)."""
     path = minecraft.data_dir(server_id) / "logs" / "latest.log"
-    if not path.exists():
+    if not path.exists() or not files.inside(server_id, path):
         return
     stat = path.stat()
     state = conn.execute("SELECT inode, offset FROM server_log_state WHERE server_id = ?", (server_id,)).fetchone()

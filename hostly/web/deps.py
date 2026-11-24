@@ -190,10 +190,13 @@ def get_ctx(request: Request):
             raise MaintenanceError()
 
         # öffentliche Adresse merken (für Resourcepack-Links und /trigger code)
+        # Nur beim allerersten Mal oder von einem Admin übernehmen – sonst könnte jemand mit einem gefälschten
+        # Host-Kopf die Links in Minecraft (/trigger code, Resourcepack) auf eine fremde Seite umbiegen.
         host = request.headers.get("host", "")
         if host.endswith(".ts.net") and host not in _public_url_seen:
-            db.set_setting(conn, "public_url", f"https://{host}")
-            _public_url_seen.add(host)
+            if (user is not None and user["is_admin"]) or not db.get_setting(conn, "public_url"):
+                db.set_setting(conn, "public_url", f"https://{host}")
+                _public_url_seen.add(host)
 
         if user is not None and user["must_change_password"]:
             if not request.url.path.startswith(_MUST_CHANGE_ALLOWED):

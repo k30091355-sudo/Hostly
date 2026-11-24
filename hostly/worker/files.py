@@ -50,6 +50,24 @@ def fix_owner(path: Path) -> int:
     return fixed
 
 
+def inside(server_id: int, path: Path) -> bool:
+    """Liegt `path` wirklich im Server-Ordner – auch nach dem Auflösen von symbolischen Links?
+
+    Plugins/Mods laufen im Minecraft-Container und könnten Links anlegen (z. B. server-icon.png → Hostlys Datenbank).
+    Der worker läuft als root und würde beim Schreiben dem Link folgen. Darum vor jedem Schreiben prüfen."""
+    base = minecraft.data_dir(server_id).resolve()
+    try:
+        real = Path(path).resolve()
+    except (OSError, RuntimeError):
+        return False
+    return real == base or str(real).startswith(str(base) + os.sep)
+
+
+def require_inside(server_id: int, path: Path) -> None:
+    if not inside(server_id, path):
+        raise OSError(f"Pfad zeigt aus dem Server-Ordner heraus (Link?): {path}")
+
+
 def slow_cmd(cmd: list[str]) -> list[str]:
     """Befehl mit niedrigster CPU- und Festplatten-Priorität ausführen."""
     prefix = ["nice", "-n", "19"]
@@ -101,7 +119,9 @@ def _bentobox_check(conn, server, row):
     conn.execute("UPDATE server_extensions SET subfolder = ? WHERE id = ?", (BENTOBOX_ADDONS, row["id"]))
     row = conn.execute("SELECT * FROM server_extensions WHERE id = ?", (row["id"],)).fetchone()
     new_active, _ = ext_paths(server, row)
+    require_inside(server["id"], active)
     new_active.parent.mkdir(parents=True, exist_ok=True)
+    require_inside(server["id"], new_active)
     active.rename(new_active)
     chown(new_active.parent)
     return row
@@ -122,9 +142,13 @@ def sync_extensions(conn, server) -> str:
         active, disabled = ext_paths(server, row)
         keep.update({str(active.relative_to(data)), str(disabled.relative_to(data))})
         want, other = (active, disabled) if row["enabled"] else (disabled, active)
+        if not inside(server["id"], want.parent) or not inside(server["id"], other.parent):
+            log.warning("Server %s: Ordner für %s zeigt nach außen (Link) – übersprungen", server["id"], row["filename"])
+            continue
         if want.exists():
             continue
         want.parent.mkdir(parents=True, exist_ok=True)
+        require_inside(server["id"], want)
         if other.exists():
             other.rename(want)
         elif row["enabled"]:
@@ -141,7 +165,9 @@ def sync_extensions(conn, server) -> str:
                     chown(want)
         done += 1
     for rel in old - keep:   # entfernte Erweiterungen löschen
-        (data / rel).unlink(missing_ok=True)
+        if inside(server["id"], (data / rel).parent):
+            (data / rel).unlink(missing_ok=True)
+    require_inside(server["id"], manifest_path)
     manifest_path.write_text(json.dumps(sorted(keep)))
     return f"{done} Dateien geändert"
 
@@ -152,6 +178,8 @@ def remove_from_userlist(server_id: int, filename: str, name: str) -> bool:
         path = base / filename
         if not path.exists():
             continue
+        if not str(path.resolve()).startswith(str(base.resolve()) + os.sep):
+            return False   # Link nach außen – nicht anfassen
         try:
             entries = json.loads(path.read_text(encoding="utf-8") or "[]")
         except (OSError, ValueError):
@@ -171,6 +199,7 @@ def write_rules_datapack(server) -> None:
     Minecraft-Version passen (alte camelCase-Namen bis 1.21.10, neue snake_case-Namen ab 1.21.11/26.x)."""
     from .. import gamesettings
     root = minecraft.data_dir(server["id"]) / (server["level_name"] or "world") / "datapacks" / "hostly-rules"
+    require_inside(server["id"], root)
     cmds = gamesettings.commands_for(server)
     if not cmds:
         shutil.rmtree(root, ignore_errors=True)
@@ -267,7 +296,7 @@ def tune_paper(server, cpu_limit: float, dry_run: bool = False) -> bool:
     changed = False
     for rel in dict.fromkeys(r[0] for r in rules):
         path = data / rel
-        if not path.exists():
+        if not path.exists() or not inside(server["id"], path):
             continue
         text = path.read_text(encoding="utf-8")
         new = text
@@ -279,7 +308,8 @@ def tune_paper(server, cpu_limit: float, dry_run: bool = False) -> bool:
             if not dry_run:
                 path.write_text(new, encoding="utf-8")
                 chown(path)
-    if not dry_run and not marker.exists() and (data / "config" / "paper-world-defaults.yml").exists():
+    if not dry_run and not marker.exists() and inside(server["id"], marker) \
+            and (data / "config" / "paper-world-defaults.yml").exists():
         marker.write_text("")
         chown(marker)
     return changed
@@ -287,6 +317,7 @@ def tune_paper(server, cpu_limit: float, dry_run: bool = False) -> bool:
 
 def write_code_datapack(server, public_url: str | None) -> None:
     root = minecraft.data_dir(server["id"]) / (server["level_name"] or "world") / "datapacks" / "hostly-code"
+    require_inside(server["id"], root)
     link = f"{public_url.rstrip('/')}/s/{server['short_code']}" if public_url else ""
     meta = {"pack": {"description": "Hostly: /trigger code", "pack_format": 48,
                      "supported_formats": {"min_inclusive": 4, "max_inclusive": 999},
@@ -403,6 +434,9 @@ def paper_worlds_to_vanilla(data: Path, level: str) -> None:
     sonst wären Nether und End scheinbar „weg“. (Andersherum wandelt Paper selbst um.)"""
     for folder, dim in ((f"{level}_nether", "DIM-1"), (f"{level}_the_end", "DIM1")):
         src, dst = data / folder / dim, data / level / dim
+        base = data.resolve()
+        if any(not str(p.resolve()).startswith(str(base) + os.sep) for p in (src, dst.parent)):
+            continue
         if src.is_dir() and not dst.exists():
             dst.parent.mkdir(parents=True, exist_ok=True)
             src.rename(dst)

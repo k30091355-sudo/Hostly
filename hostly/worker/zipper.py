@@ -2,6 +2,7 @@
 
 python -m hostly.worker.zipper QUELLE ZIEL world|all
 """
+import os
 import sys
 import zipfile
 from pathlib import Path
@@ -18,6 +19,19 @@ def level_name(src: Path) -> str:
     return "world"
 
 
+def walk_files(root: Path) -> list[Path]:
+    """Alle echten Dateien – symbolischen Links (Ordner und Dateien) wird NICHT gefolgt. Sonst könnte ein Plugin
+    einen Link auf Hostlys Datenbank anlegen, und der ZIP-Download (läuft als root) würde sie mit einpacken."""
+    out = []
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        dirnames[:] = sorted(d for d in dirnames if not os.path.islink(os.path.join(dirpath, d)))
+        for name in sorted(filenames):
+            p = Path(dirpath) / name
+            if not p.is_symlink() and p.is_file():
+                out.append(p)
+    return out
+
+
 def main(src: str, dest: str, part: str) -> None:
     src_path, dest_path = Path(src), Path(dest)
     tmp = dest_path.with_suffix(".tmp")
@@ -28,9 +42,10 @@ def main(src: str, dest: str, part: str) -> None:
         roots = [src_path]
     with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1) as zf:
         for root in roots:
-            files = [root] if root.is_file() else sorted(p for p in root.rglob("*") if p.is_file())
-            for f in files:
-                if f.name in SKIP or f.is_symlink():
+            if root.is_symlink():
+                continue
+            for f in walk_files(root):
+                if f.name in SKIP:
                     continue
                 zf.write(f, f.relative_to(src_path).as_posix())
     tmp.rename(dest_path)

@@ -167,6 +167,8 @@ async def set_avatar(mode: str = Form("none"), image: UploadFile | None = File(N
             return _page(ctx, 400, error_avatar=ctx.t("Bitte zuerst deinen Minecraft-Namen eintragen."))
     else:
         mode = "none"
+    if mode != "own":   # altes eigenes Bild nicht weiter öffentlich abrufbar lassen
+        avatar_file(ctx.user["id"]).unlink(missing_ok=True)
     ctx.conn.execute("UPDATE users SET avatar_mode = ?, avatar_version = avatar_version + 1 WHERE id = ?",
                      (mode, ctx.user["id"]))
     raise Redirect("/einstellungen?msg=avatar")

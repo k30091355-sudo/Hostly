@@ -67,10 +67,13 @@ class Worker:
         path = minecraft.data_dir(server["id"])
         path.mkdir(parents=True, exist_ok=True)
         (path / ".paused").unlink(missing_ok=True)   # der neue Container startet wach
+        icon = path / "server-icon.png"
+        if icon.is_symlink() or not files.inside(server["id"], icon):
+            icon.unlink(missing_ok=True)   # Link (z. B. von einem Plugin) entfernen statt ihm zu folgen
         if minecraft.has_icon(server):
-            shutil.copyfile(minecraft.icon_file(server["id"]), path / "server-icon.png")
+            shutil.copyfile(minecraft.icon_file(server["id"]), icon)
         else:   # kein eigenes Icon → auch kein altes im Spiel anzeigen
-            (path / "server-icon.png").unlink(missing_ok=True)
+            icon.unlink(missing_ok=True)
         _chown_tree_top(path)
 
     def clear_leftovers(self, server_id: int, keep_icon: bool = False) -> None:
@@ -114,7 +117,7 @@ class Worker:
         if "WHITELIST" not in spec["env"]:
             # leere Whitelist: itzg gleicht nur ab, wenn Namen da sind – sonst blieben alte Einträge erlaubt
             wl = minecraft.data_dir(server["id"]) / "whitelist.json"
-            if wl.exists():
+            if wl.exists() and files.inside(server["id"], wl):
                 wl.write_text("[]", encoding="utf-8")
         files.fix_owner(minecraft.data_dir(server["id"]))   # Minecraft (Benutzer 1000) muss überall schreiben dürfen
         self.ops.recreate(spec)
